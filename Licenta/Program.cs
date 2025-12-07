@@ -20,6 +20,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<IMlLabResultClient, MlLabResultClient>();
 builder.Services.AddHttpClient<IBreastCancerClient, BreastCancerClient>();
+builder.Services.AddHostedService<MlServerStarter>();
 
 builder.Services
     .AddDefaultIdentity<ApplicationUser>(options =>
@@ -34,7 +35,6 @@ builder.Services
     })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>();
-
 
 builder.Services.AddRazorPages();
 

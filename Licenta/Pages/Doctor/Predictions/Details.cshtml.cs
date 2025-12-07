@@ -1,4 +1,7 @@
+using System;
+using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
+using Licenta.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -20,15 +23,21 @@ namespace Licenta.Pages.Doctor.Predictions
             _userManager = userManager;
         }
 
-        public Prediction Item { get; set; }
+        public Prediction? Item { get; private set; }
 
         public async Task<IActionResult> OnGetAsync(Guid id)
         {
             var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Unauthorized();
+
             var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
+            if (doctor == null)
+                return Unauthorized();
 
             Item = await _db.Predictions
-                .Include(p => p.Patient).ThenInclude(pp => pp.User)
+                .Include(p => p.Patient)
+                    .ThenInclude(pp => pp.User)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (Item == null || Item.DoctorId != doctor.Id)

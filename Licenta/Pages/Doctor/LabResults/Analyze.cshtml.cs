@@ -69,9 +69,15 @@ namespace Licenta.Pages.Doctor.LabResults
                 return Page();
             }
 
-            // Aici poți pune o regulă că doctorul să vadă doar pacienții lui,
-            // dacă ai o legătură Doctor-Pacient. Deocamdată îl lăsăm simplu.
             LabResult = lab;
+
+            if (string.IsNullOrWhiteSpace(lab.FilePath) ||
+                string.IsNullOrWhiteSpace(lab.FileName) ||
+                string.IsNullOrWhiteSpace(lab.ContentType))
+            {
+                ErrorMessage = "Lab result file information is incomplete.";
+                return Page();
+            }
 
             if (!System.IO.File.Exists(lab.FilePath))
             {
@@ -93,7 +99,6 @@ namespace Licenta.Pages.Doctor.LabResults
                 PredictedProbability = prediction.Probability;
                 Explanation = prediction.Explanation;
 
-                // poți salva rezultatul în Notes, temporar:
                 lab.Notes = $"ML: {prediction.Label} ({prediction.Probability:P0}) - {prediction.Explanation}";
                 await _context.SaveChangesAsync();
             }

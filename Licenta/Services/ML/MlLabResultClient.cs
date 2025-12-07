@@ -18,7 +18,7 @@ namespace Licenta.Services.Ml
         {
             _httpClient = httpClient;
             _baseUrl = config["MlService:BaseUrl"]
-                       ?? throw new InvalidOperationException("MlService:BaseUrl is not configured.");
+                ?? throw new InvalidOperationException("MlService:BaseUrl is not configured.");
         }
 
         public async Task<LabResultPredictionResponse> AnalyzeLabResultAsync(
@@ -28,26 +28,29 @@ namespace Licenta.Services.Ml
             string contentType,
             CancellationToken cancellationToken = default)
         {
-            // ex: https://localhost:8000/api/lab/analyze
             var url = $"{_baseUrl.TrimEnd('/')}/api/lab/analyze";
 
             using var form = new MultipartFormDataContent();
 
-            // meta info:
             form.Add(new StringContent(labResult.Id.ToString()), "lab_result_id");
             form.Add(new StringContent(labResult.PatientId.ToString()), "patient_id");
 
-            // fișierul efectiv
             var fileContent = new StreamContent(fileStream);
-            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+            fileContent.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+
             form.Add(fileContent, "file", fileName);
 
             using var response = await _httpClient.PostAsync(url, form, cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content.ReadFromJsonAsync<LabResultPredictionResponse>(cancellationToken: cancellationToken);
+            var result = await response.Content.ReadFromJsonAsync<LabResultPredictionResponse>(
+                cancellationToken: cancellationToken);
+
             if (result == null)
+            {
                 throw new InvalidOperationException("ML service returned empty response.");
+            }
 
             return result;
         }

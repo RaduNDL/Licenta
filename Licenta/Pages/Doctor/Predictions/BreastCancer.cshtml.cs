@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -75,6 +76,7 @@ namespace Licenta.Pages.Doctor.Predictions
             if (doctor == null)
                 return Unauthorized();
 
+            // Construim requestul exact ca în BreastCancerRequest
             var request = new BreastCancerRequest
             {
                 Radius_mean = Input.Radius_mean,
@@ -100,6 +102,9 @@ namespace Licenta.Pages.Doctor.Predictions
                 return Page();
             }
 
+            // AICI ERA PROBLEMA:
+            //   înainte salvai Probability = response.Probability (P(Malignant))
+            //   acum salvăm Probability = response.Confidence (probabilitatea clasei prezise)
             var prediction = new Prediction
             {
                 Id = Guid.NewGuid(),
@@ -110,8 +115,10 @@ namespace Licenta.Pages.Doctor.Predictions
                 InputSummary = "Breast cancer prediction based on mean features.",
                 InputDataJson = JsonSerializer.Serialize(request),
                 OutputDataJson = JsonSerializer.Serialize(response),
-                ResultLabel = response.Label,
-                Probability = response.Probability,
+
+                ResultLabel = response.Label,          // "B" sau "M"
+                Probability = response.Confidence,     // 👈 confidence, nu P(M) direct
+
                 Notes = Input.Notes
             };
 
