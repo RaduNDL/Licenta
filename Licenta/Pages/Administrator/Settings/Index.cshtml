@@ -1,0 +1,94 @@
+﻿@page
+@model Licenta.Pages.Administrator.Settings.IndexModel
+@{
+    ViewData["Title"] = "System Settings";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+}
+<h2 class="mb-3">System Settings</h2>
+
+@if (TempData["Status"] is string msg)
+{
+    <div class="alert alert-success">@msg</div>
+}
+
+<form method="post" enctype="multipart/form-data">
+
+    <div class="card mb-4">
+        <div class="card-header fw-bold">Clinic Information</div>
+        <div class="card-body">
+
+            <label class="form-label">Clinic Name</label>
+            <input asp-for="Input.ClinicName" class="form-control" />
+
+            <label class="form-label mt-3">Upload Logo</label>
+            <input type="file" asp-for="LogoFile" class="form-control" />
+
+            @if (Model.Input?.LogoPath != null)
+            {
+                <div class="mt-2">
+                    <img src="@Model.Input.LogoPath" alt="Logo" style="max-height: 70px" />
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header fw-bold">Uploads</div>
+        <div class="card-body">
+            <label class="form-label">Max Upload (MB)</label>
+            <input asp-for="Input.MaxUploadMb" class="form-control" type="number" />
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header fw-bold">SMTP Settings</div>
+        <div class="card-body">
+            <label class="form-label">Server</label>
+            <input asp-for="Input.SmtpServer" class="form-control" />
+
+            <label class="form-label mt-3">Port</label>
+            <input asp-for="Input.SmtpPort" class="form-control" type="number" />
+
+            <label class="form-label mt-3">User</label>
+            <input asp-for="Input.SmtpUser" class="form-control" />
+
+            <label class="form-label mt-3">Password</label>
+            <input asp-for="Input.SmtpPassword" class="form-control" type="password" />
+
+            <div class="form-check mt-3">
+                <input asp-for="Input.SmtpUseSSL" class="form-check-input" />
+                <label class="form-check-label">Use SSL</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header fw-bold">Password Policy</div>
+        <div class="card-body">
+
+            <label class="form-label">Minimum length</label>
+            <input asp-for="Input.PasswordMinLength" type="number" class="form-control" />
+
+            <div class="form-check mt-2">
+                <input asp-for="Input.RequireDigit" class="form-check-input" />
+                <label class="form-check-label">Require digit</label>
+            </div>
+
+            <div class="form-check mt-2">
+                <input asp-for="Input.RequireUppercase" class="form-check-input" />
+                <label class="form-check-label">Require uppercase</label>
+            </div>
+
+            <div class="form-check mt-2">
+                <input asp-for="Input.RequireSpecialChar" class="form-check-input" />
+                <label class="form-check-label">Require special character</label>
+            </div>
+
+        </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg">Save Settings</button>
+
+</form>

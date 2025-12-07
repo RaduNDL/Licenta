@@ -1,0 +1,51 @@
+﻿@page
+@model Licenta.Pages.Assistant.Attachments.ValidateModel
+@{
+    ViewData["Title"] = "Validate Analyses";
+}
+
+<h2>Analyses pending validation</h2>
+
+@if (TempData["StatusMessage"] != null)
+{
+    <div class="alert alert-info">@TempData["StatusMessage"]</div>
+}
+
+@if (!Model.Pending.Any())
+{
+    <div class="alert alert-secondary">No analyses pending.</div>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Patient</th>
+                <th>Uploaded</th>
+                <th>Type</th>
+                <th>Notes</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model.Pending)
+            {
+                <tr>
+                    <td><a href="@a.FilePath" target="_blank">@a.FileName</a></td>
+                    <td>@(a.Patient?.User?.FullName ?? a.Patient?.User?.Email)</td>
+                    <td>@a.UploadedAt.ToLocalTime().ToString("g")</td>
+                    <td>@a.Type</td>
+                    <td>@(string.IsNullOrWhiteSpace(a.ValidationNotes) ? "-" : a.ValidationNotes)</td>
+                    <td class="text-end">
+                        <form method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@a.Id" />
+                            <button name="action" value="approve" class="btn btn-success btn-sm">Validate</button>
+                            <button name="action" value="reject" class="btn btn-outline-danger btn-sm ms-2">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

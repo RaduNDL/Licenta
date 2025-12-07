@@ -1,0 +1,39 @@
+﻿@page
+@model Licenta.Pages.Doctor.Attachments.IndexModel
+@{
+    ViewData["Title"] = "Attachments & Results";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+<h2>Medical Attachments</h2>
+
+<div class="mb-3">
+    <a class="btn btn-primary"
+       asp-page="/Doctor/Attachments/Upload"
+       asp-route-patientId="@(Model.Attachments.FirstOrDefault()?.PatientId)">
+        Upload document
+    </a>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>File</th>
+            <th>Patient</th>
+            <th>Uploaded</th>
+            <th>Type</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var f in Model.Attachments)
+        {
+            <tr>
+                <td><a href="@f.FilePath" target="_blank">@f.FileName</a></td>
+                <td>@f.Patient.User.FullName</td>
+                <td>@f.UploadedAt.ToLocalTime().ToString("g")</td>
+                <td>@f.Type</td>
+            </tr>
+        }
+    </tbody>
+</table>

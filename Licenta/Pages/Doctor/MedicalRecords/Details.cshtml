@@ -1,0 +1,45 @@
+﻿@page "{id:guid}"
+@using Licenta.Models
+@model Licenta.Pages.Doctor.MedicalRecords.DetailsModel
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+
+<h2>Medical Record Details</h2>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <strong>@(Model.Record?.Patient?.User?.FullName ?? Model.Record?.Patient?.User?.Email ?? "Patient")</strong><br />
+        <small>@Model.Record.VisitDateUtc.ToLocalTime().ToString("f")</small>
+    </div>
+
+    <div class="card-body">
+        <h5>Diagnosis</h5>
+        <p>@Model.Record.Diagnosis</p>
+
+        <h5>Symptoms & Notes</h5>
+        <pre class="p-2 bg-light">@Model.Record.Notes</pre>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Record.Treatment))
+        {
+            <h5 class="mt-3">Treatment / Recommendations</h5>
+            <pre class="p-2 bg-light">@Model.Record.Treatment</pre>
+        }
+    </div>
+</div>
+
+@if (Model.Record.Status != RecordStatus.Validated)
+{
+    <form method="post" asp-page-handler="Validate">
+        <button class="btn btn-success">Validate</button>
+    </form>
+}
+
+<a class="btn btn-outline-secondary mt-2"
+   asp-page="/Doctor/MedicalRecords/PrescriptionPdf"
+   asp-route-id="@Model.Record.Id">
+    Download prescription (PDF)
+</a>
+
+<a asp-page="/Doctor/MedicalRecords/Index" class="btn btn-secondary mt-3">Back</a>

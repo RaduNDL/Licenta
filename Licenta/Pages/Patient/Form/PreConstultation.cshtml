@@ -1,0 +1,48 @@
+﻿@page
+@model Licenta.Pages.Patient.Forms.PreConsultationModel
+@{
+    ViewData["Title"] = "Pre‑consultation Form";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/patient.css" />
+}
+<h2>Pre‑consultation Form</h2>
+
+@if (TempData["StatusMessage"] is string msg)
+{
+    <div class="alert alert-info">@msg</div>
+}
+
+<form method="post">
+    <div class="mb-3">
+        <label asp-for="Input.DoctorId" class="form-label">Doctor</label>
+        <select asp-for="Input.DoctorId" class="form-select" asp-items="Model.Doctors"></select>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.MainComplaint" class="form-label">Main complaint</label>
+        <input asp-for="Input.MainComplaint" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Symptoms" class="form-label">Symptoms (onset, duration, severity)</label>
+        <textarea asp-for="Input.Symptoms" class="form-control" rows="4"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Allergies" class="form-label">Allergies</label>
+        <input asp-for="Input.Allergies" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Medications" class="form-label">Current medications</label>
+        <textarea asp-for="Input.Medications" class="form-control" rows="3"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Notes" class="form-label">Notes (optional)</label>
+        <textarea asp-for="Input.Notes" class="form-control" rows="3"></textarea>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Submit</button>
+</form>

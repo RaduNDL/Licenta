@@ -1,0 +1,50 @@
+﻿.stats-card {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+}
+
+.stats-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin-right: 1rem;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+}
+
+.stats-info h3 {
+    font-size: 2rem;
+    margin: 0;
+    font-weight: 800;
+}
+
+.stats-info p {
+    margin: 0;
+    color: var(--secondary-color);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: #e2e8f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #64748b;
+}
+
+.settings-section {
+    border-left: 4px solid var(--primary-color);
+    padding-left: 1.5rem;
+    margin-bottom: 2rem;
+}

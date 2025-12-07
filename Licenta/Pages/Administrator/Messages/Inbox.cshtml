@@ -1,0 +1,44 @@
+﻿@page
+@model Licenta.Pages.Administrator.Messages.InboxModel
+@{
+    ViewData["Title"] = "Messages";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+}
+
+<h2 class="mb-3">Messages</h2>
+
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <a class="btn btn-primary btn-sm" asp-page="/Administrator/Messages/Create">
+        New message
+    </a>
+    <a class="btn btn-outline-secondary btn-sm" asp-page="/Administrator/Messages/Requests/Index">
+        Patient message requests
+    </a>
+</div>
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>From</th>
+            <th>Subject</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var m in Model.Messages)
+        {
+            <tr>
+                <td>@(m.Sender.FullName ?? m.Sender.UserName)</td>
+                <td>
+                    <a asp-page="/Administrator/Messages/Details" asp-route-id="@m.Id">
+                        @m.Subject
+                    </a>
+                </td>
+                <td>@m.SentAt.ToLocalTime().ToString("g")</td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,40 @@
+﻿@page
+@model Licenta.Pages.Assistant.Attachments.IndexModel
+@{
+    ViewData["Title"] = "Analyses";
+}
+<h2>Analyses</h2>
+
+<div class="mb-3">
+    <a class="btn btn-primary" asp-page="/Assistant/Attachments/Upload">Upload new</a>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>File</th>
+            <th>Patient</th>
+            <th>Uploaded</th>
+            <th>Type</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var f in Model.Items)
+        {
+            <tr>
+                <td><a href="@f.FilePath" target="_blank">@f.FileName</a></td>
+                <td>@(f.Patient?.User?.FullName ?? f.Patient?.User?.Email)</td>
+                <td>@f.UploadedAt.ToLocalTime().ToString("g")</td>
+                <td>@f.Type</td>
+                <td>
+                    @f.Status
+                    @if (!string.IsNullOrWhiteSpace(f.ValidationNotes))
+                    {
+                        <div class="small text-muted">Notes: @f.ValidationNotes</div>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

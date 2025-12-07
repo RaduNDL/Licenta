@@ -1,0 +1,96 @@
+﻿@page
+@model Licenta.Pages.Doctor.Predictions.BreastCancerModel
+
+@{
+    ViewData["Title"] = "Breast cancer prediction";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+
+<h2>Breast cancer prediction</h2>
+
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label" for="Input_PatientId">Patient</label>
+        <select asp-for="Input.PatientId"
+                asp-items="Model.Patients"
+                class="form-select">
+        </select>
+        <span asp-validation-for="Input.PatientId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Radius_mean</label>
+        <input asp-for="Input.Radius_mean" class="form-control" />
+        <span asp-validation-for="Input.Radius_mean" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Texture_mean</label>
+        <input asp-for="Input.Texture_mean" class="form-control" />
+        <span asp-validation-for="Input.Texture_mean" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">perimeter_mean</label>
+        <input asp-for="Input.perimeter_mean" class="form-control" />
+        <span asp-validation-for="Input.perimeter_mean" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">area_mean</label>
+        <input asp-for="Input.area_mean" class="form-control" />
+        <span asp-validation-for="Input.area_mean" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">smoothness_mean</label>
+        <input asp-for="Input.smoothness_mean" class="form-control" />
+        <span asp-validation-for="Input.smoothness_mean" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">compactness_mean</label>
+        <input asp-for="Input.compactness_mean" class="form-control" />
+        <span asp-validation-for="Input.compactness_mean" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">concavity_mean</label>
+        <input asp-for="Input.concavity_mean" class="form-control" />
+        <span asp-validation-for="Input.concavity_mean" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">concavepoints_mean</label>
+        <input asp-for="Input.concavepoints_mean" class="form-control" />
+        <span asp-validation-for="Input.concavepoints_mean" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">symmetry_mean</label>
+        <input asp-for="Input.symmetry_mean" class="form-control" />
+        <span asp-validation-for="Input.symmetry_mean" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">fractal_dimension_mean</label>
+        <input asp-for="Input.fractal_dimension_mean" class="form-control" />
+        <span asp-validation-for="Input.fractal_dimension_mean" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Notes" class="form-label"></label>
+        <textarea asp-for="Input.Notes" rows="3" class="form-control"></textarea>
+        <span asp-validation-for="Input.Notes" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Run prediction</button>
+    <a asp-page="/Doctor/Predictions/Index" class="btn btn-secondary ms-2">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

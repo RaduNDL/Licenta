@@ -1,0 +1,103 @@
+﻿@page
+@model Licenta.Pages.Patient.Appointments.RequestModel
+
+@{
+    ViewData["Title"] = "Request Appointment";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/patient.css" />
+}
+
+<h2 class="mb-3">Request Appointment</h2>
+
+@if (TempData["StatusMessage"] is string status)
+{
+    <div class="alert alert-info">@status</div>
+}
+
+<form method="post">
+    <div class="mb-3">
+        <label asp-for="Input.DoctorId" class="form-label">Doctor</label>
+        <select asp-for="Input.DoctorId"
+                asp-items="Model.Doctors"
+                class="form-select"
+                id="doctorSelect">
+        </select>
+        <span asp-validation-for="Input.DoctorId" class="text-danger"></span>
+    </div>
+
+    @if (Model.DoctorSchedule != null && Model.DoctorSchedule.Count > 0)
+    {
+        <div class="mb-3">
+            <h5>Doctor schedule</h5>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Start</th>
+                        <th>End</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var day in Model.DoctorSchedule)
+                    {
+                        <tr>
+                            <td>@day.DayOfWeek</td>
+                            <td>@day.StartTime.ToString(@"hh\:mm")</td>
+                            <td>@day.EndTime.ToString(@"hh\:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="text-muted mb-0">
+                Please choose a preferred date and time within these working hours.
+            </p>
+        </div>
+    }
+    else
+    {
+        <p class="text-muted">No schedule is defined for this doctor.</p>
+    }
+
+    <div class="mb-3 mt-3">
+        <label asp-for="Input.PreferredDate" class="form-label">Preferred date</label>
+        <input asp-for="Input.PreferredDate" class="form-control" type="date" />
+        <span asp-validation-for="Input.PreferredDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.PreferredTime" class="form-label">Preferred time</label>
+        <input asp-for="Input.PreferredTime"
+               class="form-control"
+               type="time"
+               step="900" />
+        <span asp-validation-for="Input.PreferredTime" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Reason" class="form-label">Reason</label>
+        <textarea asp-for="Input.Reason" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Input.Reason" class="text-danger"></span>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Send request</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var select = document.getElementById("doctorSelect");
+            if (!select) return;
+
+            select.addEventListener("change", function () {
+                var value = this.value;
+                if (value) {
+                    var url = '@Url.Page("Request")' + '?doctorId=' + encodeURIComponent(value);
+                    window.location.href = url;
+                }
+            });
+        });
+    </script>
+}

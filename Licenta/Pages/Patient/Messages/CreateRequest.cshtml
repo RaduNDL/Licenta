@@ -1,0 +1,45 @@
+﻿@page
+@model Licenta.Pages.Patient.Messages.CreateRequestModel
+@{
+    ViewData["Title"] = "Request to contact doctor";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/patient.css" />
+}
+
+<h2 class="mb-3">Request permission to contact a doctor</h2>
+
+<p class="text-muted">
+    Before you can send a direct message to a doctor, an administrator must approve your request.
+    Please select the doctor and describe why you need to contact them.
+</p>
+
+<form method="post">
+    <div class="mb-3">
+        <label asp-for="Input.DoctorId" class="form-label">Doctor</label>
+        <select asp-for="Input.DoctorId" asp-items="Model.Doctors" class="form-select">
+            <option value="">-- Select doctor --</option>
+        </select>
+        <span asp-validation-for="Input.DoctorId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Subject" class="form-label"></label>
+        <input asp-for="Input.Subject" class="form-control" />
+        <span asp-validation-for="Input.Subject" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Input.Body" class="form-label"></label>
+        <textarea asp-for="Input.Body" rows="6" class="form-control"></textarea>
+        <span asp-validation-for="Input.Body" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Send request</button>
+    <a asp-page="/Patient/Messages/RequestList" class="btn btn-secondary ms-2">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

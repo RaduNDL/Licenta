@@ -1,0 +1,27 @@
+﻿@page
+@model Licenta.Pages.Assistant.Patients.IndexModel
+@{
+    ViewData["Title"] = "Patients";
+}
+
+<h2>Patients</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var p in Model.Patients)
+        {
+            <tr>
+                <td>@p.User.FullName</td>
+                <td>@p.User.Email</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

@@ -1,0 +1,46 @@
+﻿@page
+@model Licenta.Pages.Doctor.MedicalRecords.CreateModel
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+
+<h2>Create Medical Record</h2>
+
+<form method="post">
+    <div class="mb-3">
+        <label asp-for="Record.PatientId" class="form-label"></label>
+        <select asp-for="Record.PatientId" asp-items="Model.Patients" class="form-select"></select>
+        <span asp-validation-for="Record.PatientId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Record.Diagnosis" class="form-label"></label>
+        <input asp-for="Record.Diagnosis" class="form-control" />
+        <span asp-validation-for="Record.Diagnosis" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Record.Symptoms" class="form-label">Symptoms</label>
+        <textarea asp-for="Record.Symptoms" rows="4" class="form-control"></textarea>
+        <span asp-validation-for="Record.Symptoms" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Record.Notes" class="form-label">Notes</label>
+        <textarea asp-for="Record.Notes" rows="5" class="form-control"></textarea>
+        <span asp-validation-for="Record.Notes" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Record.Treatment" class="form-label">Treatment / Recommendations</label>
+        <textarea asp-for="Record.Treatment" rows="4" class="form-control"></textarea>
+        <span asp-validation-for="Record.Treatment" class="text-danger"></span>
+    </div>
+
+    <button class="btn btn-primary">Save</button>
+    <a asp-page="/Doctor/MedicalRecords/Index" class="btn btn-secondary ms-2">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

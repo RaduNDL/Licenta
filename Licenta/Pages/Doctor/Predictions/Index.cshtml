@@ -1,0 +1,69 @@
+﻿@page
+@model Licenta.Pages.Doctor.Predictions.IndexModel
+
+@{
+    ViewData["Title"] = "Predictions";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+
+<h2 class="mb-3">Predictions</h2>
+
+<div class="mb-3 d-flex gap-2">
+    <a class="btn btn-primary"
+       asp-page="/Doctor/Predictions/Create"
+       asp-route-patientId="@Model.PatientId">
+        New File Prediction
+    </a>
+
+    <a class="btn btn-outline-primary"
+       asp-page="/Doctor/Predictions/BreastCancer">
+        Breast Cancer Prediction
+    </a>
+
+    <a class="btn btn-outline-secondary"
+       asp-page="/Doctor/Predictions/Index">
+        All Predictions
+    </a>
+</div>
+
+@if (!Model.Items.Any())
+{
+    <div class="alert alert-info">No predictions found.</div>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Model</th>
+                <th>Result</th>
+                <th>Probability</th>
+                <th>Date</th>
+                <th style="width: 120px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model.Items)
+            {
+                <tr>
+                    <td>@(p.Patient?.User?.FullName ?? p.Patient?.User?.Email)</td>
+                    <td>@p.ModelName</td>
+                    <td>@p.ResultLabel</td>
+                    <td>@(p.Probability?.ToString("P1") ?? "-")</td>
+                    <td>@p.CreatedAtUtc.ToLocalTime().ToString("g")</td>
+                    <td>
+                        <a asp-page="/Doctor/Predictions/Details"
+                           asp-route-id="@p.Id"
+                           class="btn btn-sm btn-outline-primary">
+                            View
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

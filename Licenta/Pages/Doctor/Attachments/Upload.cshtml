@@ -1,0 +1,33 @@
+﻿@page
+@model Licenta.Pages.Doctor.Attachments.UploadModel
+@{
+    ViewData["Title"] = "Upload medical document";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+<h2>Upload medical document</h2>
+
+<form method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label asp-for="ModelInput.PatientId" class="form-label"></label>
+        <select asp-for="ModelInput.PatientId" asp-items="Model.Patients" class="form-select"></select>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ModelInput.Type" class="form-label"></label>
+        <input asp-for="ModelInput.Type" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">File</label>
+        <input asp-for="ModelInput.File" class="form-control" type="file" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Upload</button>
+    <a asp-page="/Doctor/Attachments/Index" class="btn btn-secondary ms-2">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

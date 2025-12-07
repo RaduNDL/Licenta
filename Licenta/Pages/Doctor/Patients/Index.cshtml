@@ -1,0 +1,52 @@
+﻿@page
+@model Licenta.Pages.Doctor.Patients.IndexModel
+
+@{
+    ViewData["Title"] = "Patients";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+
+<h2>Patients</h2>
+
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>Full name</th>
+            <th>Email</th>
+            <th>DOB</th>
+            <th style="width: 30%;">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in Model.Patients)
+        {
+            <tr>
+                <td>@(p.User.FullName ?? p.User.Email)</td>
+                <td>@p.User.Email</td>
+                <td>@(p.DateOfBirth?.ToString("d") ?? "-")</td>
+                <td>
+                    <a class="btn btn-sm btn-primary"
+                       asp-page="/Doctor/MedicalRecords/Index"
+                       asp-route-patientId="@p.Id">
+                        Records
+                    </a>
+
+                    <a class="btn btn-sm btn-outline-secondary"
+                       asp-page="/Doctor/Attachments/Index"
+                       asp-route-patientId="@p.Id">
+                        Documents
+                    </a>
+
+                    <a class="btn btn-sm btn-outline-primary"
+                       asp-page="/Doctor/Messages/Create"
+                       asp-route-patientId="@p.UserId">
+                        Message
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

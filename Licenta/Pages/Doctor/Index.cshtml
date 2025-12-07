@@ -1,0 +1,268 @@
+﻿@page
+@model Licenta.Pages.Doctor.IndexModel
+
+@{
+    ViewData["Title"] = "Doctor Dashboard";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+
+<h2 class="mb-3">Doctor Dashboard</h2>
+
+@if (!string.IsNullOrEmpty(Model.DoctorName))
+{
+    <div class="alert alert-light border mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="fw-semibold">Logged in as:</div>
+                <div class="fs-5">@Model.DoctorName</div>
+                @if (!string.IsNullOrEmpty(Model.ClinicName))
+                {
+                    <div class="small text-muted">
+                        Clinic: @Model.ClinicName
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="card shadow-sm">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div class="stats-info">
+                    <h3>@Model.TotalPatients</h3>
+                    <p>Patients</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="card shadow-sm">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="bi bi-journal-medical"></i>
+                </div>
+                <div class="stats-info">
+                    <h3>@Model.TotalRecords</h3>
+                    <p>Medical records</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="card shadow-sm">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="bi bi-calendar-event"></i>
+                </div>
+                <div class="stats-info">
+                    <h3>@Model.UpcomingAppointments</h3>
+                    <p>Upcoming appointments</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="card shadow-sm">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="bi bi-folder2-open"></i>
+                </div>
+                <div class="stats-info">
+                    <h3>@Model.PendingAttachments</h3>
+                    <p>Pending attachments</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.TotalPredictions > 0)
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="bi bi-activity"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h3>@Model.TotalPredictions</h3>
+                        <p>ML Predictions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<h4 class="mt-4 mb-3">Quick actions</h4>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-people me-2"></i>Patients
+                </h5>
+                <p class="card-text text-muted">
+                    Browse all patients and open their medical records.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Doctor/Patients/Index" class="btn btn-primary btn-sm">
+                        Open Patients
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-calendar-event me-2"></i>Appointments
+                </h5>
+                <p class="card-text text-muted">
+                    See your schedule by day or week and manage visits.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Doctor/Appointments/Index" class="btn btn-outline-primary btn-sm">
+                        View Appointments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-journal-medical me-2"></i>Medical Records
+                </h5>
+                <p class="card-text text-muted">
+                    View and update medical records for your patients.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Doctor/MedicalRecords/Index" class="btn btn-outline-primary btn-sm">
+                        Open Medical Records
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-folder2-open me-2"></i>Attachments
+                </h5>
+                <p class="card-text text-muted">
+                    Validate patient attachments (images, documents) and mark them as reviewed.
+                </p>
+                <div class="mt-auto d-flex flex-wrap gap-2">
+                    <a asp-page="/Doctor/Attachments/Validate" class="btn btn-primary btn-sm">
+                        Validate Pending
+                    </a>
+                    <a asp-page="/Doctor/Attachments/Index" class="btn btn-outline-secondary btn-sm">
+                        All Attachments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-cpu me-2"></i>ML Predictions
+                </h5>
+                <p class="card-text text-muted">
+                    Generate and review ML-based predictions for your patients.
+                </p>
+                <div class="mt-auto d-flex flex-wrap gap-2">
+                    <a asp-page="/Doctor/Predictions/Create" class="btn btn-primary btn-sm">
+                        New Prediction
+                    </a>
+                    <a asp-page="/Doctor/Predictions/Index" class="btn btn-outline-secondary btn-sm">
+                        View Predictions
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-chat-dots me-2"></i>Messages
+                </h5>
+                <p class="card-text text-muted">
+                    Check your latest internal messages from assistants or other doctors.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Doctor/Messages/Inbox" class="btn btn-outline-primary btn-sm">
+                        Open Inbox
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My schedule card -->
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-clock-history me-2"></i>My schedule
+                </h5>
+                <p class="card-text text-muted">
+                    Set the days and hours when you are available for appointments.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Doctor/Schedule/Index" class="btn btn-outline-primary btn-sm">
+                        Manage schedule
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.LatestMessages?.Any() == true)
+{
+    <h4 class="mt-4 mb-3">Latest messages</h4>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <ul class="list-unstyled mb-0">
+                @foreach (var m in Model.LatestMessages)
+                {
+                    <li class="mb-2">
+                        <div class="fw-semibold">
+                            @m.SenderName
+                            <span class="text-muted small">(@m.SentAtLocal)</span>
+                        </div>
+                        <div class="text-muted text-truncate">@m.Preview</div>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}

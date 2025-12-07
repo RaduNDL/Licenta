@@ -1,0 +1,44 @@
+﻿@page
+@model Licenta.Pages.Patient.Visits.HistoryModel
+@{
+    ViewData["Title"] = "Visits & Recommendations";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/patient.css" />
+}
+<h2>Visits &amp; Recommendations</h2>
+
+@if (!Model.Groups.Any())
+{
+    <div class="alert alert-secondary">No visits yet.</div>
+}
+else
+{
+    @foreach (var g in Model.Groups)
+    {
+        <div class="mb-4">
+            <h5 class="mb-3">@g.Date.ToString("D")</h5>
+            <table class="table table-sm table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Type</th>
+                        <th>Validated</th>
+                        <th>Recommendations</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in g.Items)
+                    {
+                        <tr>
+                            <td>@a.FileName</td>
+                            <td>@a.Type</td>
+                            <td>@(a.ValidatedAtUtc?.ToLocalTime().ToString("g") ?? "-")</td>
+                            <td>@(string.IsNullOrWhiteSpace(a.ValidationNotes) ? "-" : a.ValidationNotes)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}

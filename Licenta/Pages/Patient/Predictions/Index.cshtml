@@ -1,0 +1,42 @@
+﻿@page
+@model Licenta.Pages.Patient.Predictions.IndexModel
+@{
+    ViewData["Title"] = " Predictions";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/patient.css" />
+}
+<h2>ML Predictions</h2>
+
+@if (!Model.Items.Any())
+{
+    <div class="alert alert-secondary">No predictions available yet.</div>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Type</th>
+                <th>Uploaded</th>
+                <th>Status</th>
+                <th>Validated</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model.Items)
+            {
+                <tr>
+                    <td>@a.FileName</td>
+                    <td>@a.Type</td>
+                    <td>@a.UploadedAt.ToLocalTime().ToString("g")</td>
+                    <td>@a.Status</td>
+                    <td>@(a.ValidatedAtUtc?.ToLocalTime().ToString("g") ?? "-")</td>
+                    <td><a class="btn btn-sm btn-primary" href="@a.FilePath" target="_blank">Open</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

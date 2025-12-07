@@ -1,0 +1,41 @@
+﻿@page "{id:guid}"
+@model Licenta.Pages.Administrator.Messages.Requests.ReviewModel
+@{
+    ViewData["Title"] = "Review request";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+}
+<h2>Review patient message request</h2>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <strong>Patient:</strong> @(Model.RequestItem.Patient.FullName ?? Model.RequestItem.Patient.UserName)<br />
+        <strong>Doctor:</strong> @(Model.RequestItem.Doctor.FullName ?? Model.RequestItem.Doctor.UserName)<br />
+        <small>Created: @Model.RequestItem.CreatedAt.ToLocalTime().ToString("f")</small>
+    </div>
+    <div class="card-body">
+        <h5>@Model.RequestItem.Subject</h5>
+        <hr />
+        <pre class="p-2 bg-light">@Model.RequestItem.Body</pre>
+    </div>
+</div>
+
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label">Admin note (optional)</label>
+        <textarea asp-for="AdminNote" rows="3" class="form-control"></textarea>
+    </div>
+
+    <button type="submit" asp-page-handler="Approve" asp-route-id="@Model.RequestItem.Id" class="btn btn-success">
+        Approve and send to doctor
+    </button>
+    <button type="submit" asp-page-handler="Reject" asp-route-id="@Model.RequestItem.Id" class="btn btn-danger ms-2">
+        Reject request
+    </button>
+    <a asp-page="/Administrator/Messages/Requests/Index" class="btn btn-secondary ms-2">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

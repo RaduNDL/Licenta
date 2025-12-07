@@ -1,0 +1,78 @@
+﻿.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    background: white;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.appointment-slot {
+    border-left: 4px solid transparent;
+    background: white;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #f1f5f9;
+    transition: all 0.2s;
+}
+
+    .appointment-slot.booked {
+        border-left-color: var(--primary-color);
+        background: #f8fafc;
+    }
+
+    .appointment-slot.cancelled {
+        border-left-color: var(--danger-color);
+        opacity: 0.7;
+    }
+
+.appointment-time {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.record-header {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.record-body {
+    padding: 2rem;
+    background: white;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.diagnosis-box {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+
+.probability-bar {
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.probability-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #34d399 0%, #10b981 100%);
+    transition: width 1s ease-in-out;
+}
+
+    .probability-fill.high-risk {
+        background: linear-gradient(90deg, #f87171 0%, #ef4444 100%);
+    }

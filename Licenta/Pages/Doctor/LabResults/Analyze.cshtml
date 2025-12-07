@@ -1,0 +1,57 @@
+﻿@page "{id:int}"
+@model Licenta.Pages.Doctor.LabResults.AnalyzeModel
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+
+<h2>Analyze Lab Result (ML)</h2>
+
+@if (Model.ErrorMessage != null)
+{
+    <div class="alert alert-danger">
+        @Model.ErrorMessage
+    </div>
+}
+else if (Model.LabResult == null)
+{
+    <div class="alert alert-warning">
+        Lab result not found.
+    </div>
+}
+else
+{
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>@(Model.LabResult.Patient?.User?.FullName ?? Model.LabResult.Patient?.User?.Email ?? "Patient")</strong><br />
+            <small>Uploaded at: @Model.LabResult.UploadedAt.ToLocalTime().ToString("f")</small>
+        </div>
+        <div class="card-body">
+            <p><strong>File:</strong> @Model.LabResult.FileName (@Model.LabResult.ContentType)</p>
+            <p><strong>Status:</strong> @Model.LabResult.Status</p>
+
+            @if (Model.HasPrediction)
+            {
+                <hr />
+                <h5>ML Prediction</h5>
+                <p>
+                    <strong>Label:</strong> @Model.PredictedLabel<br />
+                    <strong>Probability:</strong> @Model.PredictedProbability?.ToString("P1")<br />
+                    @if (!string.IsNullOrWhiteSpace(Model.Explanation))
+                    {
+                        <strong>Explanation:</strong> 
+                        @Model.Explanation
+                    }
+                </p>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    No prediction available yet. Reload the page after running the analysis.
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<a asp-page="/Doctor/LabResults/Index" class="btn btn-secondary">Back to lab results</a>

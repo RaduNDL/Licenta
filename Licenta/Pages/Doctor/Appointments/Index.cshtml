@@ -1,0 +1,72 @@
+﻿@page
+@model Licenta.Pages.Doctor.Appointments.IndexModel
+@{
+    ViewData["Title"] = "Appointments";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+<h2>Appointments</h2>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <strong>@Model.SelectedDate.ToString("yyyy-MM-dd")</strong>
+        <span class="badge bg-secondary">@Model.ViewMode</span>
+    </div>
+    <div class="btn-group">
+        <a class="btn btn-outline-secondary btn-sm"
+           asp-page="./Index"
+           asp-route-view="@Model.ViewMode"
+           asp-route-date="@Model.SelectedDate.AddDays(-1).ToString("yyyy-MM-dd")">
+            &laquo; Prev
+        </a>
+        <a class="btn btn-outline-secondary btn-sm"
+           asp-page="./Index"
+           asp-route-view="@Model.ViewMode"
+           asp-route-date="@DateTime.UtcNow.ToString("yyyy-MM-dd")">
+            Today
+        </a>
+        <a class="btn btn-outline-secondary btn-sm"
+           asp-page="./Index"
+           asp-route-view="@Model.ViewMode"
+           asp-route-date="@Model.SelectedDate.AddDays(1).ToString("yyyy-MM-dd")">
+            Next &raquo;
+        </a>
+    </div>
+    <div class="btn-group">
+        <a class="btn btn-sm @(Model.ViewMode == "day" ? "btn-primary" : "btn-outline-primary")"
+           asp-page="./Index"
+           asp-route-view="day"
+           asp-route-date="@Model.SelectedDate.ToString("yyyy-MM-dd")">
+            Day
+        </a>
+        <a class="btn btn-sm @(Model.ViewMode == "week" ? "btn-primary" : "btn-outline-primary")"
+           asp-page="./Index"
+           asp-route-view="week"
+           asp-route-date="@Model.SelectedDate.ToString("yyyy-MM-dd")">
+            Week
+        </a>
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Patient</th>
+            <th>Reason</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var a in Model.Appointments)
+        {
+            <tr>
+                <td>@a.ScheduledAt.ToLocalTime().ToString("g")</td>
+                <td>@a.Patient.User.FullName</td>
+                <td>@a.Reason</td>
+                <td>@a.Status</td>
+            </tr>
+        }
+    </tbody>
+</table>

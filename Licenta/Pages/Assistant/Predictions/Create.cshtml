@@ -1,0 +1,36 @@
+﻿@page
+@model Licenta.Pages.Assistant.Predictions.AssistantPredictionsCreatePageModel
+@{
+    ViewData["Title"] = "New ML intake";
+}
+<h2>New ML intake</h2>
+
+<form method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label asp-for="Input.PatientId" class="form-label"></label>
+        <select asp-for="Input.PatientId" asp-items="Model.Patients" class="form-select"></select>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.DoctorId" class="form-label"></label>
+        <select asp-for="Input.DoctorId" asp-items="Model.Doctors" class="form-select"></select>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.ModelName" class="form-label"></label>
+        <input asp-for="Input.ModelName" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.InputSummary" class="form-label"></label>
+        <textarea asp-for="Input.InputSummary" rows="4" class="form-control" placeholder="Simptome / context / măsurători"></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Input file (image / PDF)</label>
+        <input asp-for="Input.File" type="file" class="form-control" />
+    </div>
+
+    <button class="btn btn-primary">Create intake</button>
+    <a asp-page="/Doctor/Predictions/Index" class="btn btn-secondary ms-2">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

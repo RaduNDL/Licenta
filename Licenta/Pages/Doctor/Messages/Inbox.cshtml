@@ -1,0 +1,37 @@
+﻿@page
+@model Licenta.Pages.Doctor.Messages.InboxModel
+@{
+    ViewData["Title"] = "Inbox";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+<h2>Messages</h2>
+
+<div class="mb-3">
+    <a class="btn btn-primary" asp-page="/Doctor/Messages/Create">New message</a>
+</div>
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>From</th>
+            <th>Subject</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var m in Model.Messages)
+        {
+            <tr>
+                <td>@m.Sender.UserName</td>
+                <td>
+                    <a asp-page="/Doctor/Messages/Details" asp-route-id="@m.Id">
+                        @m.Subject
+                    </a>
+                </td>
+                <td>@m.SentAt.ToLocalTime().ToString("g")</td>
+            </tr>
+        }
+    </tbody>
+</table>

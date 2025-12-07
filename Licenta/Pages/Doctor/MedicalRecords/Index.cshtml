@@ -1,0 +1,63 @@
+﻿@page
+@model Licenta.Pages.Doctor.MedicalRecords.IndexModel
+
+@{
+    ViewData["Title"] = "Medical Records";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+
+<h2>Medical Records</h2>
+
+@if (TempData["StatusMessage"] != null)
+{
+    <div class="alert alert-warning">
+        @TempData["StatusMessage"]
+    </div>
+}
+
+@if (Model.Records == null || !Model.Records.Any())
+{
+    <p>No medical records found.</p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Visit date</th>
+                <th>Diagnosis</th>
+                <th>Status</th>
+                <th style="width: 20%;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Records)
+            {
+                <tr>
+                    <td>@(r.Patient.User.FullName ?? r.Patient.User.Email)</td>
+                    <td>@r.VisitDateUtc.ToLocalTime().ToString("g")</td>
+                    <td>@(string.IsNullOrWhiteSpace(r.Diagnosis) ? "-" : r.Diagnosis)</td>
+                    <td>@r.Status</td>
+                    <td>
+                        <a class="btn btn-sm btn-primary"
+                           asp-page="/Doctor/MedicalRecords/Details"
+                           asp-route-id="@r.Id">
+                            Details
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<a asp-page="/Doctor/MedicalRecords/Create" class="btn btn-primary mt-2">
+    Create new record
+</a>
+<a asp-page="/Doctor/Patients/Index" class="btn btn-secondary mt-2 ms-2">
+    Back to patients
+</a>

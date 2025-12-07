@@ -1,0 +1,50 @@
+﻿@page
+@model Licenta.Pages.Administrator.Messages.Requests.IndexModel
+@{
+    ViewData["Title"] = "Patient message requests";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+}
+
+<h2 class="mb-3">Patient message requests</h2>
+
+<div class="mb-3">
+    <a class="btn btn-outline-secondary btn-sm @(Model.StatusFilter == null ? "active" : "")" asp-route-status="">All</a>
+    <a class="btn btn-outline-secondary btn-sm @(Model.StatusFilter == "Pending" ? "active" : "")" asp-route-status="Pending">Pending</a>
+    <a class="btn btn-outline-secondary btn-sm @(Model.StatusFilter == "Approved" ? "active" : "")" asp-route-status="Approved">Approved</a>
+    <a class="btn btn-outline-secondary btn-sm @(Model.StatusFilter == "Rejected" ? "active" : "")" asp-route-status="Rejected">Rejected</a>
+</div>
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Subject</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.Requests)
+        {
+            <tr class="@(r.Status == Licenta.Models.PatientMessageRequestStatus.Pending ? "table-warning" : "")">
+                <td>@(r.Patient.FullName ?? r.Patient.UserName)</td>
+                <td>@(r.Doctor.FullName ?? r.Doctor.UserName)</td>
+                <td>@r.Subject</td>
+                <td>@r.CreatedAt.ToLocalTime().ToString("g")</td>
+                <td>@r.Status.ToString()</td>
+                <td>
+                    <a class="btn btn-sm btn-primary"
+                       asp-page="/Administrator/Messages/Requests/Review"
+                       asp-route-id="@r.Id">
+                        Review
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

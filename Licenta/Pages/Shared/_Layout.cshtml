@@ -1,0 +1,393 @@
+﻿@inject Licenta.Areas.Identity.Data.AppDbContext Db
+@{
+    var settings = Db.SystemSettings
+        .OrderBy(s => s.Id)
+        .FirstOrDefault();
+    var logo = settings?.LogoPath ?? "/img/default-logo.png";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Licenta</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Licenta.styles.css" asp-append-version="true" />
+
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <header class="sticky-top">
+        <nav class="navbar navbar-expand-lg app-navbar">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2" asp-area="" asp-page="/Index">
+                    <div class="logo-circle">
+                        <img src="@logo" alt="Clinic Logo" class="logo-img" />
+                    </div>
+                    <div class="d-flex flex-column">
+                        <span class="fw-semibold">Licenta</span>
+                        <span class="text-muted brand-subtitle">Smart Medical Platform</span>
+                    </div>
+                </a>
+
+                <button class="navbar-toggler" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                        aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div id="mainNavbar" class="collapse navbar-collapse">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-page="/Index">
+                                <i class="bi bi-house-door me-1"></i> Home
+                            </a>
+                        </li>
+
+                        @if (User.IsInRole("Administrator"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark d-flex align-items-center gap-1"
+                                   href="#" id="adminDropdown" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="role-badge">Admin</span>
+                                    <span>Panel</span>
+                                </a>
+                                <ul class="dropdown-menu shadow-sm border-0 rounded-3" aria-labelledby="adminDropdown">
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Administrator/AdminPanel/Index">
+                                            <i class="bi bi-grid-1x2 me-2"></i>Admin Panel
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Administrator/Overview/Index">
+                                            <i class="bi bi-speedometer2 me-2"></i>Overview (users &amp; roles)
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Administrator/Users/Index">
+                                            <i class="bi bi-people me-2"></i>Users &amp; Roles
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Administrator/Audit">
+                                            <i class="bi bi-clipboard-data me-2"></i>Audit Log
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+
+                                    <li>
+                                        <a class="dropdown-item fw-semibold" asp-page="/Administrator/Settings/Index">
+                                            <i class="bi bi-gear-wide-connected me-2"></i>System Settings
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Messages</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Administrator/Messages/Inbox">
+                                            <i class="bi bi-chat-dots me-2"></i>Messages
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Administrator/Messages/Requests/Index">
+                                            <i class="bi bi-envelope-open me-2"></i>Patient message requests
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Doctor"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark d-flex align-items-center gap-1"
+                                   href="#" id="doctorDropdown" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="role-badge">Doctor</span>
+                                    <span>Panel</span>
+                                </a>
+                                <ul class="dropdown-menu shadow-sm border-0 rounded-3" aria-labelledby="doctorDropdown">
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/Index">
+                                            <i class="bi bi-grid-1x2 me-2"></i>Dashboard
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/Patients/Index">
+                                            <i class="bi bi-person-hearts me-2"></i>Patients
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/Appointments/Index">
+                                            <i class="bi bi-calendar-event me-2"></i>Appointments
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Medical Records</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/MedicalRecords/Index">
+                                            <i class="bi bi-journal-medical me-2"></i>All Records
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/MedicalRecords/Create">
+                                            <i class="bi bi-file-earmark-plus me-2"></i>New Record
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Attachments &amp; Results</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/Attachments/Index">
+                                            <i class="bi bi-folder2-open me-2"></i>Attachments
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/Attachments/Upload">
+                                            <i class="bi bi-cloud-arrow-up me-2"></i>Upload
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/Attachments/Validate">
+                                            <i class="bi bi-check2-circle me-2"></i>Validate
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Analytics</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/Predictions/Index">
+                                            <i class="bi bi-activity me-2"></i>Predictions
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/Reports/Validate">
+                                            <i class="bi bi-file-earmark-text me-2"></i>Validate Reports
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/Messages/Inbox">
+                                            <i class="bi bi-chat-dots me-2"></i>Messages
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Doctor/LabResults/Index">
+                                            <i class="bi bi-droplet-half me-2"></i>Lab Results
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Assistant"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark d-flex align-items-center gap-1"
+                                   href="#" id="assistantDropdown" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="role-badge">Assistant</span>
+                                    <span>Panel</span>
+                                </a>
+                                <ul class="dropdown-menu shadow-sm border-0 rounded-3" aria-labelledby="assistantDropdown">
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Assistant/Patients/Index">
+                                            <i class="bi bi-people me-2"></i>Patients
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Attachments</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Assistant/Attachments/Index">
+                                            <i class="bi bi-folder2-open me-2"></i>All Attachments
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Assistant/Attachments/Upload">
+                                            <i class="bi bi-cloud-arrow-up me-2"></i>Upload
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Assistant/Attachments/Validate">
+                                            <i class="bi bi-check2-circle me-2"></i>Validate
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Appointments</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Assistant/Appointments/Requests">
+                                            <i class="bi bi-calendar-plus me-2"></i>Appointments
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">ML</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Assistant/Predictions/Create">
+                                            <i class="bi bi-cpu me-2"></i>New Prediction
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Messages</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Assistant/Messages/Inbox">
+                                            <i class="bi bi-chat-dots me-2"></i>Messages
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Patient"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark d-flex align-items-center gap-1"
+                                   href="#" id="patientDropdown" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="role-badge">Patient</span>
+                                    <span>Panel</span>
+                                </a>
+                                <ul class="dropdown-menu shadow-sm border-0 rounded-3" aria-labelledby="patientDropdown">
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Patient/Index">
+                                            <i class="bi bi-grid-1x2 me-2"></i>Dashboard
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Appointments</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Patient/Appointments/Index">
+                                            <i class="bi bi-calendar-event me-2"></i>View Appointments
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Patient/Appointments/Request">
+                                            <i class="bi bi-calendar-plus me-2"></i>Request Appointment
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Documents &amp; Images</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Patient/Attachments/Validated">
+                                            <i class="bi bi-file-earmark-check me-2"></i>Validated Documents
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Patient/Attachments/Upload">
+                                            <i class="bi bi-image me-2"></i>Upload Medical Images
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Pre-consultation</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Patient/Form/PreConstultation">
+                                            <i class="bi bi-journal-text me-2"></i>Pre-consultation Form
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Insights</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Patient/Predictions/Index">
+                                            <i class="bi bi-activity me-2"></i> Predictions
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Patient/Notifications/Index">
+                                            <i class="bi bi-bell me-2"></i>Notifications
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Patient/Visits/History">
+                                            <i class="bi bi-clock-history me-2"></i>Visits &amp; Recommendations
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li class="dropdown-header">Messages</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Patient/Messages/Inbox">
+                                            <i class="bi bi-chat-dots me-2"></i>Messages
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-page="/Patient/Messages/RequestList">
+                                            <i class="bi bi-envelope-plus me-2"></i>Contact doctor (requests)
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+
+                    </ul>
+
+                    <div class="d-flex align-items-center gap-2">
+                        @if (User.IsInRole("Patient"))
+                        {
+                            <a asp-page="/Patient/Messages/Inbox" class="btn btn-sm nav-icon-pill position-relative me-1">
+                                <i class="bi bi-chat-dots"></i>
+                                <span class="visually-hidden">Messages</span>
+                            </a>
+                            <a asp-page="/Patient/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1">
+                                <i class="bi bi-bell"></i>
+                                <span class="visually-hidden">Notifications</span>
+                            </a>
+                        }
+                        else if (User.IsInRole("Doctor"))
+                        {
+                            <a asp-page="/Doctor/Messages/Inbox" class="btn btn-sm nav-icon-pill position-relative me-1">
+                                <i class="bi bi-chat-dots"></i>
+                                <span class="visually-hidden">Messages</span>
+                            </a>
+                        }
+                        else if (User.IsInRole("Assistant"))
+                        {
+                            <a asp-page="/Assistant/Messages/Inbox" class="btn btn-sm nav-icon-pill position-relative me-1">
+                                <i class="bi bi-chat-dots"></i>
+                                <span class="visually-hidden">Messages</span>
+                            </a>
+                        }
+                        else if (User.IsInRole("Administrator"))
+                        {
+                            <a asp-page="/Administrator/Messages/Inbox" class="btn btn-sm nav-icon-pill position-relative me-1">
+                                <i class="bi bi-chat-dots"></i>
+                                <span class="visually-hidden">Messages</span>
+                            </a>
+                        }
+
+                        <partial name="_LoginPartial" />
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="app-shell">
+        <div class="container">
+            <main role="main" class="app-card">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+    
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

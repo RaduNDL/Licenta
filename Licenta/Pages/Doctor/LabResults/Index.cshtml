@@ -1,0 +1,65 @@
+﻿@page
+@model Licenta.Pages.Doctor.LabResults.IndexModel
+
+@{
+    ViewData["Title"] = "Lab Results";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+
+<h2>Lab Results</h2>
+
+@if (TempData["StatusMessage"] is string msg)
+{
+    <div class="alert alert-info">
+        @msg
+    </div>
+}
+
+@if (Model.Results == null || !Model.Results.Any())
+{
+    <p>No lab results found.</p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Uploaded at</th>
+                <th>File</th>
+                <th>Status</th>
+                <th style="width: 20%;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Results)
+            {
+                <tr>
+                    <td>
+                        @(r.Patient?.User?.FullName
+                                        ?? r.Patient?.User?.Email
+                                        ?? "Unknown patient")
+            </td>
+            <td>@r.UploadedAt.ToLocalTime().ToString("g")</td>
+            <td>@r.FileName</td>
+            <td>@r.Status</td>
+            <td>
+                <a class="btn btn-sm btn-primary"
+                   asp-page="/Doctor/LabResults/Analyze"
+                   asp-route-id="@r.Id">
+                    Run ML Analysis
+                </a>
+                @* aici poți adăuga ulterior și un buton de download *@
+            </td>
+        </tr>
+                }
+        </tbody>
+    </table>
+}
+
+<a asp-page="/Doctor/Patients/Index" class="btn btn-secondary mt-2">
+    Back to patients
+</a>

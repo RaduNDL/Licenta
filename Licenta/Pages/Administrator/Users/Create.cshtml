@@ -1,0 +1,31 @@
+﻿@page
+@model Licenta.Pages.Administrator.Users.CreateModel
+@{
+    ViewData["Title"] = "Create User";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+}
+<h2>Create User</h2>
+<form method="post" class="card card-body">
+    <div class="mb-3">
+        <label asp-for="Input.Email" class="form-label"></label>
+        <input asp-for="Input.Email" class="form-control" />
+        <span asp-validation-for="Input.Email" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Password" class="form-label"></label>
+        <input asp-for="Input.Password" type="password" class="form-control" />
+        <span asp-validation-for="Input.Password" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Input.Role" class="form-label">Role</label>
+        <select asp-for="Input.Role" class="form-select" asp-items="@(new SelectList(Model.Roles))"></select>
+    </div>
+    <div class="form-check mb-3">
+        <input asp-for="Input.EmailConfirmed" class="form-check-input" />
+        <label asp-for="Input.EmailConfirmed" class="form-check-label">Email confirmed</label>
+    </div>
+    <button class="btn btn-primary">Create</button>
+    <a asp-page="./Index" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>

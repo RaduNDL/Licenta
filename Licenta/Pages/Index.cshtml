@@ -1,0 +1,108 @@
+﻿@page
+@model Licenta.Pages.IndexModel
+@{
+    ViewData["Title"] = "Home";
+
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+
+    var isAdmin = User.IsInRole("Administrator");
+    var isDoctor = User.IsInRole("Doctor");
+    var isAssistant = User.IsInRole("Assistant");
+    var isPatient = User.IsInRole("Patient");
+
+    string? primaryPage = null;
+    string? primaryLabel = null;
+
+    if (isAdmin)
+    {
+        primaryPage = "/Administrator/AdminPanel/Index";
+        primaryLabel = "Go to Admin Panel";
+    }
+    else if (isDoctor)
+    {
+        primaryPage = "/Doctor/Index";
+        primaryLabel = "Go to Doctor Dashboard";
+    }
+    else if (isAssistant)
+    {
+        primaryPage = "/Assistant/AssistantPanel/Index";
+        primaryLabel = "Go to Assistant Panel";
+    }
+    else if (isPatient)
+    {
+        primaryPage = "/Patient/Index";
+        primaryLabel = "Go to Patient Dashboard";
+    }
+
+    var hasAnyRole = isAdmin || isDoctor || isAssistant || isPatient;
+}
+
+<div class="text-center py-5">
+    <h1 class="display-4 fw-bold">Welcome to Licenta - Smart Medical Platform</h1>
+
+    <p class="lead mt-3">
+        A modern medical platform for Patients, Doctors and Assistants.
+    </p>
+
+    @if (!isAuthenticated)
+    {
+        <a class="btn btn-primary btn-lg mt-4" asp-area="Identity" asp-page="/Account/Login">
+            Login
+        </a>
+        <a class="btn btn-outline-secondary btn-lg mt-4 ms-3" asp-area="Identity" asp-page="/Account/Register">
+            Register
+        </a>
+    }
+    else
+    {
+        @if (hasAnyRole && primaryPage is not null)
+        {
+            <a class="btn btn-success btn-lg mt-4" asp-page="@primaryPage">
+                @primaryLabel
+            </a>
+
+            <div class="mt-4">
+                <p class="text-muted mb-2">Other panels you can access:</p>
+
+
+                @if (isAdmin && primaryPage != "/Administrator/AdminPanel/Index")
+                {
+                    <a class="btn btn-outline-primary me-2 mb-2"
+                       asp-page="/Administrator/AdminPanel/Index">
+                        Admin Panel
+                    </a>
+                }
+
+                @if (isDoctor && primaryPage != "/Doctor/Index")
+                {
+                    <a class="btn btn-outline-primary me-2 mb-2"
+                       asp-page="/Doctor/Index">
+                        Doctor Dashboard
+                    </a>
+                }
+
+                @if (isAssistant && primaryPage != "/Assistant/AssistantPanel/Index")
+                {
+                    <a class="btn btn-outline-primary me-2 mb-2"
+                       asp-page="/Assistant/AssistantPanel/Index">
+                        Assistant Panel
+                    </a>
+                }
+
+                @if (isPatient && primaryPage != "/Patient/Index")
+                {
+                    <a class="btn btn-outline-primary me-2 mb-2"
+                       asp-page="/Patient/Index">
+                        Patient Dashboard
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="mt-4 text-warning">
+                Your account has no role assigned yet. Please contact an administrator.
+            </p>
+        }
+    }
+</div>

@@ -1,0 +1,45 @@
+﻿@page "{id}"
+@model Licenta.Pages.Administrator.Users.DeleteUserModel
+@{
+    ViewData["Title"] = "Delete User";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+}
+<h2 class="mb-3 text-danger">Delete User</h2>
+
+@if (TempData["StatusMessage"] is string msg)
+{
+    <div class="alert alert-info">@msg</div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">@Model.TargetEmail</h5>
+        <p class="text-muted mb-3">User ID: @Model.UserId</p>
+
+        @if (Model.Roles.Any())
+        {
+            <p>
+                <strong>Roles:</strong>
+                @foreach (var r in Model.Roles)
+                {
+                    <span class="badge bg-primary me-1">@r</span>
+                }
+            </p>
+        }
+        else
+        {
+            <p><em>No roles assigned</em></p>
+        }
+
+        <p>Are you sure you want to permanently delete this user?</p>
+
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="UserId" />
+            <button type="submit" class="btn btn-danger">Confirm delete</button>
+            <a asp-page="./Index" class="btn btn-outline-secondary ms-2">Cancel</a>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,50 @@
+﻿@page "{id:guid}"
+@model Licenta.Pages.Doctor.Predictions.DetailsModel
+@{
+    ViewData["Title"] = "Prediction details";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctor.css" />
+}
+<h2>Prediction details</h2>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <strong>@Model.Item.Patient.User.FullName</strong><br />
+        <small>@Model.Item.CreatedAtUtc.ToLocalTime().ToString("f")</small>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Model</dt>
+            <dd class="col-sm-9">@Model.Item.ModelName</dd>
+
+            <dt class="col-sm-3">Result</dt>
+            <dd class="col-sm-9">@Model.Item.ResultLabel</dd>
+
+            <dt class="col-sm-3">Probability</dt>
+            <dd class="col-sm-9">@((Model.Item.Probability ?? 0).ToString("P2"))</dd>
+
+            <dt class="col-sm-3">Input</dt>
+            <dd class="col-sm-9">@Model.Item.InputSummary</dd>
+
+            @if (!string.IsNullOrEmpty(Model.Item.AttachmentPath))
+            {
+                <dt class="col-sm-3">File</dt>
+                <dd class="col-sm-9">
+                    <a href="@Model.Item.AttachmentPath" target="_blank">View input file</a>
+                </dd>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.Item.Notes))
+            {
+                <dt class="col-sm-3">Notes</dt>
+                <dd class="col-sm-9">
+                    <pre class="p-2 bg-light">@Model.Item.Notes</pre>
+                </dd>
+            }
+        </dl>
+    </div>
+</div>
+
+<a asp-page="/Doctor/Predictions/Index" asp-route-patientId="@Model.Item.PatientId"
+   class="btn btn-secondary">Back</a>
