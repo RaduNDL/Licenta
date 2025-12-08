@@ -32,7 +32,6 @@ else
                 <dt class="col-sm-3">Result</dt>
                 <dd class="col-sm-9">@Model.Item.ResultLabel</dd>
 
-                <!-- AICI afişăm confidence-ul salvat în Prediction.Probability -->
                 <dt class="col-sm-3">Confidence</dt>
                 <dd class="col-sm-9">
                     @((Model.Item.Probability ?? 0).ToString("P2"))

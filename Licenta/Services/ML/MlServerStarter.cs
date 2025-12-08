@@ -35,7 +35,7 @@ namespace Licenta.Services.Ml
             }
             catch
             {
-                // ignorăm erorile
+
             }
 
             return Task.CompletedTask;

@@ -11,22 +11,49 @@
 
 <h2 class="mb-3">Predictions</h2>
 
-<div class="mb-3 d-flex gap-2">
-    <a class="btn btn-primary"
-       asp-page="/Doctor/Predictions/Create"
-       asp-route-patientId="@Model.PatientId">
-        New File Prediction
-    </a>
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="prediction-model-card">
+            <div class="prediction-model-icon skin"></div>
+            <h5 class="prediction-model-title">HAM10000 Prediction</h5>
+            <p class="prediction-model-text">
+                Skin lesion classification using dermatoscopic images (HAM10000 dataset).
+            </p>
+            <a class="btn btn-outline-primary btn-sm w-100"
+               asp-page="/Doctor/Predictions/Create"
+               asp-route-patientId="@Model.PatientId">
+                Open HAM10000 Model
+            </a>
+        </div>
+    </div>
 
-    <a class="btn btn-outline-primary"
-       asp-page="/Doctor/Predictions/BreastCancer">
-        Breast Cancer Prediction
-    </a>
+    <div class="col-md-4">
+        <div class="prediction-model-card">
+            <div class="prediction-model-icon breast"></div>
+            <h5 class="prediction-model-title">Breast Cancer Prediction</h5>
+            <p class="prediction-model-text">
+                Breast cancer risk estimation based on mean features (WBC dataset).
+            </p>
+            <a class="btn btn-outline-primary btn-sm w-100"
+               asp-page="/Doctor/Predictions/BreastCancer">
+                Open Breast Cancer Model
+            </a>
+        </div>
+    </div>
 
-    <a class="btn btn-outline-secondary"
-       asp-page="/Doctor/Predictions/Index">
-        All Predictions
-    </a>
+    <div class="col-md-4">
+        <div class="prediction-model-card prediction-model-all">
+            <div class="prediction-model-icon all"></div>
+            <h5 class="prediction-model-title">All Predictions</h5>
+            <p class="prediction-model-text">
+                Browse and review all previous ML predictions for your patients.
+            </p>
+            <a class="btn btn-outline-secondary btn-sm w-100"
+               asp-page="/Doctor/Predictions/Index">
+                View All Predictions
+            </a>
+        </div>
+    </div>
 </div>
 
 @if (!Model.Items.Any())
@@ -35,35 +62,44 @@
 }
 else
 {
-    <table class="table table-striped align-middle">
-        <thead>
-            <tr>
-                <th>Patient</th>
-                <th>Model</th>
-                <th>Result</th>
-                <th>Probability</th>
-                <th>Date</th>
-                <th style="width: 120px;"></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var p in Model.Items)
-            {
-                <tr>
-                    <td>@(p.Patient?.User?.FullName ?? p.Patient?.User?.Email)</td>
-                    <td>@p.ModelName</td>
-                    <td>@p.ResultLabel</td>
-                    <td>@(p.Probability?.ToString("P1") ?? "-")</td>
-                    <td>@p.CreatedAtUtc.ToLocalTime().ToString("g")</td>
-                    <td>
-                        <a asp-page="/Doctor/Predictions/Details"
-                           asp-route-id="@p.Id"
-                           class="btn btn-sm btn-outline-primary">
-                            View
-                        </a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Prediction history</h5>
+            <table class="table table-striped align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Model</th>
+                        <th>Result</th>
+                        <th>Probability</th>
+                        <th>Date</th>
+                        <th style="width: 120px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Items)
+                    {
+                        <tr>
+                            <td>@(p.Patient?.User?.FullName ?? p.Patient?.User?.Email)</td>
+                            <td>@p.ModelName</td>
+                            <td>
+                                <span class="badge @(p.ResultLabel == "M" ? "bg-danger" : "bg-success")">
+                                    @p.ResultLabel
+                                </span>
+                            </td>
+                            <td>@(p.Probability?.ToString("P1") ?? "-")</td>
+                            <td>@p.CreatedAtUtc.ToLocalTime().ToString("g")</td>
+                            <td>
+                                <a asp-page="/Doctor/Predictions/Details"
+                                   asp-route-id="@p.Id"
+                                   class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 }

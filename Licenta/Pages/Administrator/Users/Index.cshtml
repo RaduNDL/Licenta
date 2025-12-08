@@ -6,129 +6,113 @@
 @section Styles {
     <link rel="stylesheet" href="~/css/admin.css" />
 }
-<h2 class="mb-3">Users & Roles</h2>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <a class="btn btn-outline-primary" asp-page="/Administrator/Users/Create">Create user</a>
+        <h2 class="fw-bold mb-1">Users Management</h2>
+        <p class="text-muted small">Manage access, roles, and user status.</p>
     </div>
-
-    <div class="d-flex align-items-center gap-2">
-        <form method="post" asp-page-handler="Export" class="mb-0">
-            <button type="submit" class="btn btn-outline-success">
-                Export users 
-            </button>
+    <div class="d-flex gap-2">
+        <form method="post" asp-page-handler="Export">
+            <button class="btn btn-light text-success border-0 shadow-sm"><i class="bi bi-file-earmark-excel me-2"></i>Export</button>
         </form>
-
-        @if (TempData["StatusMessage"] is string msg)
-        {
-            <div class="alert alert-info mb-0 py-1 px-2">@msg</div>
-        }
+        <a class="btn btn-primary" asp-page="/Administrator/Users/Create"><i class="bi bi-plus-lg me-2"></i>New User</a>
     </div>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-striped table-hover align-middle">
-        <thead class="table-light">
-            <tr>
-                <th style="width: 15%">ClinicID</th>
-                <th style="width: 20%">Full name</th>
-                <th style="width: 25%">Email</th>
-                <th style="width: 25%">Roles</th>
-                <th style="width: 15%">Status</th>
-                <th class="text-end" style="width: 25%">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var u in Model.Users)
-            {
-                var roles = Model.RolesByUserId.TryGetValue(u.Id, out var rlist) ? rlist : new List<string>();
-                var isDoctor = roles.Contains("Doctor");
-                var isAdmin = roles.Contains("Administrator");
-                var isSelf = string.Equals(u.Id, Model.CurrentUserId, StringComparison.Ordinal);
-                var isLocked = u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow;
+@if (TempData["StatusMessage"] is string msg)
+{
+    <div class="alert alert-success rounded-4 shadow-sm border-0 mb-4">
+        <i class="bi bi-check-circle-fill me-2"></i> @msg
+    </div>
+}
 
-                <tr>
-                    <td>@(u.ClinicId ?? "-")</td>
+<div class="card border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0 align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">User</th>
+                        <th>Clinic ID</th>
+                        <th>Roles</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model.Users)
+                    {
+                        var roles = Model.RolesByUserId.TryGetValue(u.Id, out var rlist) ? rlist : new List<string>();
+                        var isLocked = u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow;
+                        var isSelf = string.Equals(u.Id, Model.CurrentUserId, StringComparison.Ordinal);
 
-                    <td>@(u.FullName ?? "(no name)")</td>
+                        // Am scos variabila 'initial' pentru ca nu mai avem nevoie de ea
 
-                    
-                    <td class="text-truncate">
-                        @((u.Email ?? u.UserName) ?? "(no email)")
-                    </td>
+                        <tr>
+                            <td class="ps-4">
+                                @* Am eliminat cercul cu initiala si d-flex-ul care il tinea *@
+                                <div>
+                                    <div class="fw-bold text-dark">@(u.FullName ?? "Unset Name")</div>
+                                    <div class="small text-muted">@u.Email</div>
+                                </div>
+                            </td>
+                            <td><span class="text-muted font-monospace">@(u.ClinicId ?? "-")</span></td>
+                            <td>
+                                @if (!roles.Any())
+                                {
+                                    <span class="badge bg-light text-secondary border">User</span>
+                                }
+                                @foreach (var r in roles)
+                                {
+                                    var badgeClass = r == "Administrator" ? "bg-dark text-white" :
+                                    r == "Doctor" ? "bg-primary-subtle text-primary" :
+                                    "bg-secondary-subtle text-secondary";
+                                    <span class="badge @badgeClass me-1">@r</span>
+                                }
+                            </td>
+                            <td>
+                                @if (isLocked)
+                                {
+                                    <span class="badge bg-danger-subtle text-danger"><i class="bi bi-lock-fill me-1"></i> Blocked</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle-fill me-1"></i> Active</span>
+                                }
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border-0 rounded-circle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="border-radius: 12px;">
+                                        <li><h6 class="dropdown-header">Manage</h6></li>
+                                        <li><a class="dropdown-item" asp-page="Edit" asp-route-id="@u.Id"><i class="bi bi-pencil me-2"></i>Edit Details</a></li>
+                                        <li><a class="dropdown-item" asp-page="AssignRoles" asp-route-id="@u.Id"><i class="bi bi-shield-check me-2"></i>Roles</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-warning" asp-page="ResetPassword" asp-route-id="@u.Id"><i class="bi bi-key me-2"></i>Reset Password</a></li>
 
-                    <td>
-                        @if (roles.Count == 0)
-                        {
-                            <span class="badge bg-secondary-subtle border">no role</span>
-                        }
-                        else
-                        {
-                            foreach (var r in roles)
-                            {
-                                <span class="badge bg-primary me-1">@r</span>
-                            }
-                        }
-                    </td>
-
-                    <td>
-                        @if (isLocked)
-                        {
-                            <span class="badge bg-danger">Blocked</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-success">Active</span>
-                        }
-                    </td>
-
-                    <td class="text-end">
-                        <a class="btn btn-sm btn-outline-secondary me-1"
-                           asp-page="Edit"
-                           asp-route-id="@u.Id">
-                            Edit
-                        </a>
-
-                        <a class="btn btn-sm btn-warning me-1"
-                           asp-page="ResetPassword"
-                           asp-route-id="@u.Id">
-                            Reset password
-                        </a>
-
-                        <a class="btn btn-sm btn-primary me-1"
-                           asp-page="AssignRoles"
-                           asp-route-id="@u.Id">
-                            Assign roles
-                        </a>
-
-                        <a class="btn btn-sm btn-outline-danger me-2"
-                           asp-page="DeleteUser"
-                           asp-route-id="@u.Id">
-                            Delete
-                        </a>
-
-                        @if (isSelf)
-                        {
-                            <span class="text-muted">Your account</span>
-                        }
-                        else
-                        {
-                            <form method="post"
-                                  asp-page-handler="ToggleLock"
-                                  asp-route-id="@u.Id"
-                                  class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <button type="submit"
-                                        class="btn btn-sm @(isLocked ? "btn-success" : "btn-outline-danger")"
-                                        title="@(isLocked ? "Unblock" : "Block") user">
-                                    @(isLocked ? "Unblock" : "Block")
-                                </button>
-                            </form>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                                        @if (!isSelf)
+                                        {
+                                            <li>
+                                                <form method="post" asp-page-handler="ToggleLock" asp-route-id="@u.Id">
+                                                    <button class="dropdown-item @(isLocked ? "text-success" : "text-danger")">
+                                                        <i class="bi @(isLocked ? "bi-unlock" : "bi-lock") me-2"></i>
+                                                        @(isLocked ? "Unblock Access" : "Block Access")
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" asp-page="DeleteUser" asp-route-id="@u.Id"><i class="bi bi-trash me-2"></i>Delete User</a></li>
+                                        }
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>

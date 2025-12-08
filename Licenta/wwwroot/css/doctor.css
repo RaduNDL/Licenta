@@ -1,4 +1,147 @@
-﻿.calendar-header {
+﻿/* ========= GENERAL STATS CARDS ========= */
+
+.stats-card {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.stats-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+    color: var(--primary-color);
+}
+
+.stats-info h3 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.stats-info p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+/* ========= ML OVERVIEW ON DASHBOARD ========= */
+
+.ml-overview-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 1.5rem;
+    padding: 1.5rem 1.75rem;
+    border-radius: 16px;
+    background: radial-gradient(circle at top left, #2563eb 0%, #0f172a 55%, #020617 100%);
+    color: #e5f0ff;
+    box-shadow: var(--box-shadow);
+}
+
+.ml-overview-left {
+    max-width: 60%;
+}
+
+.ml-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.5rem;
+}
+
+.ml-title {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #f9fafb;
+}
+
+.ml-subtitle {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #cbd5f5;
+}
+
+.ml-overview-right {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.ml-overview-number {
+    font-size: 2.4rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #bfdbfe;
+}
+
+.ml-overview-label {
+    font-size: 0.85rem;
+    color: #e5e7eb;
+}
+
+/* ========= PREDICTION MODEL CARDS ========= */
+
+.prediction-model-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 1.25rem 1.25rem 1rem;
+    box-shadow: var(--box-shadow);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 100%;
+}
+
+.prediction-model-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    margin-bottom: 0.25rem;
+    background: #e5e7eb;
+}
+
+    /* poți schimba gradientele cum vrei */
+    .prediction-model-icon.skin {
+        background: linear-gradient(135deg, #fb7185, #f97316);
+    }
+
+    .prediction-model-icon.breast {
+        background: linear-gradient(135deg, #ec4899, #6366f1);
+    }
+
+    .prediction-model-icon.all {
+        background: linear-gradient(135deg, #22c55e, #0ea5e9);
+    }
+
+.prediction-model-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.prediction-model-text {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+/* ========= CALENDAR & APPOINTMENTS ========= */
+
+.calendar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -35,6 +178,8 @@
     font-size: 1.1rem;
 }
 
+/* ========= MEDICAL RECORD LAYOUT ========= */
+
 .record-header {
     background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     color: white;
@@ -58,6 +203,7 @@
     margin-bottom: 1rem;
 }
 
+/* ========= PROBABILITY BAR ========= */
 
 .probability-bar {
     height: 10px;

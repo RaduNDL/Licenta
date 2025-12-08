@@ -90,19 +90,21 @@
 
 @if (Model.TotalPredictions > 0)
 {
-    <div class="row g-3 mb-4">
-        <div class="col-md-3 col-sm-6">
-            <div class="card shadow-sm">
-                <div class="stats-card">
-                    <div class="stats-icon">
-                        <i class="bi bi-activity"></i>
-                    </div>
-                    <div class="stats-info">
-                        <h3>@Model.TotalPredictions</h3>
-                        <p>ML Predictions</p>
-                    </div>
-                </div>
-            </div>
+    <div class="ml-overview-card mb-4">
+        <div class="ml-overview-left">
+            <div class="ml-pill">AI Assistance</div>
+            <h3 class="ml-title">ML Predictions Overview</h3>
+            <p class="ml-subtitle">
+                You have <strong>@Model.TotalPredictions</strong> machine learning predictions generated
+                for your patients. Review them in the ML dashboard.
+            </p>
+        </div>
+        <div class="ml-overview-right">
+            <div class="ml-overview-number">@Model.TotalPredictions</div>
+            <div class="ml-overview-label">Total predictions</div>
+            <a asp-page="/Doctor/Predictions/Index" class="btn btn-light btn-sm mt-2">
+                Open ML Dashboard
+            </a>
         </div>
     </div>
 }
@@ -196,12 +198,9 @@
                 <p class="card-text text-muted">
                     Generate and review ML-based predictions for your patients.
                 </p>
-                <div class="mt-auto d-flex flex-wrap gap-2">
-                    <a asp-page="/Doctor/Predictions/Create" class="btn btn-primary btn-sm">
-                        New Prediction
-                    </a>
-                    <a asp-page="/Doctor/Predictions/Index" class="btn btn-outline-secondary btn-sm">
-                        View Predictions
+                <div class="mt-auto">
+                    <a asp-page="/Doctor/Predictions/Index" class="btn btn-primary btn-sm">
+                        Open ML Predictions
                     </a>
                 </div>
             </div>

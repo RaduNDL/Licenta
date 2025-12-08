@@ -76,7 +76,6 @@ namespace Licenta.Pages.Doctor.Predictions
             if (doctor == null)
                 return Unauthorized();
 
-            // Construim requestul exact ca în BreastCancerRequest
             var request = new BreastCancerRequest
             {
                 Radius_mean = Input.Radius_mean,
@@ -102,9 +101,7 @@ namespace Licenta.Pages.Doctor.Predictions
                 return Page();
             }
 
-            // AICI ERA PROBLEMA:
-            //   înainte salvai Probability = response.Probability (P(Malignant))
-            //   acum salvăm Probability = response.Confidence (probabilitatea clasei prezise)
+          
             var prediction = new Prediction
             {
                 Id = Guid.NewGuid(),
@@ -116,8 +113,8 @@ namespace Licenta.Pages.Doctor.Predictions
                 InputDataJson = JsonSerializer.Serialize(request),
                 OutputDataJson = JsonSerializer.Serialize(response),
 
-                ResultLabel = response.Label,          // "B" sau "M"
-                Probability = response.Confidence,     // 👈 confidence, nu P(M) direct
+                ResultLabel = response.Label,          
+                Probability = response.Confidence,    
 
                 Notes = Input.Notes
             };
