@@ -33,8 +33,8 @@
 
             <div class="mb-3">
                 <label asp-for="Input.ClinicId" class="form-label"></label>
-                <input asp-for="Input.ClinicId" class="form-control" />
-                <span asp-validation-for="Input.ClinicId" class="text-danger"></span>
+                <input asp-for="Input.ClinicId" class="form-control" readonly />
+                <span class="form-text text-muted">Clinic ID is generated automatically and cannot be changed.</span>
             </div>
 
             <div class="form-check mb-3">

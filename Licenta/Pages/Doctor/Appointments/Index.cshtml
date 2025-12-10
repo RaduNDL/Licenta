@@ -49,24 +49,68 @@
     </div>
 </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Patient</th>
-            <th>Reason</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var a in Model.Appointments)
-        {
+@if (Model.ViewMode == "day")
+{
+    <table class="table table-bordered">
+        <thead>
             <tr>
-                <td>@a.ScheduledAt.ToLocalTime().ToString("g")</td>
-                <td>@a.Patient.User.FullName</td>
-                <td>@a.Reason</td>
-                <td>@a.Status</td>
+                <th>Time slot</th>
+                <th>Appointments</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var slot in Model.HourSchedule)
+            {
+                <tr>
+                    <td>
+                        @slot.Start.ToLocalTime().ToString("HH:mm")
+                        -
+                        @slot.End.ToLocalTime().ToString("HH:mm")
+                    </td>
+                    <td>
+                        @if (slot.Appointments.Any())
+                        {
+                            @foreach (var a in slot.Appointments)
+                            {
+                                <div class="mb-1">
+                                    <strong>@a.Patient.User.FullName</strong>
+                                    (@a.ScheduledAt.ToLocalTime().ToString("HH:mm")) –
+                                    @a.Reason
+                                    <span class="badge bg-secondary ms-1">@a.Status</span>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">Free</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Patient</th>
+                <th>Reason</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model.Appointments)
+            {
+                <tr>
+                    <td>@a.ScheduledAt.ToLocalTime().ToString("g")</td>
+                    <td>@a.Patient.User.FullName</td>
+                    <td>@a.Reason</td>
+                    <td>@a.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

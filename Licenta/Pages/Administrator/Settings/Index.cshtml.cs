@@ -1,14 +1,13 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using Licenta.Areas.Identity.Data;
+﻿using Licenta.Areas.Identity.Data;
+using Licenta.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
+using System.IO;
 
 namespace Licenta.Pages.Administrator.Settings
 {
@@ -16,55 +15,146 @@ namespace Licenta.Pages.Administrator.Settings
     public class IndexModel : PageModel
     {
         private readonly AppDbContext _db;
-        private readonly IWebHostEnvironment _env;
 
-        public IndexModel(AppDbContext db, IWebHostEnvironment env)
+        public IndexModel(AppDbContext db)
         {
             _db = db;
-            _env = env;
         }
 
         [BindProperty]
-        public SystemSetting Input { get; set; }
+        public InputModel Input { get; set; } = new();
 
+        // pentru upload logo
         [BindProperty]
         public IFormFile? LogoFile { get; set; }
 
-        public async Task<IActionResult> OnGetAsync()
+        public class InputModel
         {
-            Input = await _db.SystemSettings.SingleAsync();
-            return Page();
+            // BRANDING
+            [Display(Name = "Clinic name")]
+            public string? ClinicName { get; set; }
+
+            [Display(Name = "Max upload (MB)")]
+            public int MaxUploadMb { get; set; } = 10;
+
+            public string? LogoPath { get; set; }
+
+            // SMTP
+            [Display(Name = "SMTP server")]
+            public string? SmtpServer { get; set; }
+
+            [Display(Name = "SMTP port")]
+            public int SmtpPort { get; set; } = 587;
+
+            [Display(Name = "Use SSL/TLS")]
+            public bool SmtpUseSSL { get; set; }
+
+            [Display(Name = "SMTP user")]
+            public string? SmtpUser { get; set; }
+
+            [Display(Name = "SMTP password")]
+            [DataType(DataType.Password)]
+            public string? SmtpPassword { get; set; }  // poate fi gol => păstrăm vechea parolă
+
+            // SECURITY
+            [Display(Name = "Password min length")]
+            public int PasswordMinLength { get; set; } = 6;
+
+            [Display(Name = "Require digit")]
+            public bool RequireDigit { get; set; }
+
+            [Display(Name = "Require uppercase")]
+            public bool RequireUppercase { get; set; }
+
+            [Display(Name = "Require special character")]
+            public bool RequireSpecialChar { get; set; }
         }
 
+        // ==================== GET ====================
+        public async Task OnGetAsync()
+        {
+            var settings = await _db.SystemSettings.FirstOrDefaultAsync();
+
+            if (settings == null)
+            {
+                Input = new InputModel();
+                return;
+            }
+
+            Input = new InputModel
+            {
+                ClinicName = settings.ClinicName,
+                MaxUploadMb = settings.MaxUploadMb,
+                LogoPath = settings.LogoPath,
+
+                SmtpServer = settings.SmtpServer,
+                SmtpPort = settings.SmtpPort,
+                SmtpUser = settings.SmtpUser,
+                // parola nu o trimitem în view
+                SmtpUseSSL = settings.SmtpUseSSL,
+
+                PasswordMinLength = settings.PasswordMinLength,
+                RequireDigit = settings.RequireDigit,
+                RequireUppercase = settings.RequireUppercase,
+                RequireSpecialChar = settings.RequireSpecialChar
+            };
+        }
+
+        // ==================== POST ====================
         public async Task<IActionResult> OnPostAsync()
         {
-            var settings = await _db.SystemSettings.SingleAsync();
+            if (!ModelState.IsValid)
+                return Page();
 
-            // Upload logo
-            if (LogoFile != null)
+            var settings = await _db.SystemSettings.FirstOrDefaultAsync();
+
+            if (settings == null)
             {
-                var fileName = "logo_" + Guid.NewGuid() + Path.GetExtension(LogoFile.FileName);
-                var uploadFolder = Path.Combine(_env.WebRootPath, "uploads");
-                var path = Path.Combine(uploadFolder, fileName);
+                settings = new SystemSetting();
+                _db.SystemSettings.Add(settings);
+            }
 
-                Directory.CreateDirectory(uploadFolder);
+            // BRANDING
+            settings.ClinicName = Input.ClinicName?.Trim() ?? string.Empty;
+            settings.MaxUploadMb = Input.MaxUploadMb;
 
-                using (var stream = new FileStream(path, FileMode.Create))
+            // upload logo (opțional)
+            if (LogoFile != null && LogoFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine("wwwroot", "uploads", "logos");
+                Directory.CreateDirectory(uploadsFolder);
+
+                var ext = Path.GetExtension(LogoFile.FileName);
+                if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
+
+                var fileName = $"logo_{DateTime.UtcNow:yyyyMMddHHmmss}{ext}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await LogoFile.CopyToAsync(stream);
                 }
 
-                settings.LogoPath = "/uploads/" + fileName;
+                settings.LogoPath = "/uploads/logos/" + fileName;
             }
 
-            // Map fields
-            settings.ClinicName = Input.ClinicName;
-            settings.MaxUploadMb = Input.MaxUploadMb;
-            settings.SmtpServer = Input.SmtpServer;
+            // SMTP
+            settings.SmtpServer = Input.SmtpServer?.Trim() ?? string.Empty;
             settings.SmtpPort = Input.SmtpPort;
-            settings.SmtpUser = Input.SmtpUser;
-            settings.SmtpPassword = Input.SmtpPassword;
+            settings.SmtpUser = Input.SmtpUser?.Trim() ?? string.Empty;
             settings.SmtpUseSSL = Input.SmtpUseSSL;
+
+            // dacă adminul completează o parolă nouă -> o suprascriem
+            if (!string.IsNullOrWhiteSpace(Input.SmtpPassword))
+            {
+                settings.SmtpPassword = Input.SmtpPassword;
+            }
+
+            // siguranță: să nu fie niciodată NULL (coloană NOT NULL)
+            if (settings.SmtpPassword == null)
+                settings.SmtpPassword = string.Empty;
+
+            // SECURITY
             settings.PasswordMinLength = Input.PasswordMinLength;
             settings.RequireDigit = Input.RequireDigit;
             settings.RequireUppercase = Input.RequireUppercase;
@@ -72,7 +162,7 @@ namespace Licenta.Pages.Administrator.Settings
 
             await _db.SaveChangesAsync();
 
-            TempData["Status"] = "Settings updated successfully!";
+            TempData["Status"] = "Settings updated.";
             return RedirectToPage();
         }
     }

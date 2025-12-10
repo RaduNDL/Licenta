@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,7 +23,13 @@ namespace Licenta.Pages.Patient.Notifications
             _userManager = userManager;
         }
 
-        public record NotificationVm(string Title, string Message, DateTime When);
+        public record NotificationVm(
+            long Id,
+            string Title,
+            string Message,
+            NotificationType Type,
+            DateTime When,
+            bool IsRead);
 
         public List<NotificationVm> Items { get; set; } = new();
 
@@ -38,37 +44,35 @@ namespace Licenta.Pages.Patient.Notifications
 
             var since = DateTime.UtcNow.AddDays(-30);
 
-            var docs = await _db.MedicalAttachments
-                .Include(a => a.Patient)
-                .Where(a =>
-                    a.Patient != null &&
-                    a.Patient.UserId == user.Id &&
-                    a.Status != AttachmentStatus.Pending &&
-                    (a.ValidatedAtUtc ?? a.UploadedAt) >= since)
-                .OrderByDescending(a => a.ValidatedAtUtc ?? a.UploadedAt)
+            Items = await _db.UserNotifications
+                .Where(n => n.UserId == user.Id && n.CreatedAtUtc >= since)
+                .OrderByDescending(n => n.CreatedAtUtc)
+                .Select(n => new NotificationVm(
+                    n.Id,
+                    n.Title,
+                    n.Message,
+                    n.Type,
+                    n.CreatedAtUtc.ToLocalTime(),
+                    n.IsRead))
+                .ToListAsync();
+        }
+
+        public async Task OnPostMarkAllReadAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return;
+
+            var items = await _db.UserNotifications
+                .Where(n => n.UserId == user.Id && !n.IsRead)
                 .ToListAsync();
 
-            foreach (var a in docs)
+            foreach (var n in items)
             {
-                var when = a.ValidatedAtUtc ?? a.UploadedAt;
-
-                string title = a.Status switch
-                {
-                    AttachmentStatus.Validated => "Document validated",
-                    AttachmentStatus.Rejected => "Document rejected",
-                    _ => $"Update: {a.Status}"
-                };
-
-                var fileLabel = string.IsNullOrWhiteSpace(a.Type)
-                    ? a.FileName
-                    : $"{a.FileName} ({a.Type})";
-
-                var msg = fileLabel;
-                if (!string.IsNullOrWhiteSpace(a.ValidationNotes))
-                    msg += $": {a.ValidationNotes}";
-
-                Items.Add(new NotificationVm(title, msg, when));
+                n.IsRead = true;
             }
+
+            await _db.SaveChangesAsync();
+            await OnGetAsync();
         }
     }
 }

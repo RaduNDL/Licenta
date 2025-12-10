@@ -1,0 +1,138 @@
+﻿@page
+@model Licenta.Pages.Assistant.Inventory.IndexModel
+
+@{
+    ViewData["Title"] = "Inventory";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+    <link rel="stylesheet" href="~/css/assistant.css" />
+}
+
+<h2 class="mb-3">Inventory</h2>
+
+@if (TempData["StatusMessage"] is string msg)
+{
+    <div class="alert alert-info">@msg</div>
+}
+
+<div class="card mb-4">
+    <div class="card-header bg-transparent border-0 pt-3">
+        <h5 class="fw-bold mb-0">
+            <i class="bi bi-plus-circle me-2"></i>Add / update item
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="AddOrUpdate" class="row g-3">
+            <input type="hidden" asp-for="Input.Id" />
+
+            <div class="col-md-4">
+                <label asp-for="Input.Name" class="form-label"></label>
+                <input asp-for="Input.Name" class="form-control" />
+                <span asp-validation-for="Input.Name" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="Input.Category" class="form-label"></label>
+                <input asp-for="Input.Category" class="form-control" placeholder="e.g. Consumable / Drug" />
+                <span asp-validation-for="Input.Category" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-2">
+                <label asp-for="Input.Quantity" class="form-label"></label>
+                <input asp-for="Input.Quantity" class="form-control" type="number" />
+                <span asp-validation-for="Input.Quantity" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-2">
+                <label asp-for="Input.MinQuantity" class="form-label"></label>
+                <input asp-for="Input.MinQuantity" class="form-control" type="number" />
+                <span asp-validation-for="Input.MinQuantity" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-3">
+                <label asp-for="Input.ExpiryDate" class="form-label"></label>
+                <input asp-for="Input.ExpiryDate" class="form-control" type="date" />
+                <span asp-validation-for="Input.ExpiryDate" class="text-danger"></span>
+            </div>
+
+            <div class="col-12 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i> Save item
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.Items == null || !Model.Items.Any())
+{
+    <div class="alert alert-secondary">
+        No inventory items recorded.
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-header bg-transparent border-0 pt-3">
+            <h5 class="fw-bold mb-0">
+                <i class="bi bi-box-seam me-2"></i>Current inventory
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th class="text-center">Qty</th>
+                            <th class="text-center">Min</th>
+                            <th>Expiry</th>
+                            <th style="width: 200px;">Update</th>
+                            <th class="text-end" style="width: 80px;">Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            var isLow = item.Quantity <= item.MinQuantity;
+
+                            <tr class="@(isLow ? "table-danger" : "")">
+                                <td>@item.Name</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.Category) ? "-" : item.Category)</td>
+                                <td class="text-center">@item.Quantity</td>
+                                <td class="text-center">@item.MinQuantity</td>
+                                <td>
+                                    @(item.ExpiryDate?.ToString("yyyy-MM-dd") ?? "-")
+                                </td>
+                                <td>
+                                    <form method="post" asp-page-handler="UpdateQuantity" class="d-flex gap-2 align-items-center">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <input type="number" name="quantity" class="form-control form-control-sm" value="@item.Quantity" />
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                            Save
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" asp-page-handler="Delete" onsubmit="return confirm('Delete this item?');">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

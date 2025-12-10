@@ -1,8 +1,11 @@
-﻿using Licenta.Models;
+﻿using Licenta.Areas.Identity.Data;
+using Licenta.Data;
+using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
 namespace Licenta.Pages.Administrator.Users
 {
@@ -12,6 +15,7 @@ namespace Licenta.Pages.Administrator.Users
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<AssignRolesModel> _logger;
+        private readonly AppDbContext _db;
 
         private static readonly string[] AllowedRoles = new[]
         {
@@ -21,11 +25,13 @@ namespace Licenta.Pages.Administrator.Users
         public AssignRolesModel(
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            ILogger<AssignRolesModel> logger)
+            ILogger<AssignRolesModel> logger,
+            AppDbContext db)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _logger = logger;
+            _db = db;
         }
 
         [BindProperty] public string UserId { get; set; } = string.Empty;
@@ -147,12 +153,44 @@ namespace Licenta.Pages.Administrator.Users
                 }
             }
 
+            // 🔹 CREĂM PROFILURI dacă userul a primit Patient / Doctor
+            await EnsureProfilesForRolesAsync(targetUser, SelectedRoles);
+
             _logger.LogInformation("Updated roles for user {UserId}. Added: {Add}; Removed: {Remove}",
                 targetUser.Id, string.Join(",", toAdd), string.Join(",", toRemove));
 
             Status = "Roles successfully updated.";
             TempData["Status"] = Status;
             return RedirectToPage("Index");
+        }
+
+        private async Task EnsureProfilesForRolesAsync(ApplicationUser user, IEnumerable<string> roles)
+        {
+            if (roles.Contains("Patient"))
+            {
+                if (!await _db.Patients.AnyAsync(p => p.UserId == user.Id))
+                {
+                    _db.Patients.Add(new PatientProfile
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = user.Id
+                    });
+                }
+            }
+
+            if (roles.Contains("Doctor"))
+            {
+                if (!await _db.Doctors.AnyAsync(d => d.UserId == user.Id))
+                {
+                    _db.Doctors.Add(new DoctorProfile
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = user.Id
+                    });
+                }
+            }
+
+            await _db.SaveChangesAsync();
         }
     }
 }

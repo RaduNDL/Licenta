@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Licenta.Services;
@@ -12,6 +6,12 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Assistant.Appointments
 {
@@ -106,7 +106,7 @@ namespace Licenta.Pages.Assistant.Appointments
                     PreferredDate = preferredDate,
                     PreferredTime = preferredTime,
                     Reason = reason,
-                    Status = att.Status.ToString(), // enum to string
+                    Status = att.Status.ToString(),
                     SuggestedScheduledLocal = suggested
                 });
             }
@@ -146,6 +146,7 @@ namespace Licenta.Pages.Assistant.Appointments
             }
             catch
             {
+                // Ignore file JSON issues
             }
 
             var appointment = new Appointment
@@ -171,14 +172,26 @@ namespace Licenta.Pages.Assistant.Appointments
 
             if (patientUser != null)
             {
-                await _notifier.NotifyAsync(patientUser, "Appointment request approved",
-                    $"Your appointment request has been approved.<br/>Scheduled for: {appointment.ScheduledAt.ToLocalTime():f}.");
+                await _notifier.NotifyAsync(
+                    patientUser,
+                    NotificationType.Appointment,
+                    "Appointment request approved",
+                    $"Your appointment request has been approved.<br/>Scheduled for: {appointment.ScheduledAt.ToLocalTime():f}.",
+                    relatedEntity: "Appointment",
+                    relatedEntityId: appointment.Id.ToString()
+                );
             }
 
             if (doctorUser != null)
             {
-                await _notifier.NotifyAsync(doctorUser, "New appointment from request",
-                    $"New appointment from patient {patientUser?.FullName ?? patientUser?.Email}<br/>When: {appointment.ScheduledAt.ToLocalTime():f}<br/>Reason: {appointment.Reason}");
+                await _notifier.NotifyAsync(
+                    doctorUser,
+                    NotificationType.Appointment,
+                    "New appointment created from request",
+                    $"New appointment from patient {patientUser?.FullName ?? patientUser?.Email}<br/>When: {appointment.ScheduledAt.ToLocalTime():f}<br/>Reason: {appointment.Reason}",
+                    relatedEntity: "Appointment",
+                    relatedEntityId: appointment.Id.ToString()
+                );
             }
 
             TempData["StatusMessage"] = "Request approved and appointment created.";
@@ -215,14 +228,26 @@ namespace Licenta.Pages.Assistant.Appointments
 
             if (patientUser != null)
             {
-                await _notifier.NotifyAsync(patientUser, "Appointment request rejected",
-                    $"Your appointment request was rejected.<br/>Reason: {reason}");
+                await _notifier.NotifyAsync(
+                    patientUser,
+                    NotificationType.Appointment,
+                    "Appointment request rejected",
+                    $"Your appointment request was rejected.<br/>Reason: {reason}",
+                    relatedEntity: "MedicalAttachment",
+                    relatedEntityId: att.Id.ToString()
+                );
             }
 
             if (doctorUser != null)
             {
-                await _notifier.NotifyAsync(doctorUser, "Appointment request rejected",
-                    $"Request from patient {patientUser?.FullName ?? patientUser?.Email} was rejected.<br/>Reason: {reason}");
+                await _notifier.NotifyAsync(
+                    doctorUser,
+                    NotificationType.Appointment,
+                    "Appointment request rejected",
+                    $"Request from patient {patientUser?.FullName ?? patientUser?.Email} was rejected.<br/>Reason: {reason}",
+                    relatedEntity: "MedicalAttachment",
+                    relatedEntityId: att.Id.ToString()
+                );
             }
 
             TempData["StatusMessage"] = "Request rejected.";

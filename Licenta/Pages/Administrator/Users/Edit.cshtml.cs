@@ -61,8 +61,8 @@ namespace Licenta.Pages.Administrator.Users
             {
                 Id = user.Id,
                 Email = user.Email ?? user.UserName ?? string.Empty,
-                FullName = user.FullName, 
-                ClinicId = user.ClinicId,
+                FullName = user.FullName,
+                ClinicId = user.ClinicId,   
                 EmailConfirmed = user.EmailConfirmed
             };
 
@@ -91,8 +91,7 @@ namespace Licenta.Pages.Administrator.Users
 
             user.Email = emailToSet;
             user.UserName = emailToSet;
-            user.FullName = Input.FullName?.Trim() ?? string.Empty; 
-            user.ClinicId = string.IsNullOrWhiteSpace(Input.ClinicId) ? null : Input.ClinicId!.Trim();
+            user.FullName = Input.FullName?.Trim() ?? string.Empty;
             user.EmailConfirmed = Input.EmailConfirmed;
 
             var result = await _userManager.UpdateAsync(user);

@@ -1,11 +1,13 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Licenta.Areas.Identity.Data;
+﻿using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Assistant.Appointments
 {
@@ -44,8 +46,8 @@ namespace Licenta.Pages.Assistant.Appointments
             if (appointment == null)
                 return NotFound();
 
-            PatientName = appointment.Patient.User.FullName ?? appointment.Patient.User.Email ?? "Unknown Patient";
-            DoctorName = appointment.Doctor.User.FullName ?? appointment.Doctor.User.Email ?? "Unknown Doctor";
+            PatientName = appointment.Patient.User.FullName ?? appointment.Patient.User.Email ?? "Unknown patient";
+            DoctorName = appointment.Doctor.User.FullName ?? appointment.Doctor.User.Email ?? "Unknown doctor";
 
             return Page();
         }
@@ -72,8 +74,11 @@ namespace Licenta.Pages.Assistant.Appointments
             {
                 await _notifier.NotifyAsync(
                     appointment.Patient.User,
-                    "Programare anulată",
-                    $"Programarea din {appointment.ScheduledAt.ToLocalTime():f} a fost anulată.<br/>Motiv: {appointment.CancelReason}"
+                    NotificationType.Appointment,
+                    "Appointment cancelled",
+                    $"Your appointment on {appointment.ScheduledAt.ToLocalTime():f} was cancelled.<br/>Reason: {appointment.CancelReason}",
+                    relatedEntity: "Appointment",
+                    relatedEntityId: appointment.Id.ToString()
                 );
             }
 
@@ -81,8 +86,11 @@ namespace Licenta.Pages.Assistant.Appointments
             {
                 await _notifier.NotifyAsync(
                     appointment.Doctor.User,
-                    "Programare anulată",
-                    $"Pacient: {appointment.Patient.User.FullName ?? appointment.Patient.User.Email}.<br/>Motiv: {appointment.CancelReason}"
+                    NotificationType.Appointment,
+                    "Appointment cancelled",
+                    $"Patient: {appointment.Patient.User.FullName ?? appointment.Patient.User.Email}.<br/>Reason: {appointment.CancelReason}",
+                    relatedEntity: "Appointment",
+                    relatedEntityId: appointment.Id.ToString()
                 );
             }
 

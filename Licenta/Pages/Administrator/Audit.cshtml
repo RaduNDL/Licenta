@@ -91,7 +91,7 @@
                                     <td class="ps-4">
                                         <div class="d-flex align-items-center">
                                             <div class="avatar-circle" style="width: 32px; height: 32px; font-size: 0.8rem;">
-                                                @e.UserName.Substring(0, 1).ToUpper()
+                                                @(string.IsNullOrEmpty(e.UserName) ? "?" : e.UserName.Substring(0, 1).ToUpper())
                                             </div>
                                             <span class="fw-medium text-dark">@e.UserName</span>
                                         </div>

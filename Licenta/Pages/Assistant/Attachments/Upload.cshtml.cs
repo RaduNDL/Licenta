@@ -1,8 +1,13 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -41,7 +46,8 @@ namespace Licenta.Pages.Assistant.Attachments
             public IFormFile File { get; set; } = default!;
         }
 
-        [BindProperty] public InputModel Input { get; set; } = new();
+        [BindProperty]
+        public InputModel Input { get; set; } = new();
 
         public SelectList Patients { get; set; } = default!;
 
@@ -72,9 +78,11 @@ namespace Licenta.Pages.Assistant.Attachments
             var filePath = Path.Combine(uploadsRoot, fileName);
 
             using (var stream = System.IO.File.Create(filePath))
+            {
                 await Input.File.CopyToAsync(stream);
+            }
 
-            // Asociere cu un doctor (fallback: primul doctor din sistem)
+            // Associate with a doctor (fallback: first doctor in the system)
             var doctor = await _db.Doctors
                 .Include(d => d.User)
                 .OrderBy(d => d.User.FullName)
@@ -89,7 +97,7 @@ namespace Licenta.Pages.Assistant.Attachments
                 FilePath = "/uploads/" + fileName,
                 Type = Input.Type,
                 UploadedAt = DateTime.UtcNow,
-                Status = AttachmentStatus.Pending, // ✅ enum în loc de string
+                Status = AttachmentStatus.Pending,
                 ValidationNotes = Input.Description,
                 UploadedByAssistantId = assistant.Id
             };
@@ -97,16 +105,20 @@ namespace Licenta.Pages.Assistant.Attachments
             _db.MedicalAttachments.Add(attachment);
             await _db.SaveChangesAsync();
 
-            // Notificări pacient și doctor
-            var patient = await _db.Patients.Include(p => p.User)
+            // Notifications for patient and doctor
+            var patient = await _db.Patients
+                .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == Input.PatientId);
 
             if (patient?.User != null)
             {
                 await _notifier.NotifyAsync(
                     patient.User,
-                    "Analiză încărcată",
-                    $"A fost încărcat un document de tip <b>{Input.Type}</b>. Status: <b>În așteptare validare</b>."
+                    NotificationType.Document,
+                    "New document uploaded",
+                    $"A new document of type <b>{Input.Type}</b> was uploaded for you.<br/>Status: <b>Pending validation</b>.",
+                    relatedEntity: "MedicalAttachment",
+                    relatedEntityId: attachment.Id.ToString()
                 );
             }
 
@@ -114,12 +126,15 @@ namespace Licenta.Pages.Assistant.Attachments
             {
                 await _notifier.NotifyAsync(
                     doctor.User,
-                    "Analiză în așteptare",
-                    $"Pacient: {patient?.User?.FullName ?? patient?.User?.Email}<br/>Tip: {Input.Type}<br/>Te rugăm să o validezi."
+                    NotificationType.Document,
+                    "New document pending validation",
+                    $"Patient: {patient?.User?.FullName ?? patient?.User?.Email}<br/>Type: {Input.Type}<br/>Please review and validate the document.",
+                    relatedEntity: "MedicalAttachment",
+                    relatedEntityId: attachment.Id.ToString()
                 );
             }
 
-            TempData["StatusMessage"] = "Documentul a fost încărcat cu succes.";
+            TempData["StatusMessage"] = "Document uploaded successfully.";
             return RedirectToPage("/Assistant/Attachments/Index");
         }
 

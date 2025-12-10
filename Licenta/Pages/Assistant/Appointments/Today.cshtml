@@ -1,0 +1,74 @@
+﻿@page
+@model Licenta.Pages.Assistant.Appointments.TodayModel
+
+@using Licenta.Models
+
+@{
+    ViewData["Title"] = "Today’s appointments";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+    <link rel="stylesheet" href="~/css/assistant.css" />
+}
+
+<h2 class="mb-3">Today’s appointments</h2>
+
+@if (TempData["StatusMessage"] is string msg)
+{
+    <div class="alert alert-info">@msg</div>
+}
+
+@if (Model.Appointments == null || !Model.Appointments.Any())
+{
+    <div class="alert alert-secondary">
+        No appointments scheduled for today.
+    </div>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Visit stage</th>
+                <th style="width: 260px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model.Appointments)
+            {
+                <tr>
+                    <td>@a.TimeLocal</td>
+                    <td>@a.PatientName</td>
+                    <td>@a.DoctorName</td>
+                    <td>@a.Reason</td>
+                    <td>@a.Status</td>
+                    <td>@a.VisitStage</td>
+                    <td>
+                        <form method="post" asp-page-handler="UpdateStage" class="d-flex gap-2 align-items-center">
+                            <input type="hidden" name="appointmentId" value="@a.Id" />
+
+                            <select name="stage" class="form-select form-select-sm" style="max-width: 180px;">
+                                @foreach (VisitStage s in Enum.GetValues(typeof(VisitStage)))
+                                {
+                                    <option value="@s" selected="@(s == a.VisitStage)">
+                                        @s
+                                    </option>
+                                }
+                            </select>
+
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                Update
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

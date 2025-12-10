@@ -1,0 +1,42 @@
+﻿@page
+@using Licenta.Models
+@model Licenta.Pages.Assistant.Notifications.IndexModel
+
+@{
+    ViewData["Title"] = "Notifications";
+}
+ 
+<h2>Notificări</h2>
+
+@if (!Model.Items.Any())
+{
+    <p>Nu ai notificări în ultimele 30 de zile.</p>
+}
+else
+{
+    <form method="post" asp-page-handler="MarkAllRead" class="mb-2">
+        <button type="submit" class="btn btn-sm btn-secondary">Marchează toate ca citite</button>
+    </form>
+
+    <table class="table table-striped table-sm">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Tip</th>
+                <th>Titlu</th>
+                <th>Mesaj</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var n in Model.Items)
+            {
+                <tr class="@(n.IsRead ? "" : "table-info")">
+                    <td>@n.When.ToString("g")</td>
+                    <td>@n.Type</td>
+                    <td>@n.Title</td>
+                    <td>@Html.Raw(n.Message)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -111,6 +111,7 @@
 <h4 class="mt-4 mb-3">Quick actions</h4>
 
 <div class="row g-3">
+    <!-- Appointments -->
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
@@ -118,47 +119,52 @@
                     <i class="bi bi-calendar-plus me-2"></i>Appointments
                 </h5>
                 <p class="card-text text-muted">
-                    View your upcoming and past appointments.
+                    View your upcoming visits or request a new appointment.
                 </p>
-                <div class="mt-auto">
+                <div class="mt-auto d-flex flex-wrap gap-2">
                     <a asp-page="/Patient/Appointments/Index" class="btn btn-primary btn-sm">
                         My appointments
                     </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">
-                    <i class="bi bi-journal-medical me-2"></i>Medical records
-                </h5>
-                <p class="card-text text-muted">
-                    Access your medical history, diagnoses and treatments.
-                </p>
-                <div class="mt-auto">
-                    <a asp-page="/Patient/MedicalRecords/Index" class="btn btn-outline-primary btn-sm">
-                        My records
+                    <a asp-page="/Patient/Appointments/Request" class="btn btn-outline-primary btn-sm">
+                        Request appointment
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Visits history -->
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
                 <h5 class="card-title">
-                    <i class="bi bi-droplet-half me-2"></i>Lab results
+                    <i class="bi bi-clock-history me-2"></i>Visits history
                 </h5>
                 <p class="card-text text-muted">
-                    See uploaded lab results and doctor’s comments.
+                    See your previous visits and consultations.
                 </p>
                 <div class="mt-auto">
-                    <a asp-page="/Patient/LabResults/Index" class="btn btn-outline-primary btn-sm">
-                        My lab results
+                    <a asp-page="/Patient/Visits/History" class="btn btn-outline-primary btn-sm">
+                        View history
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pre-consultation form -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-clipboard-check me-2"></i>Pre-consultation form
+                </h5>
+                <p class="card-text text-muted">
+                    Fill in your pre-consultation medical questionnaire.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Patient/Form/PreConstultation" class="btn btn-outline-primary btn-sm">
+                        Open form
                     </a>
                 </div>
             </div>
@@ -167,6 +173,7 @@
 </div>
 
 <div class="row g-3 mt-1">
+    <!-- Attachments -->
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
@@ -174,20 +181,21 @@
                     <i class="bi bi-upload me-2"></i>Attachments
                 </h5>
                 <p class="card-text text-muted">
-                    Upload new medical documents or view existing ones.
+                    Upload new medical documents or see validated ones.
                 </p>
                 <div class="mt-auto d-flex flex-wrap gap-2">
                     <a asp-page="/Patient/Attachments/Upload" class="btn btn-primary btn-sm">
                         Upload document
                     </a>
-                    <a asp-page="/Patient/Attachments/Index" class="btn btn-outline-secondary btn-sm">
-                        My documents
+                    <a asp-page="/Patient/Attachments/Validated" class="btn btn-outline-secondary btn-sm">
+                        Validated documents
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Messages -->
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
@@ -197,27 +205,55 @@
                 <p class="card-text text-muted">
                     Communicate securely with your doctor or assistant.
                 </p>
-                <div class="mt-auto">
+                <div class="mt-auto d-flex flex-wrap gap-2">
                     <a asp-page="/Patient/Messages/Inbox" class="btn btn-outline-primary btn-sm">
-                        Open inbox
+                        Inbox
+                    </a>
+                    <a asp-page="/Patient/Messages/CreateRequest" class="btn btn-outline-secondary btn-sm">
+                        New request
+                    </a>
+                    <a asp-page="/Patient/Messages/RequestList" class="btn btn-outline-secondary btn-sm">
+                        My requests
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Notifications -->
     <div class="col-md-4 mb-3">
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
                 <h5 class="card-title">
-                    <i class="bi bi-person-circle me-2"></i>My profile
+                    <i class="bi bi-bell me-2"></i>Notifications
                 </h5>
                 <p class="card-text text-muted">
-                    Update your personal data and contact information.
+                    Check system notifications and important updates.
                 </p>
                 <div class="mt-auto">
-                    <a asp-page="/Patient/Profile/Index" class="btn btn-outline-primary btn-sm">
-                        Edit profile
+                    <a asp-page="/Patient/Notifications/Index" class="btn btn-outline-primary btn-sm">
+                        View notifications
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <!-- Lab results / predictions -->
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-bar-chart-line me-2"></i>ML Predictions
+                </h5>
+                <p class="card-text text-muted">
+                    View your machine learning prediction results.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Patient/Predictions/Index" class="btn btn-outline-primary btn-sm">
+                        Open predictions
                     </a>
                 </div>
             </div>

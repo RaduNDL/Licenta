@@ -1,4 +1,4 @@
-using Licenta.Models;
+﻿using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -65,10 +65,18 @@ namespace Licenta.Pages.Administrator.Users
                 return Page();
             }
 
+            var email = Input.Email.Trim();
+            var existing = await _userManager.FindByEmailAsync(email);
+            if (existing != null)
+            {
+                ModelState.AddModelError("Input.Email", "A user with this email already exists.");
+                return Page();
+            }
+
             var user = new ApplicationUser
             {
-                UserName = Input.Email,
-                Email = Input.Email,
+                UserName = email,
+                Email = email,
                 EmailConfirmed = Input.EmailConfirmed
             };
 
@@ -80,10 +88,22 @@ namespace Licenta.Pages.Administrator.Users
                 return Page();
             }
 
+            if (string.IsNullOrEmpty(user.ClinicId))
+            {
+                user.ClinicId = GenerateClinicId();
+                await _userManager.UpdateAsync(user);
+            }
+
             await _userManager.AddToRoleAsync(user, Input.Role);
 
             TempData["StatusMessage"] = $"User {Input.Email} created with role '{Input.Role}'.";
             return RedirectToPage("./Index");
+        }
+
+        private static string GenerateClinicId()
+        {
+            var guid = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
+            return $"CL-{guid}";
         }
     }
 }

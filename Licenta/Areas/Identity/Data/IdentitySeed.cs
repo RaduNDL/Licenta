@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
-using Licenta.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -97,6 +96,17 @@ namespace Licenta.Data
                 }
             }
 
+            if (string.IsNullOrEmpty(user.ClinicId))
+            {
+                user.ClinicId = GenerateClinicId();
+                var updateResult = await userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    throw new Exception($"Failed setting ClinicId for '{email}': " +
+                        string.Join(", ", updateResult.Errors.Select(e => e.Description)));
+                }
+            }
+
             if (!await userManager.IsInRoleAsync(user, role))
             {
                 var addRoleResult = await userManager.AddToRoleAsync(user, role);
@@ -108,6 +118,12 @@ namespace Licenta.Data
             }
 
             return user;
+        }
+
+        private static string GenerateClinicId()
+        {
+            var guid = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
+            return $"CL-{guid}";
         }
 
         private static async Task EnsureDoctorProfileAsync(AppDbContext db, ApplicationUser doctorUser)

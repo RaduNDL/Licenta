@@ -1,4 +1,213 @@
 ﻿@page
 @model Licenta.Pages.Assistant.AssistantPanel.IndexModel
+
 @{
+    ViewData["Title"] = "Assistant Dashboard";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
+    <link rel="stylesheet" href="~/css/assistant.css" />
+}
+
+<h2 class="mb-3">Assistant Dashboard</h2>
+
+@if (!string.IsNullOrEmpty(Model.AssistantName))
+{
+    <div class="alert alert-light border mb-4">
+        <div class="fw-semibold">Logged in as:</div>
+        <div class="fs-5">@Model.AssistantName</div>
+    </div>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <i class="bi bi-calendar-event fs-2 text-primary"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold">@Model.UpcomingAppointments</div>
+                    <div class="text-muted small">Upcoming appointments</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <i class="bi bi-file-earmark-medical fs-2 text-warning"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold">@Model.PendingAttachments</div>
+                    <div class="text-muted small">Analyses pending validation</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <i class="bi bi-people fs-2 text-success"></i>
+                </div>
+                <div>
+                    <div class="fs-4 fw-bold">@Model.TotalPatients</div>
+                    <div class="text-muted small">Registered patients</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h4 class="mt-4 mb-3">Quick actions</h4>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-calendar-check me-2"></i>Today’s appointments
+                </h5>
+                <p class="card-text text-muted">
+                    View today’s appointments and update patient flow (check-in, triage, etc.).
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Assistant/Appointments/Today" class="btn btn-primary btn-sm">
+                        Open today schedule
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-upload me-2"></i>Analyses & documents
+                </h5>
+                <p class="card-text text-muted">
+                    Upload or validate lab results and medical documents.
+                </p>
+                <div class="mt-auto d-flex gap-2 flex-wrap">
+                    <a asp-page="/Assistant/Attachments/Upload" class="btn btn-primary btn-sm">
+                        Upload analysis
+                    </a>
+                    <a asp-page="/Assistant/Attachments/Validate" class="btn btn-outline-secondary btn-sm">
+                        Validate analyses
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-chat-dots me-2"></i>Messages
+                </h5>
+                <p class="card-text text-muted">
+                    Communicate with doctors and patients through internal messages.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Assistant/Messages/Inbox" class="btn btn-outline-primary btn-sm">
+                        Open inbox
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-person-vcard me-2"></i>Patients list
+                </h5>
+                <p class="card-text text-muted">
+                    View all registered patients and basic contact details.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Assistant/Patients/Index" class="btn btn-outline-primary btn-sm">
+                        Open patients
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-box-seam me-2"></i>Inventory & supplies
+                </h5>
+                <p class="card-text text-muted">
+                    Manage consumables and medicine stock, watch low stock alerts.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Assistant/Inventory/Index" class="btn btn-outline-primary btn-sm">
+                        Open inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-shield-check me-2"></i>Sterilization log
+                </h5>
+                <p class="card-text text-muted">
+                    Record sterilization cycles for devices (autoclaves, etc.).
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Assistant/Sterilization/Index" class="btn btn-outline-primary btn-sm">
+                        Open log
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.NextAppointments?.Any() == true)
+{
+    <h4 class="mt-4 mb-3">Next appointments</h4>
+
+    <div class="card shadow-sm mb-5">
+        <div class="card-body">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model.NextAppointments)
+                    {
+                        <tr>
+                            <td>@a.TimeLocal</td>
+                            <td>@a.PatientName</td>
+                            <td>@a.DoctorName</td>
+                            <td>@a.Reason</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 }

@@ -1,0 +1,46 @@
+﻿@page
+@model Licenta.Pages.Admin.Appointments.CreateModel
+@{
+    ViewData["Title"] = "New Appointment";
+}
+
+<h2>New Appointment</h2>
+
+<form method="post">
+    <div class="mb-3">
+        <label asp-for="Appointment.DoctorId" class="form-label">Doctor</label>
+        <select asp-for="Appointment.DoctorId" class="form-select"
+                asp-items="@(new SelectList(Model.Doctors, "Id", "User.FullName"))">
+            <option value="">-- Select doctor --</option>
+        </select>
+        <span asp-validation-for="Appointment.DoctorId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Appointment.PatientId" class="form-label">Patient</label>
+        <select asp-for="Appointment.PatientId" class="form-select"
+                asp-items="@(new SelectList(Model.Patients, "Id", "User.FullName"))">
+            <option value="">-- Select patient --</option>
+        </select>
+        <span asp-validation-for="Appointment.PatientId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Appointment.ScheduledAt" class="form-label">Date & time</label>
+        <input asp-for="Appointment.ScheduledAt" type="datetime-local" class="form-control" />
+        <span asp-validation-for="Appointment.ScheduledAt" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Appointment.Reason" class="form-label">Reason</label>
+        <input asp-for="Appointment.Reason" class="form-control" />
+        <span asp-validation-for="Appointment.Reason" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create</button>
+    <a asp-page="./Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

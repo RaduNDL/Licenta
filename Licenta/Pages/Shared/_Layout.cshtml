@@ -1,10 +1,31 @@
-﻿@inject Licenta.Areas.Identity.Data.AppDbContext Db
+﻿@using Licenta.Areas.Identity.Data
+@using Microsoft.AspNetCore.Identity
+@inject AppDbContext Db
+@inject UserManager<ApplicationUser> UserManager
+
 @{
     var settings = Db.SystemSettings
         .OrderBy(s => s.Id)
         .FirstOrDefault();
     var logo = settings?.LogoPath ?? "/img/default-logo.png";
+
+    // Current user and unread notifications
+    string currentUserId = null;
+    int unreadNotificationsCount = 0;
+
+    if (User.Identity.IsAuthenticated)
+    {
+        currentUserId = UserManager.GetUserId(User);
+        if (!string.IsNullOrEmpty(currentUserId))
+        {
+            unreadNotificationsCount = Db.UserNotifications
+                .Count(n => n.UserId == currentUserId && !n.IsRead);
+        }
+    }
+
+    string unreadLabel = unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount.ToString();
 }
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,6 +39,28 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Licenta.styles.css" asp-append-version="true" />
+
+    <style>
+        /* Small Discord-like notification badge on top-right of the bell */
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            transform: translate(40%, -40%);
+            min-width: 18px;
+            height: 18px;
+            padding: 0 4px;
+            border-radius: 999px;
+            background-color: #dc3545; /* Bootstrap danger */
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+    </style>
 
     @RenderSection("Styles", required: false)
 </head>
@@ -200,6 +243,11 @@
                                 </a>
                                 <ul class="dropdown-menu shadow-sm border-0 rounded-3" aria-labelledby="assistantDropdown">
                                     <li>
+                                        <a class="dropdown-item" asp-page="/Assistant/AssistantPanel/Index">
+                                            <i class="bi bi-grid-1x2 me-2"></i>Dashboard
+                                        </a>
+                                    </li>
+                                    <li>
                                         <a class="dropdown-item" asp-page="/Assistant/Patients/Index">
                                             <i class="bi bi-people me-2"></i>Patients
                                         </a>
@@ -345,6 +393,10 @@
                             </a>
                             <a asp-page="/Patient/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1">
                                 <i class="bi bi-bell"></i>
+                                @if (unreadNotificationsCount > 0)
+                                {
+                                    <span class="notification-badge">@unreadLabel</span>
+                                }
                                 <span class="visually-hidden">Notifications</span>
                             </a>
                         }
@@ -354,6 +406,14 @@
                                 <i class="bi bi-chat-dots"></i>
                                 <span class="visually-hidden">Messages</span>
                             </a>
+                            <a asp-page="/Doctor/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1">
+                                <i class="bi bi-bell"></i>
+                                @if (unreadNotificationsCount > 0)
+                                {
+                                    <span class="notification-badge">@unreadLabel</span>
+                                }
+                                <span class="visually-hidden">Notifications</span>
+                            </a>
                         }
                         else if (User.IsInRole("Assistant"))
                         {
@@ -361,12 +421,24 @@
                                 <i class="bi bi-chat-dots"></i>
                                 <span class="visually-hidden">Messages</span>
                             </a>
+                            <a asp-page="/Assistant/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1">
+                                <i class="bi bi-bell"></i>
+                                @if (unreadNotificationsCount > 0)
+                                {
+                                    <span class="notification-badge">@unreadLabel</span>
+                                }
+                                <span class="visually-hidden">Notifications</span>
+                            </a>
                         }
                         else if (User.IsInRole("Administrator"))
-                        {
-                            <a asp-page="/Administrator/Messages/Inbox" class="btn btn-sm nav-icon-pill position-relative me-1">
-                                <i class="bi bi-chat-dots"></i>
-                                <span class="visually-hidden">Messages</span>
+                        { 
+                            <a asp-page="/Administrator/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1">
+                                <i class="bi bi-bell"></i>
+                                @if (unreadNotificationsCount > 0)
+                                {
+                                    <span class="notification-badge">@unreadLabel</span>
+                                }
+                                <span class="visually-hidden">Notifications</span>
                             </a>
                         }
 
@@ -384,7 +456,7 @@
             </main>
         </div>
     </div>
-    
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

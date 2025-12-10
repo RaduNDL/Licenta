@@ -25,6 +25,8 @@ namespace Licenta.Areas.Identity.Data
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<UserActivityLog> UserActivityLogs => Set<UserActivityLog>();
         public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
+        public DbSet<InventoryItem> InventoryItems { get; set; } = null!;
+        public DbSet<SterilizationCycle> SterilizationCycles { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder b)
         {

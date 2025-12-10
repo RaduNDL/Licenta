@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Licenta.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251201145127_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251209135852_AssistantModels")]
+    partial class AssistantModels
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -136,6 +136,9 @@ namespace Licenta.Migrations
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("VisitStage")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -272,6 +275,35 @@ namespace Licenta.Migrations
                     b.HasIndex("SenderId");
 
                     b.ToTable("InternalMessages");
+                });
+
+            modelBuilder.Entity("Licenta.Models.InventoryItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MinQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InventoryItems");
                 });
 
             modelBuilder.Entity("Licenta.Models.LabResult", b =>
@@ -683,6 +715,33 @@ namespace Licenta.Migrations
                     b.HasIndex("PrescriptionId");
 
                     b.ToTable("PrescriptionItems");
+                });
+
+            modelBuilder.Entity("Licenta.Models.SterilizationCycle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CycleNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DeviceName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("PerformedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SterilizationCycles");
                 });
 
             modelBuilder.Entity("Licenta.Models.SystemSetting", b =>

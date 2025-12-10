@@ -7,9 +7,7 @@ import joblib
 import numpy as np
 import os
 
-# ---------------------------
-# PATH-URI
-# ---------------------------
+
 
 BASE_DIR = os.path.dirname(__file__)
 MODELS_DIR = os.path.join(BASE_DIR, "models")
@@ -27,9 +25,7 @@ if not (os.path.exists(MODEL_PATH) and os.path.exists(SCALER_PATH)):
 model = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
 
-# ---------------------------
-# FEATURES (ORDINEA EXACTĂ)
-# ---------------------------
+
 
 FEATURE_COLS = [
     "radius_mean",
@@ -44,9 +40,7 @@ FEATURE_COLS = [
     "fractal_dimension_mean",
 ]
 
-# ---------------------------
-# MODEL PENTRU TEST / SWAGGER
-# ---------------------------
+
 
 class BreastCancerFeatures(BaseModel):
     radius_mean: float
@@ -125,7 +119,6 @@ def _predict_from_dict(payload: Dict[str, Any]):
         if norm_col in normalized_payload:
             val = normalized_payload[norm_col]
         else:
-            # dacă lipsește feature-ul, punem 0.0 ca default
             val = 0.0
             missing_cols.append(col)
 
@@ -152,20 +145,18 @@ def _predict_from_dict(payload: Dict[str, Any]):
 
     return {
         "label": label,
-        "probability": prob_malignant,  # P(M)
+        "probability": prob_malignant,
         "probability_benign": prob_benign,
         "probability_malignant": prob_malignant,
         "explanation": f"Model logistic regression, P(M)={prob_malignant:.2f}"
     }
 
 
-# Endpoint pentru testare din /docs
 @app.post("/predict")
 def predict(features: BreastCancerFeatures):
     return _predict_from_dict(features.dict())
 
 
-# Endpointul chemat de Razor: /api/breast/analyze
 @app.post("/api/breast/analyze")
 def analyze_breast(payload: Dict[str, Any]):
     return _predict_from_dict(payload)

@@ -23,6 +23,16 @@ namespace Licenta.Pages.Doctor.Appointments
         public string ViewMode { get; set; } = "day";   // "day" sau "week"
         public DateTime SelectedDate { get; set; }
 
+        // Structură pentru orarul pe ore (doar pentru view-ul "day")
+        public class HourSlot
+        {
+            public DateTime Start { get; set; }
+            public DateTime End { get; set; }
+            public List<Appointment> Appointments { get; set; } = new();
+        }
+
+        public List<HourSlot> HourSchedule { get; set; } = new();
+
         // patientId este Guid?, compatibil cu Appointment.PatientId (Guid)
         public async Task OnGetAsync(string? view, DateTime? date, Guid? patientId)
         {
@@ -35,6 +45,7 @@ namespace Licenta.Pages.Doctor.Appointments
             if (currentUser == null)
             {
                 Appointments = new();
+                HourSchedule = new();
                 return;
             }
 
@@ -46,6 +57,7 @@ namespace Licenta.Pages.Doctor.Appointments
             if (doctorProfile == null)
             {
                 Appointments = new();
+                HourSchedule = new();
                 return;
             }
 
@@ -55,16 +67,17 @@ namespace Licenta.Pages.Doctor.Appointments
             var query = _db.Appointments
                 .Include(a => a.Patient)
                     .ThenInclude(p => p.User)
-                .Where(a => a.DoctorId == doctorId);   // Guid == Guid
+                .Where(a => a.DoctorId == doctorId);
 
             // filtru opțional după pacient
             if (patientId.HasValue)
             {
-                query = query.Where(a => a.PatientId == patientId.Value); // Guid == Guid
+                query = query.Where(a => a.PatientId == patientId.Value);
             }
 
             // interval de timp în funcție de day/week
-            DateTime start, end;
+            DateTime start;
+            DateTime end;
 
             if (ViewMode == "week")
             {
@@ -83,6 +96,33 @@ namespace Licenta.Pages.Doctor.Appointments
             Appointments = await query
                 .OrderBy(a => a.ScheduledAt)
                 .ToListAsync();
+
+            // Construim orarul pe ore DOAR pentru modul "day"
+            HourSchedule = new List<HourSlot>();
+
+            if (ViewMode == "day")
+            {
+                // aici setezi intervalul de lucru al doctorului
+                var workStart = SelectedDate.Date.AddHours(8);   // 08:00
+                var workEnd = SelectedDate.Date.AddHours(17);    // 17:00
+
+                for (var t = workStart; t < workEnd; t = t.AddHours(1))
+                {
+                    var slotStart = t;
+                    var slotEnd = t.AddHours(1);
+
+                    var slotAppointments = Appointments
+                        .Where(a => a.ScheduledAt >= slotStart && a.ScheduledAt < slotEnd)
+                        .ToList();
+
+                    HourSchedule.Add(new HourSlot
+                    {
+                        Start = slotStart,
+                        End = slotEnd,
+                        Appointments = slotAppointments
+                    });
+                }
+            }
         }
     }
 }

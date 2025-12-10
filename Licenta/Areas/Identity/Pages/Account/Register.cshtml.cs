@@ -2,6 +2,19 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
+using Licenta.Areas.Identity.Data;
+using Licenta.Data;
+using Licenta.Models;
+using Licenta.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -10,15 +23,6 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
-using Licenta.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Logging;
 
 namespace Licenta.Areas.Identity.Pages.Account
 {
@@ -30,13 +34,19 @@ namespace Licenta.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<ApplicationUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly AppDbContext _db;
+        private readonly INotificationService _notifier;
 
         public RegisterModel(
             UserManager<ApplicationUser> userManager,
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            RoleManager<IdentityRole> roleManager,
+            AppDbContext db,
+            INotificationService notifier)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -44,62 +54,36 @@ namespace Licenta.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _roleManager = roleManager;
+            _db = db;
+            _notifier = notifier;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string ReturnUrl { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public IList<AuthenticationScheme> ExternalLogins { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [Required]
             [EmailAddress]
             [Display(Name = "Email")]
             public string Email { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [Required]
             [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
             [DataType(DataType.Password)]
             [Display(Name = "Password")]
             public string Password { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [DataType(DataType.Password)]
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
         }
-
 
         public async Task OnGetAsync(string returnUrl = null)
         {
@@ -111,17 +95,78 @@ namespace Licenta.Areas.Identity.Pages.Account
         {
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
+                var email = Input.Email.Trim();
 
-                await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
-                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+                await _userStore.SetUserNameAsync(user, email, CancellationToken.None);
+                await _emailStore.SetEmailAsync(user, email, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
 
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
+
+                    // 🔔 Notify all administrators about new registration
+                    var admins = await _userManager.GetUsersInRoleAsync("Administrator");
+                    var displayName = user.FullName
+                        ?? user.Email
+                        ?? user.UserName
+                        ?? "Unknown user";
+                    var registeredAt = DateTime.Now;
+
+                    foreach (var admin in admins)
+                    {
+                        await _notifier.NotifyAsync(
+                            admin,
+                            NotificationType.System,
+                            "New user registered",
+                            $"User <b>{displayName}</b> registered at {registeredAt:f}.",
+                            relatedEntity: "User",
+                            relatedEntityId: user.Id
+                        );
+                    }
+
+                    // Auto-generate ClinicId if missing
+                    if (string.IsNullOrEmpty(user.ClinicId))
+                    {
+                        user.ClinicId = GenerateClinicId();
+                        await _userManager.UpdateAsync(user);
+                    }
+
+                    // Default role = Patient
+                    const string defaultRole = "Patient";
+                    if (!await _roleManager.RoleExistsAsync(defaultRole))
+                    {
+                        var roleResult = await _roleManager.CreateAsync(new IdentityRole(defaultRole));
+                        if (!roleResult.Succeeded)
+                        {
+                            foreach (var e in roleResult.Errors)
+                                ModelState.AddModelError(string.Empty, e.Description);
+                            return Page();
+                        }
+                    }
+
+                    var addRoleResult = await _userManager.AddToRoleAsync(user, defaultRole);
+                    if (!addRoleResult.Succeeded)
+                    {
+                        foreach (var e in addRoleResult.Errors)
+                            ModelState.AddModelError(string.Empty, e.Description);
+                        return Page();
+                    }
+
+                    // Auto-create Patient profile
+                    if (!await _db.Patients.AnyAsync(p => p.UserId == user.Id))
+                    {
+                        _db.Patients.Add(new PatientProfile
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = user.Id
+                        });
+                        await _db.SaveChangesAsync();
+                    }
 
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -145,6 +190,7 @@ namespace Licenta.Areas.Identity.Pages.Account
                         return LocalRedirect(returnUrl);
                     }
                 }
+
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
@@ -153,6 +199,12 @@ namespace Licenta.Areas.Identity.Pages.Account
 
             // If we got this far, something failed, redisplay form
             return Page();
+        }
+
+        private static string GenerateClinicId()
+        {
+            var guid = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
+            return $"CL-{guid}";
         }
 
         private ApplicationUser CreateUser()
