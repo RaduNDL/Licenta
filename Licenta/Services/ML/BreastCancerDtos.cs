@@ -4,8 +4,6 @@ namespace Licenta.Services.Ml
 {
     public class BreastCancerRequest
     {
-       
-
         [JsonPropertyName("radius_mean")]
         public float Radius_mean { get; set; }
 
@@ -27,7 +25,7 @@ namespace Licenta.Services.Ml
         [JsonPropertyName("concavity_mean")]
         public float concavity_mean { get; set; }
 
-       
+
         [JsonPropertyName("concave_points_mean")]
         public float concavepoints_mean { get; set; }
 
@@ -38,7 +36,7 @@ namespace Licenta.Services.Ml
         public float fractal_dimension_mean { get; set; }
     }
 
- 
+
     public class BreastPredictionResponse
     {
         [JsonPropertyName("label")]
@@ -59,7 +57,7 @@ namespace Licenta.Services.Ml
         [JsonPropertyName("raw_model_name")]
         public string? RawModelName { get; set; }
 
-        
+
         [JsonIgnore]
         public float MalignantProbability =>
             ProbabilityMalignant ?? Probability;
@@ -68,7 +66,7 @@ namespace Licenta.Services.Ml
         public float BenignProbability =>
             ProbabilityBenign ?? (1f - MalignantProbability);
 
-       
+
         [JsonIgnore]
         public float Confidence =>
             Label == "B"

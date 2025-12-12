@@ -28,13 +28,13 @@ namespace Licenta.Pages.Doctor.Attachments
         {
             public Guid PatientId { get; set; }
             public string Type { get; set; } = string.Empty;
-            public IFormFile File { get; set; }
+            public IFormFile File { get; set; } = default!;
         }
 
         [BindProperty]
         public InputModel ModelInput { get; set; } = new();
 
-        public SelectList Patients { get; set; }
+        public SelectList Patients { get; set; } = default!;
 
         public async Task OnGetAsync(Guid? patientId)
         {
@@ -52,7 +52,14 @@ namespace Licenta.Pages.Doctor.Attachments
             var user = await _userManager.GetUserAsync(User);
             var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
 
-            var uploadsRoot = Path.Combine(_env.WebRootPath, "uploads");
+            if (doctor == null)
+            {
+                ModelState.AddModelError(string.Empty, "Doctor not found.");
+                await LoadPatientsAsync(ModelInput.PatientId);
+                return Page();
+            }
+
+            var uploadsRoot = Path.Combine(_env.WebRootPath, "uploads", "doctor", doctor.Id.ToString());
             Directory.CreateDirectory(uploadsRoot);
 
             var fileName = $"{Guid.NewGuid()}_{ModelInput.File.FileName}";
@@ -63,15 +70,22 @@ namespace Licenta.Pages.Doctor.Attachments
                 await ModelInput.File.CopyToAsync(stream);
             }
 
+            var relativePath = $"/uploads/doctor/{doctor.Id}/{fileName}";
+
             var attachment = new MedicalAttachment
             {
                 Id = Guid.NewGuid(),
                 PatientId = ModelInput.PatientId,
                 DoctorId = doctor.Id,
                 FileName = ModelInput.File.FileName,
-                FilePath = "/uploads/" + fileName,
+                FilePath = relativePath,
                 Type = ModelInput.Type,
-                UploadedAt = DateTime.UtcNow
+                UploadedAt = DateTime.UtcNow,
+                ContentType = ModelInput.File.ContentType,
+
+                Status = AttachmentStatus.Validated,
+                ValidatedAtUtc = DateTime.UtcNow,
+                ValidatedByDoctorId = doctor.Id
             };
 
             _db.MedicalAttachments.Add(attachment);
@@ -93,6 +107,11 @@ namespace Licenta.Pages.Doctor.Attachments
                 "User.FullName",
                 selectedId
             );
+
+            if (selectedId.HasValue)
+            {
+                ModelInput.PatientId = selectedId.Value;
+            }
         }
     }
 }

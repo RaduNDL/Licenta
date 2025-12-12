@@ -1,14 +1,19 @@
 ﻿@page
-@model Licenta.Pages.Administrator.Messages.Requests.IndexModel
+@model Licenta.Pages.Assistant.Messages.Requests.IndexModel
 @{
     ViewData["Title"] = "Patient message requests";
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/admin.css" />
+    <link rel="stylesheet" href="~/css/assistant.css" />
 }
 
 <h2 class="mb-3">Patient message requests</h2>
+
+@if (TempData["StatusMessage"] is string status)
+{
+    <div class="alert alert-info">@status</div>
+}
 
 <div class="mb-3">
     <a class="btn btn-outline-secondary btn-sm @(Model.StatusFilter == null ? "active" : "")" asp-route-status="">All</a>
@@ -39,7 +44,7 @@
                 <td>@r.Status.ToString()</td>
                 <td>
                     <a class="btn btn-sm btn-primary"
-                       asp-page="/Administrator/Messages/Requests/Review"
+                       asp-page="/Assistant/Messages/Requests/Review"
                        asp-route-id="@r.Id">
                         Review
                     </a>

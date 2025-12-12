@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Patient.Messages
 {
@@ -24,6 +27,11 @@ namespace Licenta.Pages.Patient.Messages
         public async Task OnGetAsync()
         {
             var patient = await _userManager.GetUserAsync(User);
+            if (patient == null)
+            {
+                Requests = new List<PatientMessageRequest>();
+                return;
+            }
 
             Requests = await _db.PatientMessageRequests
                 .Include(r => r.Doctor)

@@ -1,9 +1,13 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace Licenta.Pages.Administrator.Overview 
+namespace Licenta.Pages.Administrator.Overview
 {
     [Authorize(Roles = "Administrator")]
     public class IndexModel : PageModel

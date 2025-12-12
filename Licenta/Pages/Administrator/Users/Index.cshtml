@@ -47,11 +47,8 @@
                         var isLocked = u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow;
                         var isSelf = string.Equals(u.Id, Model.CurrentUserId, StringComparison.Ordinal);
 
-                        // Am scos variabila 'initial' pentru ca nu mai avem nevoie de ea
-
                         <tr>
                             <td class="ps-4">
-                                @* Am eliminat cercul cu initiala si d-flex-ul care il tinea *@
                                 <div>
                                     <div class="fw-bold text-dark">@(u.FullName ?? "Unset Name")</div>
                                     <div class="small text-muted">@u.Email</div>

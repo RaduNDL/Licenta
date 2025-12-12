@@ -1,29 +1,15 @@
 ﻿@page
 @model Licenta.Pages.Assistant.Appointments.TodayModel
 
-@using Licenta.Models
-
 @{
-    ViewData["Title"] = "Today’s appointments";
+    ViewData["Title"] = "Today's appointments";
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/admin.css" />
-    <link rel="stylesheet" href="~/css/assistant.css" />
-}
+<h2>Today's appointments</h2>
 
-<h2 class="mb-3">Today’s appointments</h2>
-
-@if (TempData["StatusMessage"] is string msg)
+@if (!Model.Items.Any())
 {
-    <div class="alert alert-info">@msg</div>
-}
-
-@if (Model.Appointments == null || !Model.Appointments.Any())
-{
-    <div class="alert alert-secondary">
-        No appointments scheduled for today.
-    </div>
+    <div class="alert alert-info">No appointments scheduled for today.</div>
 }
 else
 {
@@ -35,12 +21,11 @@ else
                 <th>Doctor</th>
                 <th>Reason</th>
                 <th>Status</th>
-                <th>Visit stage</th>
-                <th style="width: 260px;">Actions</th>
+                <th style="width: 150px;"></th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var a in Model.Appointments)
+            @foreach (var a in Model.Items)
             {
                 <tr>
                     <td>@a.TimeLocal</td>
@@ -48,24 +33,15 @@ else
                     <td>@a.DoctorName</td>
                     <td>@a.Reason</td>
                     <td>@a.Status</td>
-                    <td>@a.VisitStage</td>
                     <td>
-                        <form method="post" asp-page-handler="UpdateStage" class="d-flex gap-2 align-items-center">
-                            <input type="hidden" name="appointmentId" value="@a.Id" />
-
-                            <select name="stage" class="form-select form-select-sm" style="max-width: 180px;">
-                                @foreach (VisitStage s in Enum.GetValues(typeof(VisitStage)))
-                                {
-                                    <option value="@s" selected="@(s == a.VisitStage)">
-                                        @s
-                                    </option>
-                                }
-                            </select>
-
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                Update
-                            </button>
-                        </form>
+                        @if (a.CanCancel)
+                        {
+                            <a class="btn btn-sm btn-outline-danger"
+                               asp-page="/Assistant/Appointments/Cancel"
+                               asp-route-id="@a.Id">
+                                Cancel
+                            </a>
+                        }
                     </td>
                 </tr>
             }

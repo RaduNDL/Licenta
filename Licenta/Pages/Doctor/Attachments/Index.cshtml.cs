@@ -27,11 +27,22 @@ namespace Licenta.Pages.Doctor.Attachments
             PatientId = patientId;
 
             var user = await _userManager.GetUserAsync(User);
-            var doctorId = user?.DoctorProfile?.Id;
+            if (user == null)
+            {
+                Attachments = new();
+                return;
+            }
+
+            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
+            if (doctor == null)
+            {
+                Attachments = new();
+                return;
+            }
 
             var query = _db.MedicalAttachments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
-                .Where(a => a.DoctorId == doctorId);
+                .Where(a => a.DoctorId == doctor.Id);
 
             if (patientId.HasValue)
             {

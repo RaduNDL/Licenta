@@ -11,7 +11,7 @@
 <h2 class="mb-3">Request permission to contact a doctor</h2>
 
 <p class="text-muted">
-    Before you can send a direct message to a doctor, an administrator must approve your request.
+    Before you can send a direct message to a doctor, a medical assistant must review your request.
     Please select the doctor and describe why you need to contact them.
 </p>
 
@@ -25,13 +25,13 @@
     </div>
 
     <div class="mb-3">
-        <label asp-for="Input.Subject" class="form-label"></label>
+        <label asp-for="Input.Subject" class="form-label">Subject</label>
         <input asp-for="Input.Subject" class="form-control" />
         <span asp-validation-for="Input.Subject" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
-        <label asp-for="Input.Body" class="form-label"></label>
+        <label asp-for="Input.Body" class="form-label">Body</label>
         <textarea asp-for="Input.Body" rows="6" class="form-control"></textarea>
         <span asp-validation-for="Input.Body" class="text-danger"></span>
     </div>

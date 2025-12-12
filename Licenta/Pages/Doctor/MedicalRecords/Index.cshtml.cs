@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace Licenta.Pages.Doctor.MedicalRecords
 {
@@ -30,7 +31,6 @@ namespace Licenta.Pages.Doctor.MedicalRecords
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                // nu e logat corect
                 return Challenge();
             }
 

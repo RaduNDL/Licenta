@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -23,12 +24,18 @@ namespace Licenta.Pages.Patient.Forms
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IWebHostEnvironment _env;
+        private readonly INotificationService _notifier;
 
-        public PreConsultationModel(AppDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
+        public PreConsultationModel(
+            AppDbContext db,
+            UserManager<ApplicationUser> userManager,
+            IWebHostEnvironment env,
+            INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
             _env = env;
+            _notifier = notifier;
         }
 
         public SelectList Doctors { get; set; } = default!;
@@ -69,7 +76,7 @@ namespace Licenta.Pages.Patient.Forms
 
         public async Task<IActionResult> OnPostAsync()
         {
-            await OnGetAsync(); 
+            await OnGetAsync();
 
             if (!ModelState.IsValid)
             {
@@ -127,6 +134,35 @@ namespace Licenta.Pages.Patient.Forms
 
             _db.MedicalAttachments.Add(att);
             await _db.SaveChangesAsync();
+
+            var patientName = user.FullName ?? user.Email ?? user.UserName;
+
+            var doctorProfile = await _db.Doctors
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d => d.Id == Input.DoctorId);
+
+            if (doctorProfile?.User != null)
+            {
+                var title = "New pre-consultation form";
+                var body = $"Patient <b>{patientName}</b> submitted a pre-consultation form.";
+
+                await _notifier.NotifyAsync(
+                    doctorProfile.User,
+                    NotificationType.Info,
+                    title,
+                    body,
+                    relatedEntity: "MedicalAttachment",
+                    relatedEntityId: att.Id.ToString());
+            }
+
+            await _notifier.NotifyAsync(
+                user,
+                NotificationType.Info,
+                "Pre-consultation form submitted",
+                "Your pre-consultation form was submitted for review.",
+                relatedEntity: "MedicalAttachment",
+                relatedEntityId: att.Id.ToString(),
+                sendEmail: false);
 
             TempData["StatusMessage"] = "Form submitted for review.";
             return RedirectToPage();

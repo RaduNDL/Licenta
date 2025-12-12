@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Patient.Messages
 {
@@ -58,7 +62,6 @@ namespace Licenta.Pages.Patient.Messages
             if (patient == null)
                 return;
 
-            // Doctors for which the patient has an APPROVED request
             var approvedRequests = await _db.PatientMessageRequests
                 .Include(r => r.Doctor)
                 .Where(r => r.PatientId == patient.Id &&
@@ -75,7 +78,6 @@ namespace Licenta.Pages.Patient.Messages
                 var doctorId = doctor.Id;
                 var doctorName = doctor.FullName ?? doctor.Email ?? doctor.UserName;
 
-                // last message between patient and this doctor
                 var lastMessage = await _db.InternalMessages
                     .Where(m =>
                         (m.SenderId == patient.Id && m.RecipientId == doctorId) ||
@@ -150,7 +152,6 @@ namespace Licenta.Pages.Patient.Messages
             }
             else
             {
-                // Check if there is an approved request
                 var hasPermission = await _db.PatientMessageRequests.AnyAsync(r =>
                     r.PatientId == patient.Id &&
                     r.DoctorId == Input.RecipientId &&

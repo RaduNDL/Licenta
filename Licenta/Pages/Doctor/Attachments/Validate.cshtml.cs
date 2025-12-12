@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -80,15 +76,14 @@ namespace Licenta.Pages.Doctor.Attachments
             if (string.Equals(action, "approve", StringComparison.OrdinalIgnoreCase))
             {
                 attachment.Status = AttachmentStatus.Validated;
-                attachment.ValidatedAtUtc = DateTime.UtcNow;
-                attachment.ValidatedByDoctorId = doctor.Id;
             }
             else
             {
                 attachment.Status = AttachmentStatus.Rejected;
-                attachment.ValidatedAtUtc = DateTime.UtcNow;
-                attachment.ValidatedByDoctorId = doctor.Id;
             }
+
+            attachment.ValidatedAtUtc = DateTime.UtcNow;
+            attachment.ValidatedByDoctorId = doctor.Id;
 
             await _db.SaveChangesAsync();
             TempData["StatusMessage"] = $"Attachment {attachment.FileName} -> {attachment.Status}.";

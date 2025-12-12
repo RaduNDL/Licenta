@@ -1,4 +1,8 @@
-﻿using Licenta.Areas.Identity.Data;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -35,7 +39,7 @@ namespace Licenta.Pages.Doctor.Predictions
         [BindProperty]
         public InputModel Input { get; set; } = new();
 
-        public SelectList Patients { get; set; }
+        public SelectList Patients { get; set; } = default!;
 
         public async Task OnGetAsync(Guid? patientId)
         {
@@ -71,7 +75,7 @@ namespace Licenta.Pages.Doctor.Predictions
                 savedPath = "/prediction-inputs/" + fileName;
             }
 
-            // TODO: aici vei apela efectiv modelul ML (API / proces extern)
+            // TODO: here you will actually call the ML model (API / external process)
             var resultLabel = "Pending";
             double? prob = null;
 

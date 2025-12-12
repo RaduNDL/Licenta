@@ -23,47 +23,70 @@
 }
 
 <form method="post" class="card shadow-sm p-3">
-    <p>Select the days and hours when you are available for appointments.</p>
+    <p>Write your weekly schedule in a natural text format. The system will parse it and save your availability.</p>
 
-    <table class="table table-sm align-middle">
-        <thead>
-            <tr>
-                <th style="width: 10%;">Day</th>
-                <th style="width: 10%;">Active</th>
-                <th style="width: 20%;">Start</th>
-                <th style="width: 20%;">End</th>
-            </tr>
-        </thead>
-        <tbody>
-            @for (int i = 0; i < Model.Days.Count; i++)
-            {
-                <tr>
-                    <td>
-                        @Model.Days[i].DayName
-                        <input type="hidden" asp-for="Days[@i].DayOfWeek" />
-                        <input type="hidden" asp-for="Days[@i].DayName" />
-                    </td>
-                    <td>
-                        <input class="form-check-input" asp-for="Days[@i].IsActive" />
-                    </td>
-                    <td>
-                        <input class="form-control" asp-for="Days[@i].StartTime" type="time" />
-                        <span asp-validation-for="Days[@i].StartTime" class="text-danger"></span>
-                    </td>
-                    <td>
-                        <input class="form-control" asp-for="Days[@i].EndTime" type="time" />
-                        <span asp-validation-for="Days[@i].EndTime" class="text-danger"></span>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="alert alert-info small">
+        <strong>Tip:</strong> You can write one line per day, for example:<br />
+        <code>Monday from 2 PM to 4 PM</code><br />
+        <code>Tuesday 08:00 - 17:00</code><br />
+        <code>Friday 09:30 - 13:00</code><br />
+        When you save, the schedule below will be updated.
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ScheduleText" class="form-label">Schedule</label>
+        <textarea asp-for="ScheduleText"
+                  class="form-control"
+                  rows="5"
+                  placeholder="Monday from 2 PM to 4 PM&#10;Tuesday 08:00 - 17:00"></textarea>
+        <span asp-validation-for="ScheduleText" class="text-danger"></span>
+        <div class="form-text">
+            Accepted format: one or more lines like
+            <code>Monday 14:00 - 16:00</code> or <code>Monday from 2 PM to 4 PM</code>.
+        </div>
+    </div>
 
     <div asp-validation-summary="All" class="text-danger mb-2"></div>
 
     <button type="submit" class="btn btn-primary">Save schedule</button>
     <a asp-page="/Doctor/Index" class="btn btn-outline-secondary ms-2">Back to dashboard</a>
 </form>
+
+@if (Model.Days != null && Model.Days.Any(d => d.IsActive && d.StartTime.HasValue && d.EndTime.HasValue))
+{
+    <h4 class="mt-4 mb-3">Current schedule</h4>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Day</th>
+                        <th style="width: 25%;">From</th>
+                        <th style="width: 25%;">To</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model.Days.Where(x => x.IsActive && x.StartTime.HasValue && x.EndTime.HasValue))
+                    {
+                        <tr>
+                            <td>@d.DayName</td>
+                            <td>@d.StartTime?.ToString(@"hh\:mm")</td>
+                            <td>@d.EndTime?.ToString(@"hh\:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <h4 class="mt-4">Current schedule</h4>
+    <div class="alert alert-secondary">
+        No schedule defined yet. Use the text editor above and press <strong>Save schedule</strong>.
+    </div>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

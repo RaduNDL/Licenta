@@ -3,10 +3,14 @@ using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace Licenta.Pages.Administrator.Messages.Requests
+namespace Licenta.Pages.Assistant.Messages.Requests
 {
-    [Authorize(Roles = "Administrator")]
+    [Authorize(Roles = "Assistant")]
     public class IndexModel : PageModel
     {
         private readonly AppDbContext _db;

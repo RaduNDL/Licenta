@@ -27,6 +27,8 @@ namespace Licenta.Models
 
         public DateTime CreatedAtUtc { get; set; }
         public DateTime? UpdatedAtUtc { get; set; }
+        public DateTime StartTimeUtc { get; internal set; }
+        public string Location { get; internal set; }
 
         public Appointment()
         {

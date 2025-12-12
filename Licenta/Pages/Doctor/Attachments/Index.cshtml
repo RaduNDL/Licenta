@@ -6,34 +6,55 @@
 @section Styles {
     <link rel="stylesheet" href="~/css/doctor.css" />
 }
-<h2>Medical Attachments</h2>
 
-<div class="mb-3">
-    <a class="btn btn-primary"
-       asp-page="/Doctor/Attachments/Upload"
-       asp-route-patientId="@(Model.Attachments.FirstOrDefault()?.PatientId)">
-        Upload document
-    </a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Patient attachments</h2>
+
+    @if (Model.PatientId.HasValue)
+    {
+        <a class="btn btn-primary"
+           asp-page="/Doctor/Attachments/Upload"
+           asp-route-patientId="@Model.PatientId">
+            Upload document for this patient
+        </a>
+    }
+    else
+    {
+        <button class="btn btn-secondary" disabled>
+            Select a patient to upload a document
+        </button>
+    }
 </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>File</th>
-            <th>Patient</th>
-            <th>Uploaded</th>
-            <th>Type</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var f in Model.Attachments)
-        {
+@if (!Model.Attachments.Any())
+{
+    <div class="alert alert-secondary">
+        No attachments found for the current filter.
+    </div>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
             <tr>
-                <td><a href="@f.FilePath" target="_blank">@f.FileName</a></td>
-                <td>@f.Patient.User.FullName</td>
-                <td>@f.UploadedAt.ToLocalTime().ToString("g")</td>
-                <td>@f.Type</td>
+                <th>File</th>
+                <th>Patient</th>
+                <th>Uploaded</th>
+                <th>Type</th>
+                <th>Status</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var f in Model.Attachments)
+            {
+                <tr>
+                    <td><a href="@f.FilePath" target="_blank">@f.FileName</a></td>
+                    <td>@(f.Patient?.User?.FullName ?? f.Patient?.User?.Email)</td>
+                    <td>@f.UploadedAt.ToLocalTime().ToString("g")</td>
+                    <td>@f.Type</td>
+                    <td>@f.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

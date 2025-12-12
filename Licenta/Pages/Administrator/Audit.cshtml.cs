@@ -1,6 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text.Json;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using System;
 
 namespace Licenta.Pages.Administrator
 {
@@ -25,8 +30,8 @@ namespace Licenta.Pages.Administrator
                 return;
 
             var latestFile = Directory.GetFiles(logsDir, "audit-*.json")
-                                      .OrderByDescending(f => f)
-                                      .FirstOrDefault();
+                                    .OrderByDescending(f => f)
+                                    .FirstOrDefault();
             if (latestFile == null)
                 return;
 
@@ -69,7 +74,7 @@ namespace Licenta.Pages.Administrator
                 {
                 }
 
-                if (Logins.Count >= 200) break; 
+                if (Logins.Count >= 200) break;
             }
         }
     }

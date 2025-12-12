@@ -1,48 +1,316 @@
 ﻿@page
-@model Licenta.Pages.Patient.Forms.PreConsultationModel
+@model Licenta.Pages.Patient.IndexModel
+
 @{
-    ViewData["Title"] = "Pre‑consultation Form";
+    ViewData["Title"] = "Patient Dashboard";
 }
+
 @section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" />
     <link rel="stylesheet" href="~/css/patient.css" />
 }
-<h2>Pre‑consultation Form</h2>
 
-@if (TempData["StatusMessage"] is string msg)
+<h2 class="mb-3">Patient Dashboard</h2>
+
+@if (!string.IsNullOrEmpty(Model.PatientName))
 {
-    <div class="alert alert-info">@msg</div>
+    <div class="alert alert-light border mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="fw-semibold">Logged in as:</div>
+                <div class="fs-5">@Model.PatientName</div>
+
+                @if (!string.IsNullOrEmpty(Model.PrimaryDoctorName))
+                {
+                    <div class="small text-muted">
+                        Primary doctor: @Model.PrimaryDoctorName
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 }
 
-<form method="post">
-    <div class="mb-3">
-        <label asp-for="Input.DoctorId" class="form-label">Doctor</label>
-        <select asp-for="Input.DoctorId" class="form-select" asp-items="Model.Doctors"></select>
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="card shadow-sm">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="bi bi-calendar-event"></i>
+                </div>
+                <div class="stats-info">
+                    <h3>@Model.UpcomingAppointments</h3>
+                    <p>Upcoming appointments</p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Input.MainComplaint" class="form-label">Main complaint</label>
-        <input asp-for="Input.MainComplaint" class="form-control" />
+    <div class="col-md-3 col-sm-6">
+        <div class="card shadow-sm">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="bi bi-journal-medical"></i>
+                </div>
+                <div class="stats-info">
+                    <h3>@Model.TotalMedicalRecords</h3>
+                    <p>Medical records</p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Input.Symptoms" class="form-label">Symptoms (onset, duration, severity)</label>
-        <textarea asp-for="Input.Symptoms" class="form-control" rows="4"></textarea>
+    <div class="col-md-3 col-sm-6">
+        <div class="card shadow-sm">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="bi bi-droplet-half"></i>
+                </div>
+                <div class="stats-info">
+                    <h3>@Model.TotalLabResults</h3>
+                    <p>Lab results</p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Input.Allergies" class="form-label">Allergies</label>
-        <input asp-for="Input.Allergies" class="form-control" />
+    <div class="col-md-3 col-sm-6">
+        <div class="card shadow-sm">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <i class="bi bi-envelope"></i>
+                </div>
+                <div class="stats-info">
+                    <h3>@Model.UnreadMessages</h3>
+                    <p>Unread messages</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.TotalPredictions > 0)
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card shadow-sm">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="bi bi-cpu"></i>
+                    </div>
+                    <div class="stats-info">
+                        <h3>@Model.TotalPredictions</h3>
+                        <p>ML Predictions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<h4 class="mt-4 mb-3">Quick actions</h4>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-calendar-plus me-2"></i>Appointments
+                </h5>
+                <p class="card-text text-muted">
+                    View your upcoming visits or request a new appointment.
+                </p>
+                <div class="mt-auto d-flex flex-wrap gap-2">
+                    <a asp-page="/Patient/Appointments/Index" class="btn btn-primary btn-sm">
+                        My appointments
+                    </a>
+                    <a asp-page="/Patient/Appointments/Request" class="btn btn-outline-primary btn-sm">
+                        Request appointment
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Input.Medications" class="form-label">Current medications</label>
-        <textarea asp-for="Input.Medications" class="form-control" rows="3"></textarea>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-clock-history me-2"></i>Visits history
+                </h5>
+                <p class="card-text text-muted">
+                    See your previous visits and consultations.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Patient/Visits/History" class="btn btn-outline-primary btn-sm">
+                        View history
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Input.Notes" class="form-label">Notes (optional)</label>
-        <textarea asp-for="Input.Notes" class="form-control" rows="3"></textarea>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-clipboard-check me-2"></i>Pre-consultation form
+                </h5>
+                <p class="card-text text-muted">
+                    Fill in your pre-consultation medical questionnaire.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Patient/Form/PreConstultation" class="btn btn-outline-primary btn-sm">
+                        Open form
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-upload me-2"></i>Attachments
+                </h5>
+                <p class="card-text text-muted">
+                    Upload new medical documents or see validated ones.
+                </p>
+                <div class="mt-auto d-flex flex-wrap gap-2">
+                    <a asp-page="/Patient/Attachments/Upload" class="btn btn-primary btn-sm">
+                        Upload document
+                    </a>
+                    <a asp-page="/Patient/Attachments/Validated" class="btn btn-outline-secondary btn-sm">
+                        Validated documents
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <button class="btn btn-primary" type="submit">Submit</button>
-</form>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-chat-dots me-2"></i>Messages
+                </h5>
+                <p class="card-text text-muted">
+                    Communicate securely with your doctor or assistant.
+                </p>
+                <div class="mt-auto d-flex flex-wrap gap-2">
+                    <a asp-page="/Patient/Messages/Inbox" class="btn btn-outline-primary btn-sm">
+                        Inbox
+                    </a>
+                    <a asp-page="/Patient/Messages/CreateRequest" class="btn btn-outline-secondary btn-sm">
+                        New request
+                    </a>
+                    <a asp-page="/Patient/Messages/RequestList" class="btn btn-outline-secondary btn-sm">
+                        My requests
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-bell me-2"></i>Notifications
+                </h5>
+                <p class="card-text text-muted">
+                    Check system notifications and important updates.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Patient/Notifications/Index" class="btn btn-outline-primary btn-sm">
+                        View notifications
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
+                    <i class="bi bi-bar-chart-line me-2"></i>ML Predictions
+                </h5>
+                <p class="card-text text-muted">
+                    View your machine learning prediction results.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Patient/Predictions/Index" class="btn btn-outline-primary btn-sm">
+                        Open predictions
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.NextAppointments?.Any() == true)
+{
+    <h4 class="mt-4 mb-3">Next appointments</h4>
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <ul class="list-unstyled mb-0">
+                @foreach (var a in Model.NextAppointments)
+                {
+                    <li class="mb-2">
+                        <div class="fw-semibold">
+                            @a.DateTimeLocalString
+                            <span class="text-muted small"> (@a.Status)</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(a.DoctorName))
+                        {
+                            <div class="small text-muted">
+                                Doctor: @a.DoctorName
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(a.Location))
+                        {
+                            <div class="small text-muted">
+                                Location: @a.Location
+                            </div>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+@if (Model.LatestMessages?.Any() == true)
+{
+    <h4 class="mt-4 mb-3">Latest messages</h4>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <ul class="list-unstyled mb-0">
+                @foreach (var m in Model.LatestMessages)
+                {
+                    <li class="mb-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-semibold">
+                                    @m.SenderName
+                                    <span class="text-muted small">(@m.SentAtLocal)</span>
+                                </div>
+                                <div class="text-muted text-truncate">@m.Preview</div>
+                            </div>
+                            @if (m.IsUnread)
+                            {
+                                <span class="badge bg-primary ms-2">New</span>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+}

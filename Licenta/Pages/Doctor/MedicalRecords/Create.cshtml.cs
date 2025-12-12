@@ -71,7 +71,7 @@ namespace Licenta.Pages.Doctor.MedicalRecords
             Record.Id = Guid.NewGuid();
             Record.DoctorId = doctor.Id;
             Record.VisitDateUtc = DateTime.UtcNow;
-            Record.Status = RecordStatus.Draft; 
+            Record.Status = RecordStatus.Draft;
 
             _context.MedicalRecords.Add(Record);
             await _context.SaveChangesAsync();

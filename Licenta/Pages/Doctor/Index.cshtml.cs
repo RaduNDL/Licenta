@@ -23,11 +23,9 @@ namespace Licenta.Pages.Doctor
             _userManager = userManager;
         }
 
-        // Header info
         public string? DoctorName { get; set; }
         public string? ClinicName { get; set; }
 
-        // Stats
         public int TotalPatients { get; set; }
         public int TotalRecords { get; set; }
         public int UpcomingAppointments { get; set; }
@@ -57,10 +55,10 @@ namespace Licenta.Pages.Doctor
                 .FirstOrDefaultAsync(d => d.UserId == user.Id);
 
             DoctorName = doctor?.User?.FullName
-                         ?? doctor?.User?.Email
-                         ?? user.FullName
-                         ?? user.Email
-                         ?? "Doctor";
+                             ?? doctor?.User?.Email
+                             ?? user.FullName
+                             ?? user.Email
+                             ?? "Doctor";
 
             TotalPatients = await _db.Patients.CountAsync();
 

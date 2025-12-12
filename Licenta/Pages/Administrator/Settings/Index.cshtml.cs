@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using System;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Administrator.Settings
 {
@@ -24,13 +26,11 @@ namespace Licenta.Pages.Administrator.Settings
         [BindProperty]
         public InputModel Input { get; set; } = new();
 
-        // pentru upload logo
         [BindProperty]
         public IFormFile? LogoFile { get; set; }
 
         public class InputModel
         {
-            // BRANDING
             [Display(Name = "Clinic name")]
             public string? ClinicName { get; set; }
 
@@ -39,7 +39,6 @@ namespace Licenta.Pages.Administrator.Settings
 
             public string? LogoPath { get; set; }
 
-            // SMTP
             [Display(Name = "SMTP server")]
             public string? SmtpServer { get; set; }
 
@@ -54,9 +53,8 @@ namespace Licenta.Pages.Administrator.Settings
 
             [Display(Name = "SMTP password")]
             [DataType(DataType.Password)]
-            public string? SmtpPassword { get; set; }  // poate fi gol => păstrăm vechea parolă
+            public string? SmtpPassword { get; set; }
 
-            // SECURITY
             [Display(Name = "Password min length")]
             public int PasswordMinLength { get; set; } = 6;
 
@@ -70,7 +68,6 @@ namespace Licenta.Pages.Administrator.Settings
             public bool RequireSpecialChar { get; set; }
         }
 
-        // ==================== GET ====================
         public async Task OnGetAsync()
         {
             var settings = await _db.SystemSettings.FirstOrDefaultAsync();
@@ -90,7 +87,6 @@ namespace Licenta.Pages.Administrator.Settings
                 SmtpServer = settings.SmtpServer,
                 SmtpPort = settings.SmtpPort,
                 SmtpUser = settings.SmtpUser,
-                // parola nu o trimitem în view
                 SmtpUseSSL = settings.SmtpUseSSL,
 
                 PasswordMinLength = settings.PasswordMinLength,
@@ -100,7 +96,6 @@ namespace Licenta.Pages.Administrator.Settings
             };
         }
 
-        // ==================== POST ====================
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)
@@ -114,11 +109,9 @@ namespace Licenta.Pages.Administrator.Settings
                 _db.SystemSettings.Add(settings);
             }
 
-            // BRANDING
             settings.ClinicName = Input.ClinicName?.Trim() ?? string.Empty;
             settings.MaxUploadMb = Input.MaxUploadMb;
 
-            // upload logo (opțional)
             if (LogoFile != null && LogoFile.Length > 0)
             {
                 var uploadsFolder = Path.Combine("wwwroot", "uploads", "logos");
@@ -138,23 +131,19 @@ namespace Licenta.Pages.Administrator.Settings
                 settings.LogoPath = "/uploads/logos/" + fileName;
             }
 
-            // SMTP
             settings.SmtpServer = Input.SmtpServer?.Trim() ?? string.Empty;
             settings.SmtpPort = Input.SmtpPort;
             settings.SmtpUser = Input.SmtpUser?.Trim() ?? string.Empty;
             settings.SmtpUseSSL = Input.SmtpUseSSL;
 
-            // dacă adminul completează o parolă nouă -> o suprascriem
             if (!string.IsNullOrWhiteSpace(Input.SmtpPassword))
             {
                 settings.SmtpPassword = Input.SmtpPassword;
             }
 
-            // siguranță: să nu fie niciodată NULL (coloană NOT NULL)
             if (settings.SmtpPassword == null)
                 settings.SmtpPassword = string.Empty;
 
-            // SECURITY
             settings.PasswordMinLength = Input.PasswordMinLength;
             settings.RequireDigit = Input.RequireDigit;
             settings.RequireUppercase = Input.RequireUppercase;

@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.SignalR;
+using Licenta.Hubs;
 
 namespace Licenta.Services
 {
@@ -11,11 +13,16 @@ namespace Licenta.Services
     {
         private readonly AppDbContext _db;
         private readonly IEmailSender _emailSender;
+        private readonly IHubContext<NotificationHub> _hub;
 
-        public NotificationService(AppDbContext db, IEmailSender emailSender)
+        public NotificationService(
+            AppDbContext db,
+            IEmailSender emailSender,
+            IHubContext<NotificationHub> hub)
         {
             _db = db;
             _emailSender = emailSender;
+            _hub = hub;
         }
 
         public async Task NotifyAsync(
@@ -31,7 +38,6 @@ namespace Licenta.Services
             if (recipient == null)
                 throw new ArgumentNullException(nameof(recipient));
 
-            // 1. Persist notification for in-app display
             var notification = new UserNotification
             {
                 UserId = recipient.Id,
@@ -46,23 +52,31 @@ namespace Licenta.Services
 
             _db.UserNotifications.Add(notification);
 
-            // 2. Optional: also create an internal message (if you use internal inbox)
             var internalMessage = new InternalMessage
             {
                 Id = Guid.NewGuid(),
-                // SenderId can be null or system-user. For now we mirror recipient for simplicity.
                 SenderId = recipient.Id,
                 RecipientId = recipient.Id,
                 Subject = title,
                 Body = message,
-                SentAt = DateTime.UtcNow
+                SentAt = DateTime.UtcNow,
+                IsRead = false
             };
 
             _db.InternalMessages.Add(internalMessage);
 
             await _db.SaveChangesAsync(ct);
 
-            // 3. E-mail notification
+            await _hub.Clients.Group($"USER_{recipient.Id}")
+                .SendAsync("ReceiveNotification", new
+                {
+                    id = notification.Id,
+                    title = notification.Title,
+                    message = notification.Message,
+                    type = notification.Type.ToString(),
+                    when = notification.CreatedAtUtc
+                }, ct);
+
             if (sendEmail && !string.IsNullOrWhiteSpace(recipient.Email))
             {
                 try
@@ -71,7 +85,6 @@ namespace Licenta.Services
                 }
                 catch
                 {
-                    // TODO: log error if you have logging configured
                 }
             }
         }
@@ -87,17 +100,13 @@ namespace Licenta.Services
                 NotificationType.Info,
                 subject,
                 htmlBody,
-                relatedEntity: null,
-                relatedEntityId: null,
-                sendEmail: true,
-                ct: ct);
+                null,
+                null,
+                true,
+                ct);
         }
     }
 
-    /// <summary>
-    /// Simple no-op e-mail sender you can register for development
-    /// if you don't have a real SMTP provider configured.
-    /// </summary>
     public class NoopEmailSender : IEmailSender
     {
         public Task SendEmailAsync(string email, string subject, string htmlMessage)

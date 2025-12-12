@@ -21,26 +21,33 @@
     </a>
 </div>
 
-<table class="table table-hover">
-    <thead>
-        <tr>
-            <th>Doctor</th>
-            <th>Subject</th>
-            <th>Created</th>
-            <th>Status</th>
-            <th>Admin note</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var r in Model.Requests)
-        {
+@if (!Model.Requests.Any())
+{
+    <div class="alert alert-secondary">No message requests yet.</div>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
             <tr>
-                <td>@(r.Doctor.FullName ?? r.Doctor.UserName)</td>
-                <td>@r.Subject</td>
-                <td>@r.CreatedAt.ToLocalTime().ToString("g")</td>
-                <td>@r.Status.ToString()</td>
-                <td>@r.AdminNote</td>
+                <th>Doctor</th>
+                <th>Subject</th>
+                <th>Created</th>
+                <th>Status</th>
+                <th>Admin note</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Requests)
+            {
+                <tr>
+                    <td>@(r.Doctor.FullName ?? r.Doctor.UserName)</td>
+                    <td>@r.Subject</td>
+                    <td>@r.CreatedAt.ToLocalTime().ToString("g")</td>
+                    <td>@r.Status.ToString()</td>
+                    <td>@r.AdminNote</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

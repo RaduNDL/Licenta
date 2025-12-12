@@ -7,20 +7,20 @@
 
 <form method="post" enctype="multipart/form-data">
     <div class="mb-3">
-        <label asp-for="Input.PatientId" class="form-label"></label>
+        <label asp-for="Input.PatientId" class="form-label">Patient</label>
         <select asp-for="Input.PatientId" asp-items="Model.Patients" class="form-select"></select>
     </div>
     <div class="mb-3">
-        <label asp-for="Input.DoctorId" class="form-label"></label>
+        <label asp-for="Input.DoctorId" class="form-label">Doctor</label>
         <select asp-for="Input.DoctorId" asp-items="Model.Doctors" class="form-select"></select>
     </div>
     <div class="mb-3">
-        <label asp-for="Input.ModelName" class="form-label"></label>
+        <label asp-for="Input.ModelName" class="form-label">Model Name</label>
         <input asp-for="Input.ModelName" class="form-control" />
     </div>
     <div class="mb-3">
-        <label asp-for="Input.InputSummary" class="form-label"></label>
-        <textarea asp-for="Input.InputSummary" rows="4" class="form-control" placeholder="Simptome / context / măsurători"></textarea>
+        <label asp-for="Input.InputSummary" class="form-label">Input Summary</label>
+        <textarea asp-for="Input.InputSummary" rows="4" class="form-control" placeholder="Symptoms / context / measurements"></textarea>
     </div>
     <div class="mb-3">
         <label class="form-label">Input file (image / PDF)</label>

@@ -9,13 +9,12 @@
         .FirstOrDefault();
     var logo = settings?.LogoPath ?? "/img/default-logo.png";
 
-    // Current user and unread notifications
-    string currentUserId = null;
+    string currentUserId = "";
     int unreadNotificationsCount = 0;
 
-    if (User.Identity.IsAuthenticated)
+    if (User?.Identity?.IsAuthenticated == true)
     {
-        currentUserId = UserManager.GetUserId(User);
+        currentUserId = UserManager.GetUserId(User) ?? "";
         if (!string.IsNullOrEmpty(currentUserId))
         {
             unreadNotificationsCount = Db.UserNotifications
@@ -40,31 +39,9 @@
     <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Licenta.styles.css" asp-append-version="true" />
 
-    <style>
-        /* Small Discord-like notification badge on top-right of the bell */
-        .notification-badge {
-            position: absolute;
-            top: 0;
-            right: 0;
-            transform: translate(40%, -40%);
-            min-width: 18px;
-            height: 18px;
-            padding: 0 4px;
-            border-radius: 999px;
-            background-color: #dc3545; /* Bootstrap danger */
-            color: #fff;
-            font-size: 0.65rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-        }
-    </style>
-
     @RenderSection("Styles", required: false)
 </head>
-<body>
+<body data-current-user-id="@currentUserId">
     <header class="sticky-top">
         <nav class="navbar navbar-expand-lg app-navbar">
             <div class="container">
@@ -128,19 +105,6 @@
                                     <li>
                                         <a class="dropdown-item fw-semibold" asp-page="/Administrator/Settings/Index">
                                             <i class="bi bi-gear-wide-connected me-2"></i>System Settings
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Messages</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Administrator/Messages/Inbox">
-                                            <i class="bi bi-chat-dots me-2"></i>Messages
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Administrator/Messages/Requests/Index">
-                                            <i class="bi bi-envelope-open me-2"></i>Patient message requests
                                         </a>
                                     </li>
                                 </ul>
@@ -275,15 +239,12 @@
                                     <li class="dropdown-header">Appointments</li>
                                     <li>
                                         <a class="dropdown-item" asp-page="/Assistant/Appointments/Requests">
-                                            <i class="bi bi-calendar-plus me-2"></i>Appointments
+                                            <i class="bi bi-calendar-plus me-2"></i>Appointment requests
                                         </a>
                                     </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">ML</li>
                                     <li>
-                                        <a class="dropdown-item" asp-page="/Assistant/Predictions/Create">
-                                            <i class="bi bi-cpu me-2"></i>New Prediction
+                                        <a class="dropdown-item" asp-page="/Assistant/Appointments/Today">
+                                            <i class="bi bi-calendar-day me-2"></i>Today’s appointments
                                         </a>
                                     </li>
 
@@ -343,7 +304,7 @@
                                     <li><hr class="dropdown-divider" /></li>
                                     <li class="dropdown-header">Pre-consultation</li>
                                     <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Form/PreConstultation">
+                                        <a class="dropdown-item" asp-page="/Patient/Forms/PreConsultation">
                                             <i class="bi bi-journal-text me-2"></i>Pre-consultation Form
                                         </a>
                                     </li>
@@ -381,7 +342,6 @@
                                 </ul>
                             </li>
                         }
-
                     </ul>
 
                     <div class="d-flex align-items-center gap-2">
@@ -391,7 +351,7 @@
                                 <i class="bi bi-chat-dots"></i>
                                 <span class="visually-hidden">Messages</span>
                             </a>
-                            <a asp-page="/Patient/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1">
+                            <a asp-page="/Patient/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1 notification-bell-btn">
                                 <i class="bi bi-bell"></i>
                                 @if (unreadNotificationsCount > 0)
                                 {
@@ -406,7 +366,7 @@
                                 <i class="bi bi-chat-dots"></i>
                                 <span class="visually-hidden">Messages</span>
                             </a>
-                            <a asp-page="/Doctor/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1">
+                            <a asp-page="/Doctor/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1 notification-bell-btn">
                                 <i class="bi bi-bell"></i>
                                 @if (unreadNotificationsCount > 0)
                                 {
@@ -421,7 +381,7 @@
                                 <i class="bi bi-chat-dots"></i>
                                 <span class="visually-hidden">Messages</span>
                             </a>
-                            <a asp-page="/Assistant/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1">
+                            <a asp-page="/Assistant/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1 notification-bell-btn">
                                 <i class="bi bi-bell"></i>
                                 @if (unreadNotificationsCount > 0)
                                 {
@@ -431,8 +391,8 @@
                             </a>
                         }
                         else if (User.IsInRole("Administrator"))
-                        { 
-                            <a asp-page="/Administrator/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1">
+                        {
+                            <a asp-page="/Administrator/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1 notification-bell-btn">
                                 <i class="bi bi-bell"></i>
                                 @if (unreadNotificationsCount > 0)
                                 {
@@ -457,9 +417,14 @@
         </div>
     </div>
 
+    <div id="notification-toast-container" class="notification-toast-container"></div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/layout.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

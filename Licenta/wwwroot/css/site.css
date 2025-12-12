@@ -160,3 +160,88 @@ a {
     background-color: #e0f2fe !important;
     color: #075985;
 }
+/* Mic badge roșu pe clopoțel */
+.notification-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(40%, -40%);
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background-color: #dc3545;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* Toast container & toast */
+.notification-toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 1080;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.notification-toast {
+    background-color: #0f172a;
+    color: #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    min-width: 260px;
+    max-width: 360px;
+    animation: toast-in 0.2s ease-out;
+}
+
+    .notification-toast.hide {
+        animation: toast-out 0.2s ease-in forwards;
+    }
+
+.notification-toast-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.notification-toast-title {
+    font-size: 0.9rem;
+}
+
+.notification-toast-body {
+    font-size: 0.85rem;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes toast-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+

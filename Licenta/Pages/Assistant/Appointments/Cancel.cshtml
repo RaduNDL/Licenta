@@ -6,12 +6,12 @@
 <h2>Cancel appointment</h2>
 
 <div class="alert alert-warning">
-    Confirmați anularea programării pentru <strong>@Model.PatientName</strong> la <strong>@Model.DoctorName</strong>?
+    Confirm cancellation of the appointment for <strong>@Model.PatientName</strong> with <strong>@Model.DoctorName</strong>?
 </div>
 
 <form method="post">
     <div class="mb-3">
-        <label asp-for="Input.CancelReason" class="form-label"></label>
+        <label asp-for="Input.CancelReason" class="form-label">Reason for cancellation</label>
         <textarea asp-for="Input.CancelReason" rows="3" class="form-control"></textarea>
         <span asp-validation-for="Input.CancelReason" class="text-danger"></span>
     </div>
@@ -20,6 +20,6 @@
     <a asp-page="/Doctor/Appointments/Index" class="btn btn-secondary ms-2">Back</a>
 </form>
 
-@section Scripts {  
+@section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

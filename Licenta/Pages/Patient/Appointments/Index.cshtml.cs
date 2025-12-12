@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Patient.Appointments
 {
@@ -25,7 +29,7 @@ namespace Licenta.Pages.Patient.Appointments
             public string FilePath { get; set; } = "";
             public string Type { get; set; } = "";
             public DateTime UploadedAt { get; set; }
-            public AttachmentStatus Status { get; set; }  
+            public AttachmentStatus Status { get; set; }
             public DateTime? ValidatedAtUtc { get; set; }
             public string? ValidationNotes { get; set; }
             public string? DoctorUserFullName { get; set; }
@@ -42,7 +46,6 @@ namespace Licenta.Pages.Patient.Appointments
                 return;
             }
 
-            // Appointment requests sunt MedicalAttachments cu Type = "AppointmentRequest"
             var query = _db.MedicalAttachments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
                 .Include(a => a.Doctor).ThenInclude(d => d.User)
@@ -56,7 +59,7 @@ namespace Licenta.Pages.Patient.Appointments
                     FilePath = a.FilePath,
                     Type = a.Type,
                     UploadedAt = a.UploadedAt,
-                    Status = a.Status, 
+                    Status = a.Status,
                     ValidatedAtUtc = a.ValidatedAtUtc,
                     ValidationNotes = a.ValidationNotes,
                     DoctorUserFullName = a.Doctor != null ? (a.Doctor.User.FullName ?? a.Doctor.User.Email) : null

@@ -1,12 +1,19 @@
-﻿using Licenta.Areas.Identity.Data;
+﻿using System;
+using System.Threading.Tasks;
+using Licenta.Areas.Identity.Data;
 using Licenta.Data;
 using Licenta.Models;
 using Licenta.Services;
 using Licenta.Services.Ml;
+using Licenta.Hubs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +22,8 @@ QuestPDF.Settings.License = LicenseType.Community;
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
+        ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")
+    ));
 
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<IMlLabResultClient, MlLabResultClient>();
@@ -42,6 +50,8 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddSingleton<IEmailSender, NoopEmailSender>();
 builder.Services.AddSingleton<IPdfService, PdfService>();
 
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -67,5 +77,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
+
+app.MapHub<NotificationHub>("/notificationHub");
 
 await app.RunAsync();

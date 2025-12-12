@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
@@ -8,9 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
-namespace Licenta.Pages.Administrator.Messages.Requests
+namespace Licenta.Pages.Assistant.Messages.Requests
 {
-    [Authorize(Roles = "Administrator")]
+    [Authorize(Roles = "Assistant")]
     public class ReviewModel : PageModel
     {
         private readonly AppDbContext _db;
@@ -44,8 +44,8 @@ namespace Licenta.Pages.Administrator.Messages.Requests
 
         public async Task<IActionResult> OnPostApproveAsync(Guid id)
         {
-            var admin = await _userManager.GetUserAsync(User);
-            if (admin == null)
+            var assistant = await _userManager.GetUserAsync(User);
+            if (assistant == null)
                 return Forbid();
 
             var request = await _db.PatientMessageRequests
@@ -67,14 +67,14 @@ namespace Licenta.Pages.Administrator.Messages.Requests
 
             request.Status = PatientMessageRequestStatus.Approved;
             request.ReviewedAt = DateTime.UtcNow;
-            request.ReviewedByAdminId = admin.Id;
+            request.ReviewedByAdminId = assistant.Id;
             request.AdminNote = AdminNote;
 
             var message = new InternalMessage
             {
                 Id = Guid.NewGuid(),
-                SenderId = request.PatientId!,      
-                RecipientId = request.DoctorId!,    
+                SenderId = request.PatientId!,
+                RecipientId = request.DoctorId!,
                 Subject = request.Subject ?? string.Empty,
                 Body = request.Body ?? string.Empty,
                 SentAt = DateTime.UtcNow,
@@ -83,16 +83,16 @@ namespace Licenta.Pages.Administrator.Messages.Requests
             _db.InternalMessages.Add(message);
 
             var doctorDisplay = request.Doctor?.FullName
-                                ?? request.Doctor?.Email
-                                ?? "the doctor";
+                                 ?? request.Doctor?.Email
+                                 ?? "the doctor";
 
             var notifyPatient = new InternalMessage
             {
                 Id = Guid.NewGuid(),
-                SenderId = admin.Id,
-                RecipientId = request.PatientId!,   // safe
+                SenderId = assistant.Id,
+                RecipientId = request.PatientId!,
                 Subject = "Your message to the doctor was approved",
-                Body = $"Your request to message {doctorDisplay} was approved by an administrator.",
+                Body = $"Your request to message {doctorDisplay} was approved by a medical assistant.",
                 SentAt = DateTime.UtcNow,
                 IsRead = false
             };
@@ -104,8 +104,8 @@ namespace Licenta.Pages.Administrator.Messages.Requests
 
         public async Task<IActionResult> OnPostRejectAsync(Guid id)
         {
-            var admin = await _userManager.GetUserAsync(User);
-            if (admin == null)
+            var assistant = await _userManager.GetUserAsync(User);
+            if (assistant == null)
                 return Forbid();
 
             var request = await _db.PatientMessageRequests
@@ -127,15 +127,15 @@ namespace Licenta.Pages.Administrator.Messages.Requests
 
             request.Status = PatientMessageRequestStatus.Rejected;
             request.ReviewedAt = DateTime.UtcNow;
-            request.ReviewedByAdminId = admin.Id;
+            request.ReviewedByAdminId = assistant.Id;
             request.AdminNote = AdminNote;
 
-            var body = AdminNote ?? "Your request to contact the doctor was rejected by an administrator.";
+            var body = AdminNote ?? "Your request to contact the doctor was rejected by a medical assistant.";
             var notifyPatient = new InternalMessage
             {
                 Id = Guid.NewGuid(),
-                SenderId = admin.Id,
-                RecipientId = request.PatientId!,   
+                SenderId = assistant.Id,
+                RecipientId = request.PatientId!,
                 Subject = "Your message request was rejected",
                 Body = body,
                 SentAt = DateTime.UtcNow,

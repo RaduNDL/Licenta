@@ -89,10 +89,28 @@
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
                 <h5 class="card-title">
+                    <i class="bi bi-calendar-plus me-2"></i>Appointment requests
+                </h5>
+                <p class="card-text text-muted">
+                    Review and approve appointment requests sent by patients.
+                </p>
+                <div class="mt-auto">
+                    <a asp-page="/Assistant/Appointments/Requests" class="btn btn-outline-primary btn-sm">
+                        View requests
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">
                     <i class="bi bi-upload me-2"></i>Analyses & documents
                 </h5>
                 <p class="card-text text-muted">
-                    Upload or validate lab results and medical documents.
+                    Upload or validate lab results and medical documents for patients.
                 </p>
                 <div class="mt-auto d-flex gap-2 flex-wrap">
                     <a asp-page="/Assistant/Attachments/Upload" class="btn btn-primary btn-sm">
@@ -105,28 +123,10 @@
             </div>
         </div>
     </div>
-
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">
-                    <i class="bi bi-chat-dots me-2"></i>Messages
-                </h5>
-                <p class="card-text text-muted">
-                    Communicate with doctors and patients through internal messages.
-                </p>
-                <div class="mt-auto">
-                    <a asp-page="/Assistant/Messages/Inbox" class="btn btn-outline-primary btn-sm">
-                        Open inbox
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
                 <h5 class="card-title">
@@ -144,36 +144,18 @@
         </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-6 mb-3">
         <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
                 <h5 class="card-title">
-                    <i class="bi bi-box-seam me-2"></i>Inventory & supplies
+                    <i class="bi bi-chat-dots me-2"></i>Messages
                 </h5>
                 <p class="card-text text-muted">
-                    Manage consumables and medicine stock, watch low stock alerts.
+                    Communicate with doctors and patients through internal messages.
                 </p>
                 <div class="mt-auto">
-                    <a asp-page="/Assistant/Inventory/Index" class="btn btn-outline-primary btn-sm">
-                        Open inventory
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">
-                    <i class="bi bi-shield-check me-2"></i>Sterilization log
-                </h5>
-                <p class="card-text text-muted">
-                    Record sterilization cycles for devices (autoclaves, etc.).
-                </p>
-                <div class="mt-auto">
-                    <a asp-page="/Assistant/Sterilization/Index" class="btn btn-outline-primary btn-sm">
-                        Open log
+                    <a asp-page="/Assistant/Messages/Inbox" class="btn btn-outline-primary btn-sm">
+                        Open inbox
                     </a>
                 </div>
             </div>

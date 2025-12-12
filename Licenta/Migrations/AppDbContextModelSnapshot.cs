@@ -114,6 +114,10 @@ namespace Licenta.Migrations
                     b.Property<Guid>("DoctorId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
@@ -124,6 +128,9 @@ namespace Licenta.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ScheduledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("StartTimeUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("Status")

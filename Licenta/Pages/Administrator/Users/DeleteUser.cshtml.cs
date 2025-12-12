@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Administrator.Users
 {
@@ -72,7 +76,6 @@ namespace Licenta.Pages.Administrator.Users
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            // Protecție: nu lăsa sistemul fără niciun Administrator activ
             if (roles.Contains("Administrator"))
             {
                 var admins = await _userManager.GetUsersInRoleAsync("Administrator");
@@ -87,14 +90,12 @@ namespace Licenta.Pages.Administrator.Users
                 }
             }
 
-            // Protejează doctorii dacă PROTECT_DOCTOR = true
             if (PROTECT_DOCTOR && roles.Contains("Doctor"))
             {
                 TempData["StatusMessage"] = "Doctors cannot be deleted directly.";
                 return RedirectToPage("./Index");
             }
 
-            // Soft delete instead of hard delete
             user.IsSoftDeleted = true;
             user.LockoutEnabled = true;
             user.LockoutEnd = DateTimeOffset.MaxValue;

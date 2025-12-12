@@ -82,7 +82,6 @@ namespace Licenta.Pages.Assistant.Attachments
                 await Input.File.CopyToAsync(stream);
             }
 
-            // Associate with a doctor (fallback: first doctor in the system)
             var doctor = await _db.Doctors
                 .Include(d => d.User)
                 .OrderBy(d => d.User.FullName)
@@ -105,7 +104,6 @@ namespace Licenta.Pages.Assistant.Attachments
             _db.MedicalAttachments.Add(attachment);
             await _db.SaveChangesAsync();
 
-            // Notifications for patient and doctor
             var patient = await _db.Patients
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == Input.PatientId);

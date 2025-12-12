@@ -1,4 +1,4 @@
-using Licenta.Areas.Identity.Data;
+﻿using Licenta.Areas.Identity.Data;
 using Licenta.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Assistant.Appointments
 {
@@ -21,9 +25,7 @@ namespace Licenta.Pages.Assistant.Appointments
             _userManager = userManager;
         }
 
-        public List<AppointmentRow> Appointments { get; set; } = new();
-
-        public class AppointmentRow
+        public class ItemVm
         {
             public int Id { get; set; }
             public string TimeLocal { get; set; } = string.Empty;
@@ -31,54 +33,50 @@ namespace Licenta.Pages.Assistant.Appointments
             public string DoctorName { get; set; } = string.Empty;
             public string Reason { get; set; } = string.Empty;
             public string Status { get; set; } = string.Empty;
-            public VisitStage VisitStage { get; set; }
+            public bool CanCancel { get; set; }
         }
+
+        public List<ItemVm> Items { get; set; } = new();
 
         public async Task OnGetAsync()
         {
-            var today = DateTime.UtcNow.Date;
-            var tomorrow = today.AddDays(1);
+            var todayUtc = DateTime.UtcNow.Date;
+            var tomorrowUtc = todayUtc.AddDays(1);
 
-            Appointments = await _db.Appointments
+            var appointments = await _db.Appointments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
                 .Include(a => a.Doctor).ThenInclude(d => d.User)
-                .Where(a => a.ScheduledAt >= today && a.ScheduledAt < tomorrow)
+                .Where(a => a.ScheduledAt >= todayUtc && a.ScheduledAt < tomorrowUtc)
                 .OrderBy(a => a.ScheduledAt)
-                .Select(a => new AppointmentRow
+                .ToListAsync();
+
+            var nowUtc = DateTime.UtcNow;
+
+            Items = appointments.Select(a =>
+            {
+                var patientName = a.Patient?.User != null
+                    ? (a.Patient.User.FullName ?? a.Patient.User.Email ?? a.Patient.User.UserName ?? "Unknown patient")
+                    : "Unknown patient";
+
+                var doctorName = a.Doctor?.User != null
+                    ? (a.Doctor.User.FullName ?? a.Doctor.User.Email ?? a.Doctor.User.UserName ?? "Unknown doctor")
+                    : "Unknown doctor";
+
+                var canCancel =
+                    a.Status != AppointmentStatus.Cancelled &&
+                    a.ScheduledAt >= nowUtc;
+
+                return new ItemVm
                 {
                     Id = a.Id,
                     TimeLocal = a.ScheduledAt.ToLocalTime().ToString("t"),
-                    PatientName = a.Patient.User.FullName ?? a.Patient.User.Email!,
-                    DoctorName = a.Doctor.User.FullName ?? a.Doctor.User.Email!,
+                    PatientName = patientName,
+                    DoctorName = doctorName,
                     Reason = a.Reason ?? string.Empty,
                     Status = a.Status.ToString(),
-                    VisitStage = a.VisitStage
-                })
-                .ToListAsync();
-        }
-
-        public async Task<IActionResult> OnPostUpdateStageAsync(int appointmentId, string stage)
-        {
-            if (!Enum.TryParse<VisitStage>(stage, out var newStage))
-            {
-                TempData["StatusMessage"] = "Invalid visit stage.";
-                return RedirectToPage();
-            }
-
-            var appt = await _db.Appointments.FirstOrDefaultAsync(a => a.Id == appointmentId);
-            if (appt == null)
-            {
-                TempData["StatusMessage"] = "Appointment not found.";
-                return RedirectToPage();
-            }
-
-            appt.VisitStage = newStage;
-            appt.UpdatedAtUtc = DateTime.UtcNow;
-
-            await _db.SaveChangesAsync();
-
-            TempData["StatusMessage"] = $"Visit stage updated to '{newStage}'.";
-            return RedirectToPage();
+                    CanCancel = canCancel
+                };
+            }).ToList();
         }
     }
 }

@@ -94,7 +94,6 @@ namespace Licenta.Pages.Assistant.Appointments
                 }
                 catch
                 {
-                    // Ignore malformed JSON or missing files
                 }
 
                 rows.Add(new RequestRowVm
@@ -146,7 +145,6 @@ namespace Licenta.Pages.Assistant.Appointments
             }
             catch
             {
-                // Ignore file JSON issues
             }
 
             var appointment = new Appointment

@@ -3,6 +3,9 @@ using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Assistant.Patients
 {
@@ -22,7 +25,7 @@ namespace Licenta.Pages.Assistant.Patients
         {
             Patients = await _db.Patients
                 .Include(p => p.User)
-                .OrderBy(p => p.User.FullName)   
+                .OrderBy(p => p.User.FullName)
                 .ToListAsync();
         }
     }

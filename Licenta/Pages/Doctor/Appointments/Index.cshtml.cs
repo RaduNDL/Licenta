@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Doctor.Appointments
 {
@@ -20,10 +24,9 @@ namespace Licenta.Pages.Doctor.Appointments
         }
 
         public List<Appointment> Appointments { get; set; } = new();
-        public string ViewMode { get; set; } = "day";   // "day" sau "week"
+        public string ViewMode { get; set; } = "day";
         public DateTime SelectedDate { get; set; }
 
-        // Structură pentru orarul pe ore (doar pentru view-ul "day")
         public class HourSlot
         {
             public DateTime Start { get; set; }
@@ -33,14 +36,11 @@ namespace Licenta.Pages.Doctor.Appointments
 
         public List<HourSlot> HourSchedule { get; set; } = new();
 
-        // patientId este Guid?, compatibil cu Appointment.PatientId (Guid)
         public async Task OnGetAsync(string? view, DateTime? date, Guid? patientId)
         {
-            // modul de vizualizare
             ViewMode = string.IsNullOrEmpty(view) ? "day" : view.ToLowerInvariant();
             SelectedDate = (date ?? DateTime.UtcNow).Date;
 
-            // utilizatorul curent
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser == null)
             {
@@ -49,7 +49,6 @@ namespace Licenta.Pages.Doctor.Appointments
                 return;
             }
 
-            // găsim DoctorProfile pentru user-ul curent
             var doctorProfile = await _db.Doctors
                 .Include(d => d.User)
                 .FirstOrDefaultAsync(d => d.UserId == currentUser.Id);
@@ -61,21 +60,18 @@ namespace Licenta.Pages.Doctor.Appointments
                 return;
             }
 
-            var doctorId = doctorProfile.Id; // Guid
+            var doctorId = doctorProfile.Id;
 
-            // query de bază: programările doctorului curent
             var query = _db.Appointments
                 .Include(a => a.Patient)
                     .ThenInclude(p => p.User)
                 .Where(a => a.DoctorId == doctorId);
 
-            // filtru opțional după pacient
             if (patientId.HasValue)
             {
                 query = query.Where(a => a.PatientId == patientId.Value);
             }
 
-            // interval de timp în funcție de day/week
             DateTime start;
             DateTime end;
 
@@ -85,7 +81,7 @@ namespace Licenta.Pages.Doctor.Appointments
                 start = SelectedDate.AddDays(-diff).Date;
                 end = start.AddDays(7);
             }
-            else // day
+            else
             {
                 start = SelectedDate.Date;
                 end = start.AddDays(1);
@@ -97,14 +93,12 @@ namespace Licenta.Pages.Doctor.Appointments
                 .OrderBy(a => a.ScheduledAt)
                 .ToListAsync();
 
-            // Construim orarul pe ore DOAR pentru modul "day"
             HourSchedule = new List<HourSlot>();
 
             if (ViewMode == "day")
             {
-                // aici setezi intervalul de lucru al doctorului
-                var workStart = SelectedDate.Date.AddHours(8);   // 08:00
-                var workEnd = SelectedDate.Date.AddHours(17);    // 17:00
+                var workStart = SelectedDate.Date.AddHours(8);
+                var workEnd = SelectedDate.Date.AddHours(17);
 
                 for (var t = workStart; t < workEnd; t = t.AddHours(1))
                 {

@@ -36,7 +36,6 @@ namespace Licenta.Pages.Doctor.Reports
                 return;
             }
 
-            // Ensure we have the DoctorProfile loaded
             if (currentUser.DoctorProfile == null)
             {
                 currentUser = await _db.Users

@@ -8,6 +8,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Licenta.Pages.Assistant.Predictions
 {
@@ -36,8 +41,8 @@ namespace Licenta.Pages.Assistant.Predictions
 
         [BindProperty] public InputModel Input { get; set; } = new();
 
-        public SelectList Patients { get; set; }
-        public SelectList Doctors { get; set; }
+        public SelectList Patients { get; set; } = default!;
+        public SelectList Doctors { get; set; } = default!;
 
         public async Task OnGetAsync(Guid? patientId)
         {
@@ -53,6 +58,11 @@ namespace Licenta.Pages.Assistant.Predictions
             }
 
             var assistant = await _userManager.GetUserAsync(User);
+            if (assistant == null)
+            {
+                // This shouldn't happen if the user is authenticated and authorized
+                return Forbid();
+            }
 
             string? savedPath = null;
             if (Input.File != null)

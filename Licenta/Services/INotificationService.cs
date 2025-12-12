@@ -7,9 +7,6 @@ namespace Licenta.Services
 {
     public interface INotificationService
     {
-        /// <summary>
-        /// Main method – creates a UserNotification, optional internal message and e-mail.
-        /// </summary>
         Task NotifyAsync(
             ApplicationUser recipient,
             NotificationType type,
@@ -20,9 +17,6 @@ namespace Licenta.Services
             bool sendEmail = true,
             CancellationToken ct = default);
 
-        /// <summary>
-        /// Backwards-compatible overload – defaults to NotificationType.Info.
-        /// </summary>
         Task NotifyAsync(
             ApplicationUser recipient,
             string subject,

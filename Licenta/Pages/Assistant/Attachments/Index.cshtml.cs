@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Assistant.Attachments
 {
@@ -24,6 +27,13 @@ namespace Licenta.Pages.Assistant.Attachments
         public async Task OnGetAsync()
         {
             var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                Items = new();
+                TempData["StatusMessage"] = "User not found.";
+                return;
+            }
+
             Items = await _db.MedicalAttachments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
                 .Where(a => a.UploadedByAssistantId == user.Id)

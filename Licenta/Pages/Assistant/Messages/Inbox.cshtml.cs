@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Assistant.Messages
 {
@@ -58,7 +62,6 @@ namespace Licenta.Pages.Assistant.Messages
             if (currentUser == null)
                 return;
 
-            // All conversation partners for current user
             var raw = await _db.InternalMessages
                 .Include(m => m.Sender)
                 .Include(m => m.Recipient)
@@ -98,7 +101,6 @@ namespace Licenta.Pages.Assistant.Messages
             if (!Conversations.Any())
                 return;
 
-            // Determine selected user
             SelectedUserId = !string.IsNullOrEmpty(userId)
                 ? userId
                 : Conversations.First().PartnerId;
@@ -106,7 +108,6 @@ namespace Licenta.Pages.Assistant.Messages
             var selectedConv = Conversations.FirstOrDefault(c => c.PartnerId == SelectedUserId);
             SelectedUserName = selectedConv?.PartnerName ?? "Conversation";
 
-            // Load messages with selected user
             Messages = await _db.InternalMessages
                 .Where(m =>
                     (m.SenderId == currentUser.Id && m.RecipientId == SelectedUserId) ||
@@ -120,7 +121,6 @@ namespace Licenta.Pages.Assistant.Messages
                 ))
                 .ToListAsync();
 
-            // Pre-fill recipient for the form
             Input.RecipientId = SelectedUserId;
         }
 

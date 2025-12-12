@@ -1,12 +1,17 @@
 ﻿@page "{id:guid}"
-@model Licenta.Pages.Administrator.Messages.Requests.ReviewModel
+@model Licenta.Pages.Assistant.Messages.Requests.ReviewModel
 @{
     ViewData["Title"] = "Review request";
 }
 @section Styles {
-    <link rel="stylesheet" href="~/css/admin.css" />
+    <link rel="stylesheet" href="~/css/assistant.css" />
 }
 <h2>Review patient message request</h2>
+
+@if (TempData["StatusMessage"] is string status)
+{
+    <div class="alert alert-info">@status</div>
+}
 
 <div class="card mb-3">
     <div class="card-header">
@@ -23,7 +28,7 @@
 
 <form method="post">
     <div class="mb-3">
-        <label class="form-label">Admin note (optional)</label>
+        <label class="form-label">Assistant note (optional)</label>
         <textarea asp-for="AdminNote" rows="3" class="form-control"></textarea>
     </div>
 
@@ -33,7 +38,7 @@
     <button type="submit" asp-page-handler="Reject" asp-route-id="@Model.RequestItem.Id" class="btn btn-danger ms-2">
         Reject request
     </button>
-    <a asp-page="/Administrator/Messages/Requests/Index" class="btn btn-secondary ms-2">Back</a>
+    <a asp-page="/Assistant/Messages/Requests/Index" class="btn btn-secondary ms-2">Back</a>
 </form>
 
 @section Scripts {

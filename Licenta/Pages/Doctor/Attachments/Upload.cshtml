@@ -10,13 +10,13 @@
 
 <form method="post" enctype="multipart/form-data">
     <div class="mb-3">
-        <label asp-for="ModelInput.PatientId" class="form-label"></label>
+        <label asp-for="ModelInput.PatientId" class="form-label">Patient</label>
         <select asp-for="ModelInput.PatientId" asp-items="Model.Patients" class="form-select"></select>
     </div>
 
     <div class="mb-3">
-        <label asp-for="ModelInput.Type" class="form-label"></label>
-        <input asp-for="ModelInput.Type" class="form-control" />
+        <label asp-for="ModelInput.Type" class="form-label">Type</label>
+        <input asp-for="ModelInput.Type" class="form-control" placeholder="e.g. Schedule, Report, Prescription" />
     </div>
 
     <div class="mb-3">
@@ -25,7 +25,9 @@
     </div>
 
     <button type="submit" class="btn btn-primary">Upload</button>
-    <a asp-page="/Doctor/Attachments/Index" class="btn btn-secondary ms-2">Back</a>
+    <a asp-page="/Doctor/Attachments/Index"
+       asp-route-patientId="@Model.ModelInput.PatientId"
+       class="btn btn-secondary ms-2">Back</a>
 </form>
 
 @section Scripts {

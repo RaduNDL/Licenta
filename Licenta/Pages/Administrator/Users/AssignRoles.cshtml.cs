@@ -1,4 +1,8 @@
-﻿using Licenta.Areas.Identity.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Licenta.Areas.Identity.Data;
 using Licenta.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -6,6 +10,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Licenta.Pages.Administrator.Users
 {
@@ -106,7 +111,7 @@ namespace Licenta.Pages.Administrator.Users
             }
 
             var isRemovingAdmin = current.Contains("Administrator") &&
-                                  !SelectedRoles.Contains("Administrator");
+                                 !SelectedRoles.Contains("Administrator");
             if (isRemovingAdmin)
             {
                 var admins = await _userManager.GetUsersInRoleAsync("Administrator");
@@ -153,7 +158,6 @@ namespace Licenta.Pages.Administrator.Users
                 }
             }
 
-            // 🔹 CREĂM PROFILURI dacă userul a primit Patient / Doctor
             await EnsureProfilesForRolesAsync(targetUser, SelectedRoles);
 
             _logger.LogInformation("Updated roles for user {UserId}. Added: {Add}; Removed: {Remove}",

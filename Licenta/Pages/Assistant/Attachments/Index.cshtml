@@ -5,36 +5,49 @@
 }
 <h2>Analyses</h2>
 
+@if (TempData["StatusMessage"] is string status)
+{
+    <div class="alert alert-info">@status</div>
+}
+
 <div class="mb-3">
     <a class="btn btn-primary" asp-page="/Assistant/Attachments/Upload">Upload new</a>
+    <a class="btn btn-outline-secondary ms-2" asp-page="/Assistant/Attachments/Validate">Validate analyses</a>
 </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>File</th>
-            <th>Patient</th>
-            <th>Uploaded</th>
-            <th>Type</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var f in Model.Items)
-        {
+@if (Model.Items == null || !Model.Items.Any())
+{
+    <div class="alert alert-secondary">No analyses uploaded yet.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
             <tr>
-                <td><a href="@f.FilePath" target="_blank">@f.FileName</a></td>
-                <td>@(f.Patient?.User?.FullName ?? f.Patient?.User?.Email)</td>
-                <td>@f.UploadedAt.ToLocalTime().ToString("g")</td>
-                <td>@f.Type</td>
-                <td>
-                    @f.Status
-                    @if (!string.IsNullOrWhiteSpace(f.ValidationNotes))
-                    {
-                        <div class="small text-muted">Notes: @f.ValidationNotes</div>
-                    }
-                </td>
+                <th>File</th>
+                <th>Patient</th>
+                <th>Uploaded</th>
+                <th>Type</th>
+                <th>Status</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var f in Model.Items)
+            {
+                <tr>
+                    <td><a href="@f.FilePath" target="_blank">@f.FileName</a></td>
+                    <td>@(f.Patient?.User?.FullName ?? f.Patient?.User?.Email)</td>
+                    <td>@f.UploadedAt.ToLocalTime().ToString("g")</td>
+                    <td>@f.Type</td>
+                    <td>
+                        @f.Status
+                        @if (!string.IsNullOrWhiteSpace(f.ValidationNotes))
+                        {
+                            <div class="small text-muted">Notes: @f.ValidationNotes</div>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

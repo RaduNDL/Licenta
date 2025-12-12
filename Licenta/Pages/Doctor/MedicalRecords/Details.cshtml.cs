@@ -22,7 +22,6 @@ namespace Licenta.Pages.Doctor.MedicalRecords
             _userManager = userManager;
         }
 
-        // Evită warning-ul pentru proprietate non-nullable neinițializată
         public MedicalRecord Record { get; set; } = default!;
 
         public async Task<IActionResult> OnGetAsync(Guid id)
@@ -43,7 +42,6 @@ namespace Licenta.Pages.Doctor.MedicalRecords
             if (record == null)
                 return NotFound();
 
-            // asigură-te că doar doctorul titular poate vedea/valida fișa
             if (doctor == null || record.DoctorId != doctor.Id)
                 return Forbid();
 
@@ -69,7 +67,7 @@ namespace Licenta.Pages.Doctor.MedicalRecords
             if (doctor == null || record.DoctorId != doctor.Id)
                 return Forbid();
 
-            record.Status = RecordStatus.Validated;  
+            record.Status = RecordStatus.Validated;
             record.ValidatedAtUtc = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();

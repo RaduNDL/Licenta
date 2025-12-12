@@ -1,13 +1,20 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 
 namespace Licenta.Pages.Patient.Attachments
 {
@@ -17,12 +24,18 @@ namespace Licenta.Pages.Patient.Attachments
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IWebHostEnvironment _env;
+        private readonly INotificationService _notifier;
 
-        public UploadModel(AppDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
+        public UploadModel(
+            AppDbContext db,
+            UserManager<ApplicationUser> userManager,
+            IWebHostEnvironment env,
+            INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
             _env = env;
+            _notifier = notifier;
         }
 
         public SelectList Doctors { get; set; } = default!;
@@ -54,7 +67,7 @@ namespace Licenta.Pages.Patient.Attachments
 
         public async Task<IActionResult> OnPostAsync()
         {
-            await OnGetAsync(); // reload doctors list in case of validation error
+            await OnGetAsync();
 
             if (!ModelState.IsValid)
             {
@@ -95,9 +108,9 @@ namespace Licenta.Pages.Patient.Attachments
 
                 var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
                 if (ext != ".jpg" && ext != ".jpeg" && ext != ".png")
-                    continue; // skip unsupported files
+                    continue;
 
-                if (file.Length > 10 * 1024 * 1024) // 10MB limit
+                if (file.Length > 10 * 1024 * 1024)
                     continue;
 
                 var safeName = $"{DateTime.UtcNow:yyyyMMdd_HHmmssfff}_{Guid.NewGuid():N}{ext}";
@@ -115,11 +128,12 @@ namespace Licenta.Pages.Patient.Attachments
                     FilePath = relPath,
                     Type = "MedicalImage",
                     UploadedAt = DateTime.UtcNow,
-                    Status = AttachmentStatus.Pending, 
+                    Status = AttachmentStatus.Pending,
                     ValidationNotes = Input.Notes,
                     DoctorId = Input.DoctorId,
                     PatientId = patient.Id,
-                    UploadedByAssistantId = null
+                    UploadedByAssistantId = null,
+                    ContentType = file.ContentType
                 };
 
                 _db.MedicalAttachments.Add(attachment);
@@ -129,6 +143,40 @@ namespace Licenta.Pages.Patient.Attachments
             if (saved > 0)
             {
                 await _db.SaveChangesAsync();
+
+                var patientName = patient.User?.FullName ?? patient.User?.Email ?? patient.User?.UserName ?? "patient";
+
+                var doctorProfile = await _db.Doctors
+                    .Include(d => d.User)
+                    .FirstOrDefaultAsync(d => d.Id == Input.DoctorId);
+
+                if (doctorProfile?.User != null)
+                {
+                    var title = "New medical images uploaded";
+                    var message =
+                        $"Patient <b>{patientName}</b> uploaded <b>{saved}</b> medical image(s) for review.";
+
+                    await _notifier.NotifyAsync(
+                        doctorProfile.User,
+                        NotificationType.Info,
+                        title,
+                        message,
+                        relatedEntity: "MedicalAttachment",
+                        relatedEntityId: patient.Id.ToString());
+                }
+
+                if (patient.User != null)
+                {
+                    await _notifier.NotifyAsync(
+                        patient.User,
+                        NotificationType.Info,
+                        "Images uploaded",
+                        $"{saved} medical image(s) were uploaded and sent for validation.",
+                        relatedEntity: "MedicalAttachment",
+                        relatedEntityId: patient.Id.ToString(),
+                        sendEmail: false);
+                }
+
                 TempData["StatusMessage"] = $"{saved} file(s) uploaded and sent for validation.";
                 return RedirectToPage();
             }

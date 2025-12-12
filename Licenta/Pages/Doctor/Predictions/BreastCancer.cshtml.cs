@@ -101,7 +101,6 @@ namespace Licenta.Pages.Doctor.Predictions
                 return Page();
             }
 
-          
             var prediction = new Prediction
             {
                 Id = Guid.NewGuid(),
@@ -113,8 +112,8 @@ namespace Licenta.Pages.Doctor.Predictions
                 InputDataJson = JsonSerializer.Serialize(request),
                 OutputDataJson = JsonSerializer.Serialize(response),
 
-                ResultLabel = response.Label,          
-                Probability = response.Confidence,    
+                ResultLabel = response.Label,
+                Probability = response.Confidence,
 
                 Notes = Input.Notes
             };

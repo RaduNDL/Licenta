@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Assistant.AssistantPanel
 {
@@ -38,7 +42,6 @@ namespace Licenta.Pages.Assistant.AssistantPanel
 
         public async Task OnGetAsync()
         {
-            // numele asistentului logat
             var user = await _userManager.GetUserAsync(User);
             if (user != null)
             {
@@ -48,21 +51,18 @@ namespace Licenta.Pages.Assistant.AssistantPanel
             var nowUtc = DateTime.UtcNow;
             var todayUtc = nowUtc.Date;
 
-            // programări viitoare (excluzând cele anulate)
             UpcomingAppointments = await _db.Appointments
                 .Where(a => a.ScheduledAt >= nowUtc &&
                             a.Status != AppointmentStatus.Cancelled)
                 .CountAsync();
 
-            // analize / documente cu status Pending
             PendingAttachments = await _db.MedicalAttachments
-                .Where(a => a.Status == AttachmentStatus.Pending)
+                .Where(a => a.Status == AttachmentStatus.Pending
+                            && a.Type != "AppointmentRequest")
                 .CountAsync();
 
-            // număr total pacienți
             TotalPatients = await _db.Patients.CountAsync();
 
-            // următoarele 5 programări (azi și viitor)
             NextAppointments = await _db.Appointments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
                 .Include(a => a.Doctor).ThenInclude(d => d.User)
@@ -73,8 +73,14 @@ namespace Licenta.Pages.Assistant.AssistantPanel
                 .Select(a => new AppointmentSummary
                 {
                     TimeLocal = a.ScheduledAt.ToLocalTime().ToString("g"),
-                    PatientName = a.Patient.User.FullName ?? a.Patient.User.Email ?? a.Patient.User.UserName ?? string.Empty,
-                    DoctorName = a.Doctor.User.FullName ?? a.Doctor.User.Email ?? a.Doctor.User.UserName ?? string.Empty,
+                    PatientName = a.Patient.User.FullName
+                                  ?? a.Patient.User.Email
+                                  ?? a.Patient.User.UserName
+                                  ?? string.Empty,
+                    DoctorName = a.Doctor.User.FullName
+                                 ?? a.Doctor.User.Email
+                                 ?? a.Doctor.User.UserName
+                                 ?? string.Empty,
                     Reason = a.Reason ?? string.Empty
                 })
                 .ToListAsync();

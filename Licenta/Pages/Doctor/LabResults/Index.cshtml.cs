@@ -44,8 +44,6 @@ namespace Licenta.Pages.Doctor.LabResults
                 return Page();
             }
 
-            // deocamdată doctorul vede toate analizele; 
-            // dacă legi pacienții de doctor, poți filtra aici
             var query = _context.LabResults
                 .Include(l => l.Patient).ThenInclude(p => p.User)
                 .AsQueryable();

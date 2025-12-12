@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Administrator.Users
 {
@@ -62,7 +63,7 @@ namespace Licenta.Pages.Administrator.Users
                 Id = user.Id,
                 Email = user.Email ?? user.UserName ?? string.Empty,
                 FullName = user.FullName,
-                ClinicId = user.ClinicId,   
+                ClinicId = user.ClinicId,
                 EmailConfirmed = user.EmailConfirmed
             };
 

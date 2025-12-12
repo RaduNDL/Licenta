@@ -6,22 +6,28 @@
 
 <h2>Patients</h2>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Email</th>
-        </tr>
-    </thead>
-
-    <tbody>
-        @foreach (var p in Model.Patients)
-        {
+@if (!Model.Patients.Any())
+{
+    <div class="alert alert-secondary">No patients found.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
             <tr>
-                <td>@p.User.FullName</td>
-                <td>@p.User.Email</td>
+                <th>Name</th>
+                <th>Email</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
 
+        <tbody>
+            @foreach (var p in Model.Patients)
+            {
+                <tr>
+                    <td>@p.User.FullName</td>
+                    <td>@p.User.Email</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

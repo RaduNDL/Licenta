@@ -1,11 +1,17 @@
-using Licenta.Areas.Identity.Data;
+﻿using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Licenta.Pages.Patient.Messages
 {
@@ -14,17 +20,27 @@ namespace Licenta.Pages.Patient.Messages
     {
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly INotificationService _notifier;
 
-        public CreateRequestModel(AppDbContext db, UserManager<ApplicationUser> userManager)
+        public CreateRequestModel(
+            AppDbContext db,
+            UserManager<ApplicationUser> userManager,
+            INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
+            _notifier = notifier;
         }
 
         public class InputModel
         {
+            [Required]
             public string DoctorId { get; set; } = null!;
+
+            [Required, MaxLength(200)]
             public string Subject { get; set; } = string.Empty;
+
+            [Required, MaxLength(4000)]
             public string Body { get; set; } = string.Empty;
         }
 
@@ -72,7 +88,37 @@ namespace Licenta.Pages.Patient.Messages
             _db.PatientMessageRequests.Add(request);
             await _db.SaveChangesAsync();
 
-            TempData["MessageRequestSuccess"] = "Your request was sent to the administrator and is pending review.";
+            var patientName = patient.FullName ?? patient.Email ?? patient.UserName;
+            var doctorName = doctor.FullName ?? doctor.Email ?? doctor.UserName;
+
+            var title = "New patient message request";
+            var msg =
+                $"Patient <b>{patientName}</b> requested permission to contact doctor " +
+                $"<b>{doctorName}</b>.<br/>" +
+                $"Subject: <b>{Input.Subject}</b>.";
+
+            var assistants = await _userManager.GetUsersInRoleAsync("Assistant");
+            foreach (var assistant in assistants)
+            {
+                await _notifier.NotifyAsync(
+                    assistant,
+                    NotificationType.Info,
+                    title,
+                    msg,
+                    relatedEntity: "PatientMessageRequest",
+                    relatedEntityId: request.Id.ToString());
+            }
+
+            await _notifier.NotifyAsync(
+                patient,
+                NotificationType.Info,
+                "Message request submitted",
+                "Your message request was sent to the medical assistant and is pending review.",
+                relatedEntity: "PatientMessageRequest",
+                relatedEntityId: request.Id.ToString(),
+                sendEmail: false);
+
+            TempData["MessageRequestSuccess"] = "Your request was sent to the medical assistant and is pending review.";
             return RedirectToPage("/Patient/Messages/RequestList");
         }
 

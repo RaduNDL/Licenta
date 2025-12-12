@@ -15,7 +15,7 @@ namespace Licenta.Services.Ml
         {
             _httpClient = httpClient;
             _baseUrl = configuration["MlService:BaseUrl"]
-                       ?? throw new InvalidOperationException("MlService:BaseUrl is not configured.");
+                         ?? throw new InvalidOperationException("MlService:BaseUrl is not configured.");
         }
 
         public async Task<BreastPredictionResponse> PredictAsync(BreastCancerRequest request)

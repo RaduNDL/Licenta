@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Administrator.Users
 {
@@ -75,8 +79,6 @@ namespace Licenta.Pages.Administrator.Users
 
         private static string Quote(string? s)
             => "\"" + (s ?? string.Empty).Replace("\"", "\"\"") + "\"";
-
-        // ===== Lock / unlock logic =====
 
         public async Task<IActionResult> OnPostLockAsync(string id)
         {

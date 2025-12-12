@@ -1,10 +1,13 @@
 ﻿using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Assistant.Attachments
 {
@@ -12,60 +15,28 @@ namespace Licenta.Pages.Assistant.Attachments
     public class ValidateModel : PageModel
     {
         private readonly AppDbContext _db;
-        private readonly UserManager<ApplicationUser> _userManager;
 
-        public ValidateModel(AppDbContext db, UserManager<ApplicationUser> userManager)
+        public ValidateModel(AppDbContext db)
         {
             _db = db;
-            _userManager = userManager;
         }
 
         public List<MedicalAttachment> Pending { get; set; } = new();
 
         public async Task OnGetAsync()
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                TempData["StatusMessage"] = "User not found.";
-                Pending = new();
-                return;
-            }
-
-            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
-            if (doctor == null)
-            {
-                TempData["StatusMessage"] = "Doctor profile not found for this user.";
-                Pending = new();
-                return;
-            }
-
             Pending = await _db.MedicalAttachments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
-                .Where(a => a.DoctorId == doctor.Id && a.Status == AttachmentStatus.Pending)
+                .Where(a => a.Status == AttachmentStatus.Pending && a.Type != "AppointmentRequest")
                 .OrderByDescending(a => a.UploadedAt)
                 .ToListAsync();
         }
 
         public async Task<IActionResult> OnPostAsync(Guid id, string action)
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                TempData["StatusMessage"] = "User not found.";
-                return RedirectToPage();
-            }
-
-            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
-            if (doctor == null)
-            {
-                TempData["StatusMessage"] = "Doctor profile not found for this user.";
-                return RedirectToPage();
-            }
-
             var attachment = await _db.MedicalAttachments
-                .Include(x => x.Patient).ThenInclude(p => p.User)
-                .FirstOrDefaultAsync(x => x.Id == id && x.DoctorId == doctor.Id);
+                .Include(a => a.Patient).ThenInclude(p => p.User)
+                .FirstOrDefaultAsync(a => a.Id == id);
 
             if (attachment == null)
             {
@@ -73,17 +44,26 @@ namespace Licenta.Pages.Assistant.Attachments
                 return RedirectToPage();
             }
 
-            if (action == "approve")
+            if (attachment.Status != AttachmentStatus.Pending)
+            {
+                TempData["StatusMessage"] = "Attachment has already been processed.";
+                return RedirectToPage();
+            }
+
+            if (string.Equals(action, "approve", StringComparison.OrdinalIgnoreCase))
             {
                 attachment.Status = AttachmentStatus.Validated;
-                attachment.ValidatedAtUtc = DateTime.UtcNow;
-                attachment.ValidatedByDoctorId = doctor.Id;
             }
             else
             {
                 attachment.Status = AttachmentStatus.Rejected;
-                attachment.ValidatedAtUtc = DateTime.UtcNow;
-                attachment.ValidatedByDoctorId = doctor.Id;
+            }
+
+            attachment.ValidatedAtUtc = DateTime.UtcNow;
+
+            if (attachment.DoctorId != Guid.Empty)
+            {
+                attachment.ValidatedByDoctorId = attachment.DoctorId;
             }
 
             await _db.SaveChangesAsync();
