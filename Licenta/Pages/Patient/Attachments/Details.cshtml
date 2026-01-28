@@ -1,0 +1,79 @@
+﻿@page "{id:guid}"
+@model Licenta.Pages.Patient.Attachments.DetailsModel
+@{
+    ViewData["Title"] = "Document Details";
+}
+
+<div class="container py-5" style="max-width: 800px;">
+    <div class="mb-4">
+        <a asp-page="/Patient/Attachments/Index" class="text-decoration-none text-muted">
+            <i class="bi bi-arrow-left"></i> Back to My Documents
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">Document Information</h5>
+            <span class="badge @(Model.Item.Status == AttachmentStatus.Validated ? "bg-success" : (Model.Item.Status == AttachmentStatus.Rejected ? "bg-danger" : "bg-warning text-dark"))">
+                @Model.Item.Status
+            </span>
+        </div>
+        <div class="card-body p-4">
+            <div class="row mb-3">
+                <div class="col-sm-4 text-muted fw-bold">File Name</div>
+                <div class="col-sm-8">@Model.Item.FileName</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4 text-muted fw-bold">Type</div>
+                <div class="col-sm-8">@Model.Item.Type</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4 text-muted fw-bold">Uploaded On</div>
+                <div class="col-sm-8">@Model.Item.UploadedAt.ToLocalTime().ToString("f")</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4 text-muted fw-bold">My Notes</div>
+                <div class="col-sm-8 fst-italic">"@(Model.Item.PatientNotes ?? "-")"</div>
+            </div>
+
+            <hr />
+
+            <div class="d-flex justify-content-end">
+                <a href="@Model.Item.FilePath" target="_blank" class="btn btn-primary">
+                    <i class="bi bi-download me-2"></i>Download File
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Item.Status == AttachmentStatus.Validated || Model.Item.Status == AttachmentStatus.Rejected)
+    {
+        <div class="card shadow-sm border-0 border-start border-4 border-primary">
+            <div class="card-body p-4">
+                <h5 class="card-title fw-bold mb-3 text-primary">
+                    <i class="bi bi-stethoscope me-2"></i>Doctor's Feedback
+                </h5>
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold text-uppercase">Doctor</label>
+                    <div>Dr. @(Model.Item.Doctor?.User?.FullName ?? "Unknown")</div>
+                </div>
+                <div>
+                    <label class="small text-muted fw-bold text-uppercase">Notes & Observations</label>
+                    <div class="p-3 bg-light rounded mt-1">
+                        @if (string.IsNullOrWhiteSpace(Model.Item.DoctorNotes))
+                        {
+                            <span class="text-muted fst-italic">No specific notes provided.</span>
+                        }
+                        else
+                        {
+                            @Model.Item.DoctorNotes
+                        }
+                    </div>
+                </div>
+                <div class="mt-2 text-end text-muted small">
+                    Reviewed on @(Model.Item.ValidatedAtUtc?.ToLocalTime().ToString("g") ?? "-")
+                </div>
+            </div>
+        </div>
+    }
+</div>

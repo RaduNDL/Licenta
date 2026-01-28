@@ -27,13 +27,10 @@ namespace Licenta.Pages.Patient.Messages
         public async Task OnGetAsync()
         {
             var patient = await _userManager.GetUserAsync(User);
-            if (patient == null)
-            {
-                Requests = new List<PatientMessageRequest>();
-                return;
-            }
+            if (patient == null) return;
 
             Requests = await _db.PatientMessageRequests
+                .Include(r => r.Assistant)
                 .Include(r => r.Doctor)
                 .Where(r => r.PatientId == patient.Id)
                 .OrderByDescending(r => r.CreatedAt)

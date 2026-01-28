@@ -1,34 +1,57 @@
 ﻿@page
 @model Licenta.Pages.Patient.Attachments.UploadModel
 @{
-    ViewData["Title"] = "Upload Medical Images";
-}
-@section Styles {
-    <link rel="stylesheet" href="~/css/patient.css" />
-}
-<h2>Upload Medical Images</h2>
-
-@if (TempData["StatusMessage"] is string msg)
-{
-    <div class="alert alert-info">@msg</div>
+    ViewData["Title"] = "Upload Document";
 }
 
-<form method="post" enctype="multipart/form-data">
-    <div class="mb-3">
-        <label asp-for="Input.DoctorId" class="form-label">Doctor</label>
-        <select asp-for="Input.DoctorId" class="form-select" asp-items="Model.Doctors"></select>
-        <span class="text-muted d-block mt-1">Choose the doctor who should review your images.</span>
+<div class="container py-5" style="max-width: 600px;">
+    <div class="text-center mb-5">
+        <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+            <i class="bi bi-cloud-upload fs-3"></i>
+        </div>
+        <h2 class="fw-bold">Upload Medical Document</h2>
+        <p class="text-muted">Share test results or images securely with your doctor.</p>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Files" class="form-label">Images (JPG/PNG, max 10MB each)</label>
-        <input asp-for="Files" type="file" class="form-control" multiple accept=".jpg,.jpeg,.png" />
-    </div>
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label asp-for="Input.Type" class="form-label fw-bold">Document Type</label>
+                    <select asp-for="Input.Type" class="form-select">
+                        <option value="">Select type...</option>
+                        <option value="Dermoscopy Image">Dermoscopy Image (Skin)</option>
+                        <option value="Blood Test">Blood Test Results</option>
+                        <option value="Prescription">Old Prescription</option>
+                        <option value="MRI/CT Scan">MRI / CT Scan</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <span asp-validation-for="Input.Type" class="text-danger small"></span>
+                </div>
 
-    <div class="mb-3">
-        <label asp-for="Input.Notes" class="form-label">Notes (optional)</label>
-        <textarea asp-for="Input.Notes" class="form-control" rows="3" placeholder="Describe the wound/rash, onset, pain, etc."></textarea>
-    </div>
+                <div class="mb-4">
+                    <label asp-for="Input.File" class="form-label fw-bold">Select File</label>
+                    <input asp-for="Input.File" class="form-control" type="file" accept=".jpg,.jpeg,.png,.pdf" />
+                    <div class="form-text">Accepted formats: JPG, PNG, PDF. Max 10MB.</div>
+                    <span asp-validation-for="Input.File" class="text-danger small"></span>
+                </div>
 
-    <button type="submit" class="btn btn-primary">Upload</button>
-</form>
+                <div class="mb-4">
+                    <label asp-for="Input.Notes" class="form-label fw-bold">Notes for Doctor</label>
+                    <textarea asp-for="Input.Notes" class="form-control" rows="3" placeholder="Describe any symptoms or details..."></textarea>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        Upload & Submit <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                    <a asp-page="/Patient/Attachments/Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -14,16 +14,12 @@ namespace Licenta.Pages.Administrator.Users
     public class DeleteUserModel : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
 
         private const bool PROTECT_DOCTOR = false;
 
-        public DeleteUserModel(
-            UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+        public DeleteUserModel(UserManager<ApplicationUser> userManager)
         {
             _userManager = userManager;
-            _roleManager = roleManager;
         }
 
         [BindProperty] public string UserId { get; set; } = string.Empty;
@@ -81,11 +77,11 @@ namespace Licenta.Pages.Administrator.Users
                 var admins = await _userManager.GetUsersInRoleAsync("Administrator");
                 var otherActiveAdmins = admins
                     .Where(a => a.Id != user.Id)
-                    .Count(a => !a.LockoutEnd.HasValue || a.LockoutEnd <= DateTimeOffset.UtcNow);
+                    .Count(a => !IsLocked(a) && !a.IsSoftDeleted);
 
                 if (otherActiveAdmins == 0)
                 {
-                    TempData["StatusMessage"] = "Cannot delete the last active Administrator account.";
+                    TempData["StatusMessage"] = "Cannot deactivate the last active Administrator account.";
                     return RedirectToPage("./Index");
                 }
             }
@@ -108,5 +104,8 @@ namespace Licenta.Pages.Administrator.Users
 
             return RedirectToPage("./Index");
         }
+
+        private static bool IsLocked(ApplicationUser user)
+            => user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow;
     }
 }

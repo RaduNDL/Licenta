@@ -1,57 +1,108 @@
 ﻿@page "{id:int}"
 @model Licenta.Pages.Doctor.LabResults.AnalyzeModel
-
+@{
+    ViewData["Title"] = "Analyze Result";
+}
 @section Styles {
-    <link rel="stylesheet" href="~/css/doctor.css" />
+    <link rel="stylesheet" href="~/css/labresults.css" />
 }
 
-<h2>Analyze Lab Result (ML)</h2>
+<div class="page-container" style="max-width: 900px; margin: 0 auto;">
+    <div class="page-header">
+        <h2 class="page-title">
+            <i class="bi bi-robot text-primary"></i> AI Analysis
+        </h2>
+        <a asp-page="/Doctor/LabResults/Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
 
-@if (Model.ErrorMessage != null)
-{
-    <div class="alert alert-danger">
-        @Model.ErrorMessage
-    </div>
-}
-else if (Model.LabResult == null)
-{
-    <div class="alert alert-warning">
-        Lab result not found.
-    </div>
-}
-else
-{
-    <div class="card mb-3">
-        <div class="card-header">
-            <strong>@(Model.LabResult.Patient?.User?.FullName ?? Model.LabResult.Patient?.User?.Email ?? "Patient")</strong><br />
-            <small>Uploaded at: @Model.LabResult.UploadedAt.ToLocalTime().ToString("f")</small>
+    @if (Model.ErrorMessage != null)
+    {
+        <div class="alert alert-danger border-0 shadow-sm">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage
         </div>
-        <div class="card-body">
-            <p><strong>File:</strong> @Model.LabResult.FileName (@Model.LabResult.ContentType)</p>
-            <p><strong>Status:</strong> @Model.LabResult.Status</p>
-
-            @if (Model.HasPrediction)
-            {
-                <hr />
-                <h5>ML Prediction</h5>
-                <p>
-                    <strong>Label:</strong> @Model.PredictedLabel<br />
-                    <strong>Probability:</strong> @Model.PredictedProbability?.ToString("P1")<br />
-                    @if (!string.IsNullOrWhiteSpace(Model.Explanation))
-                    {
-                        <strong>Explanation:</strong>
-                        @Model.Explanation
-                    }
-                </p>
-            }
-            else
-            {
-                <div class="alert alert-info">
-                    No prediction available yet. Reload the page after running the analysis.
+    }
+    else if (Model.LabResult == null)
+    {
+        <div class="alert alert-warning border-0 shadow-sm">
+            Lab result not found.
+        </div>
+    }
+    else
+    {
+        <div class="analysis-card">
+            <div class="analysis-header">
+                <div class="patient-name">
+                    @(Model.LabResult.Patient?.User?.FullName ?? Model.LabResult.Patient?.User?.Email ?? "Patient")
                 </div>
-            }
-        </div>
-    </div>
-}
+                <div class="upload-time">
+                    <i class="bi bi-clock me-1"></i> Uploaded: @Model.LabResult.UploadedAt.ToLocalTime().ToString("f")
+                </div>
+            </div>
 
-<a asp-page="/Doctor/LabResults/Index" class="btn btn-secondary">Back to lab results</a>
+            <div class="analysis-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>File Name</label>
+                        <span>@Model.LabResult.FileName</span>
+                    </div>
+                    <div class="info-item">
+                        <label>File Type</label>
+                        <span>@Model.LabResult.ContentType</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Current Status</label>
+                        <span class="status-badge @(Model.LabResult.Status.ToString().ToLower())">
+                            @Model.LabResult.Status
+                        </span>
+                    </div>
+                </div>
+
+                @if (Model.HasPrediction)
+                {
+                    <div class="prediction-box">
+                        <div class="prediction-title">
+                            <i class="bi bi-stars"></i> ML Model Prediction
+                        </div>
+
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="text-muted small text-uppercase fw-bold">Result</div>
+                                <div class="prediction-result @(Model.PredictedLabel == "Malignant" ? "malignant" : "benign")">
+                                    @Model.PredictedLabel
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small text-uppercase fw-bold">Confidence</div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fs-4 fw-bold">@Model.PredictedProbability?.ToString("P1")</span>
+                                </div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: @(Model.PredictedProbability?.ToString("P0") ?? "0%")"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Explanation))
+                        {
+                            <div class="mt-3 pt-3 border-top">
+                                <label class="small text-muted fw-bold text-uppercase mb-1">Explanation</label>
+                                <p class="mb-0">@Model.Explanation</p>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-light border text-center py-4 my-3">
+                        <div class="spinner-border text-primary mb-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mb-0 text-muted">Analysis is pending or in progress. Please refresh shortly.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

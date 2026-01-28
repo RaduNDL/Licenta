@@ -82,7 +82,6 @@ namespace Licenta.Pages.Doctor.Attachments
                 Type = ModelInput.Type,
                 UploadedAt = DateTime.UtcNow,
                 ContentType = ModelInput.File.ContentType,
-
                 Status = AttachmentStatus.Validated,
                 ValidatedAtUtc = DateTime.UtcNow,
                 ValidatedByDoctorId = doctor.Id

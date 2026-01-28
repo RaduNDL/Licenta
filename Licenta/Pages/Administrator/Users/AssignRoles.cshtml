@@ -4,7 +4,7 @@
     ViewData["Title"] = "Assign Roles";
 }
 @section Styles {
-    <link rel="stylesheet" href="~/css/admin.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
 }
 <h2 class="mb-3">Assign Roles</h2>
 <p class="text-muted">User: <strong>@Model.UserEmail</strong></p>
@@ -19,7 +19,6 @@
             var isChecked = Model.SelectedRoles.Contains(r);
             var isSelf = Model.IsSelf;
             var isAdminRole = string.Equals(r, "Administrator", StringComparison.OrdinalIgnoreCase);
-
             var disabledAttr = (isSelf && isAdminRole) ? "disabled" : null;
 
             <div class="form-check">

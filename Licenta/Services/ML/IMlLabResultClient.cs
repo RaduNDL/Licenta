@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Licenta.Models;
+using Licenta.Services.Ml.Dtos;
 
 namespace Licenta.Services.Ml
 {

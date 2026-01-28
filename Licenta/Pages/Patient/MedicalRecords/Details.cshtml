@@ -1,0 +1,102 @@
+@page "{id:guid}"
+@using Licenta.Models
+@model Licenta.Pages.Patient.MedicalRecords.DetailsModel
+
+@{
+    ViewData["Title"] = "Medical Record Details";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Patientrecorddetails.css" />
+}
+
+<div class="details-container">
+    <div class="details-header fade-in">
+        <div class="header-title">
+            <i class="bi bi-file-medical-fill"></i>
+            <h2>Consultation Details</h2>
+        </div>
+        <div class="header-actions">
+            <a class="btn-action btn-back" asp-page="/Patient/MedicalRecords/Index">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+            <a class="btn-action btn-download" asp-page="/Patient/MedicalRecords/PrescriptionPdf" asp-route-id="@Model.Record.Id">
+                <i class="bi bi-file-earmark-pdf-fill"></i> Download PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="meta-card fade-in">
+        <div class="meta-item">
+            <div class="meta-icon">
+                <i class="bi bi-person-badge-fill"></i>
+            </div>
+            <div class="meta-content">
+                <span class="meta-label">Doctor</span>
+                <span class="meta-value">@(Model.Record?.Doctor?.User?.FullName ?? Model.Record?.Doctor?.User?.Email ?? "Unknown Doctor")</span>
+            </div>
+        </div>
+        <div class="meta-divider"></div>
+        <div class="meta-item">
+            <div class="meta-icon">
+                <i class="bi bi-calendar-check-fill"></i>
+            </div>
+            <div class="meta-content">
+                <span class="meta-label">Date of Visit</span>
+                <span class="meta-value">@Model.Record.VisitDateUtc.ToLocalTime().ToString("MMMM dd, yyyy")</span>
+                <span class="meta-sub">@Model.Record.VisitDateUtc.ToLocalTime().ToString("h:mm tt")</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="clinical-grid">
+        <div class="clinical-card full-width fade-in">
+            <div class="card-header-strip diagnosis-strip">
+                <i class="bi bi-heart-pulse"></i> Diagnosis
+            </div>
+            <div class="card-content">
+                <p class="diagnosis-text">@Model.Record.Diagnosis</p>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Record.Symptoms))
+        {
+            <div class="clinical-card fade-in">
+                <div class="card-header-strip">
+                    <i class="bi bi-thermometer-high"></i> Symptoms
+                </div>
+                <div class="card-content">
+                    <div class="text-block">@Model.Record.Symptoms</div>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Record.Treatment))
+        {
+            <div class="clinical-card highlight-card fade-in">
+                <div class="card-header-strip">
+                    <i class="bi bi-prescription2"></i> Treatment & Rx
+                </div>
+                <div class="card-content">
+                    <div class="text-block">@Model.Record.Treatment</div>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Record.Notes))
+        {
+            <div class="clinical-card full-width fade-in">
+                <div class="card-header-strip">
+                    <i class="bi bi-journal-text"></i> Doctor's Notes
+                </div>
+                <div class="card-content">
+                    <div class="text-block note-style">@Model.Record.Notes</div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/Patientrecorddetails.js"></script>
+}

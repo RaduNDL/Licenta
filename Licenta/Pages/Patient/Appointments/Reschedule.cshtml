@@ -1,0 +1,72 @@
+﻿@page "{id:int}"
+@model Licenta.Pages.Patient.Appointments.RescheduleModel
+@{
+    ViewData["Title"] = "Request reschedule";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Reschedule.css" />
+}
+
+<div class="reschedule-wrapper">
+    <h3 class="page-title">Reschedule Appointment</h3>
+
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info">@status</div>
+    }
+
+    @if (!Model.CanRequest)
+    {
+        <div class="alert alert-warning">
+            You cannot request a reschedule for this appointment as it is too close to the scheduled time or already processed.
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <a asp-page="/Patient/Appointments/Index" class="btn btn-secondary">Return to Appointments</a>
+        </div>
+    }
+    else
+    {
+        <div class="appointment-info-card">
+            <div class="info-header">Current Appointment Details</div>
+            <div class="info-body">
+                <div class="info-item">
+                    <span class="info-label">Doctor</span>
+                    <span class="info-value">@Model.DoctorName</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date & Time</span>
+                    <span class="info-value">@Model.CurrentScheduledAtDisplay</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Location</span>
+                    <span class="info-value">@Model.Location</span>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" class="form-card">
+            <div class="form-group">
+                <label asp-for="InputReason" class="form-label">Reason for Rescheduling</label>
+                <textarea class="form-control" rows="3" asp-for="InputReason" placeholder="Please briefly explain why you need to reschedule..."></textarea>
+                <span class="text-danger" asp-validation-for="InputReason"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="InputPreferredWindows" class="form-label">Preferred New Time Slots</label>
+                <textarea class="form-control" rows="3" asp-for="InputPreferredWindows" placeholder="E.g., Next Monday between 10 AM and 2 PM, or any Wednesday afternoon..."></textarea>
+                <span class="text-danger" asp-validation-for="InputPreferredWindows"></span>
+            </div>
+
+            <div class="action-bar">
+                <a asp-page="/Patient/Appointments/Index" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Submit Request</button>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/Reschedule.js"></script>
+}

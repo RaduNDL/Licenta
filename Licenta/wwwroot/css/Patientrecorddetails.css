@@ -1,0 +1,275 @@
+﻿:root {
+    --primary-blue: #4361ee;
+    --secondary-blue: #3f37c9;
+    --light-bg: #f8f9fc;
+    --white: #ffffff;
+    --text-dark: #1e293b;
+    --text-gray: #64748b;
+    --border-light: #e2e8f0;
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+body {
+    background-color: var(--light-bg);
+}
+
+.details-container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+}
+
+.details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-dark);
+}
+
+    .header-title i {
+        font-size: 1.8rem;
+        color: var(--primary-blue);
+    }
+
+    .header-title h2 {
+        font-weight: 800;
+        margin: 0;
+        font-size: 1.8rem;
+    }
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.btn-back {
+    background-color: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-gray);
+}
+
+    .btn-back:hover {
+        background-color: var(--white);
+        color: var(--text-dark);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+.btn-download {
+    background-color: var(--primary-blue);
+    color: white;
+    border: 1px solid var(--primary-blue);
+}
+
+    .btn-download:hover {
+        background-color: var(--secondary-blue);
+        color: white;
+        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+    }
+
+.meta-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    box-shadow: var(--shadow-soft);
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+
+.meta-icon {
+    width: 50px;
+    height: 50px;
+    background-color: #eff6ff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-blue);
+    font-size: 1.5rem;
+}
+
+.meta-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.meta-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-gray);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.meta-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.meta-sub {
+    font-size: 0.85rem;
+    color: var(--text-gray);
+}
+
+.meta-divider {
+    width: 1px;
+    height: 40px;
+    background-color: var(--border-light);
+    margin: 0 2rem;
+}
+
+.clinical-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.clinical-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border: 1px solid var(--border-light);
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.card-header-strip {
+    padding: 1rem 1.5rem;
+    background-color: #f8fafc;
+    border-bottom: 1px solid var(--border-light);
+    font-weight: 700;
+    color: var(--text-gray);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+}
+
+    .card-header-strip i {
+        font-size: 1.1rem;
+        color: var(--primary-blue);
+    }
+
+.diagnosis-strip {
+    background: linear-gradient(to right, #eff6ff, #ffffff);
+    color: var(--primary-blue);
+}
+
+.card-content {
+    padding: 1.5rem;
+    flex-grow: 1;
+}
+
+.diagnosis-text {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.text-block {
+    white-space: pre-wrap;
+    font-family: inherit;
+    color: #334155;
+    line-height: 1.6;
+    background-color: #fafafa;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px dashed var(--border-light);
+}
+
+.note-style {
+    background-color: #fffbeb;
+    border-color: #fcd34d;
+    color: #92400e;
+}
+
+.highlight-card .card-header-strip {
+    background-color: #f0fdf4;
+    color: #15803d;
+}
+
+    .highlight-card .card-header-strip i {
+        color: #16a34a;
+    }
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    opacity: 0;
+    animation: slideUp 0.5s ease-out forwards;
+}
+
+@media (max-width: 768px) {
+    .meta-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .meta-divider {
+        display: none;
+    }
+
+    .clinical-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .details-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}

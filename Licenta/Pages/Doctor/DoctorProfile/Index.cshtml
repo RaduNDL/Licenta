@@ -1,0 +1,250 @@
+﻿@page
+@model Licenta.Pages.Doctor.DoctorProfile.IndexModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctorprofile.css" asp-append-version="true" />
+}
+
+<div class="container-fluid py-4">
+
+    @if (TempData["StatusMessage"] is string ok && !string.IsNullOrWhiteSpace(ok))
+    {
+        <div class="alert alert-success border-0 shadow-sm">@ok</div>
+    }
+    @if (TempData["ErrorMessage"] is string err && !string.IsNullOrWhiteSpace(err))
+    {
+        <div class="alert alert-danger border-0 shadow-sm">@err</div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="p-4 bg-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="profile-avatar">
+                            @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                            {
+                                <img src="@Model.ProfileImageUrl" alt="Profile photo" />
+                            }
+                            else
+                            {
+                                <div class="avatar-fallback">
+                                    <i class="bi bi-person-badge"></i>
+                                </div>
+                            }
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fs-4 fw-bold text-dark">@Model.DisplayName</div>
+                            <div class="text-muted">@Model.DisplaySubtitle</div>
+                            <div class="small text-muted mt-1">
+                                <i class="bi bi-shield-lock me-1"></i>@Model.Email
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 d-flex flex-wrap gap-2">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                            <i class="bi bi-hospital me-1"></i>@(string.IsNullOrWhiteSpace(Model.ClinicId) ? "No Clinic" : Model.ClinicId)
+                        </span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-check2-circle me-1"></i>Doctor
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="stat-mini">
+                                <div class="stat-label">Appointments</div>
+                                <div class="stat-value">@Model.StatsAppointments</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-mini">
+                                <div class="stat-label">Patients</div>
+                                <div class="stat-value">@Model.StatsPatients</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-mini">
+                                <div class="stat-label">Pending Docs</div>
+                                <div class="stat-value">@Model.StatsPendingAttachments</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-mini">
+                                <div class="stat-label">Unread Msg</div>
+                                <div class="stat-value">@Model.StatsUnreadMessages</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <form method="post" enctype="multipart/form-data" asp-page-handler="UploadPhoto">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-2 fw-semibold text-dark">Profile photo</div>
+                        <div class="small text-muted mb-3">PNG/JPG/WEBP, max 2MB.</div>
+
+                        <input asp-for="PhotoFile" type="file" class="form-control" accept=".png,.jpg,.jpeg,.webp" />
+                        <span asp-validation-for="PhotoFile" class="text-danger small"></span>
+
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="bi bi-upload me-2"></i>Upload
+                            </button>
+                            @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                            {
+                                <button type="submit" class="btn btn-outline-danger" asp-page-handler="RemovePhoto">
+                                    <i class="bi bi-trash me-2"></i>Remove
+                                </button>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 px-4 pt-4 pb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fs-4 fw-bold text-dark">Doctor Profile</div>
+                            <div class="text-muted">Keep it clean and professional.</div>
+                        </div>
+                        <a asp-page="/Doctor/Index" class="btn btn-sm btn-light">
+                            <i class="bi bi-arrow-left me-2"></i>Back
+                        </a>
+                    </div>
+
+                    <ul class="nav nav-pills mt-4" id="profileTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pane-account" type="button" role="tab">
+                                <i class="bi bi-person-lines-fill me-2"></i>Account
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-professional" type="button" role="tab">
+                                <i class="bi bi-award me-2"></i>Professional
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-office" type="button" role="tab">
+                                <i class="bi bi-geo-alt me-2"></i>Bio & Office
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card-body p-4">
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="tab-content">
+
+                            <div class="tab-pane fade show active" id="pane-account" role="tabpanel">
+                                <div class="row g-3">
+                                    <div class="col-md-7">
+                                        <label class="form-label">Full name</label>
+                                        <input asp-for="Input.FullName" class="form-control" />
+                                        <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-5">
+                                        <label class="form-label">Email</label>
+                                        <input class="form-control" value="@Model.Email" disabled />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Phone number</label>
+                                        <input asp-for="Input.PhoneNumber" class="form-control" />
+                                        <span asp-validation-for="Input.PhoneNumber" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Clinic ID</label>
+                                        <input class="form-control" value="@Model.ClinicId" disabled />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="pane-professional" role="tabpanel">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Specialty</label>
+                                        <input asp-for="Input.Specialty" class="form-control" placeholder="e.g. Oncology, Radiology" />
+                                        <span asp-validation-for="Input.Specialty" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Medical license number</label>
+                                        <input asp-for="Input.LicenseNumber" class="form-control" placeholder="e.g. RO-123456" />
+                                        <span asp-validation-for="Input.LicenseNumber" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label">Languages</label>
+                                        <input asp-for="Input.Languages" class="form-control" placeholder="e.g. Romanian, English" />
+                                        <span asp-validation-for="Input.Languages" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="pane-office" role="tabpanel">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Bio</label>
+                                        <textarea asp-for="Input.Bio" class="form-control" rows="5" placeholder="Short professional bio..."></textarea>
+                                        <span asp-validation-for="Input.Bio" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-8">
+                                        <label class="form-label">Office address</label>
+                                        <input asp-for="Input.OfficeAddress" class="form-control" placeholder="Street, number..." />
+                                        <span asp-validation-for="Input.OfficeAddress" class="text-danger small"></span>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">City</label>
+                                        <input asp-for="Input.City" class="form-control" placeholder="e.g. Craiova" />
+                                        <span asp-validation-for="Input.City" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <div class="d-flex flex-wrap gap-2 justify-content-end">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-save me-2"></i>Save profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body p-4">
+                    <div class="fw-bold text-dark">Public Profile Preview</div>
+                    <div class="text-muted mt-1">
+                        <span class="me-2"><i class="bi bi-award me-1"></i>@(string.IsNullOrWhiteSpace(Model.Input.Specialty) ? "Specialty not set" : Model.Input.Specialty)</span>
+                        <span><i class="bi bi-translate me-1"></i>@(string.IsNullOrWhiteSpace(Model.Input.Languages) ? "Languages not set" : Model.Input.Languages)</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/doctorprofile.js" asp-append-version="true"></script>
+}

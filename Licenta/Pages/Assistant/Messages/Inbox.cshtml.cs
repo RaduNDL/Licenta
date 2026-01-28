@@ -1,10 +1,11 @@
-using Licenta.Areas.Identity.Data;
+﻿using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -18,32 +19,39 @@ namespace Licenta.Pages.Assistant.Messages
     {
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly INotificationService _notifier;
+        private readonly IHubContext<NotificationHub> _hub;
+        private readonly INotificationService _notifications;
 
-        public InboxModel(AppDbContext db, UserManager<ApplicationUser> userManager, INotificationService notifier)
+        public InboxModel(
+            AppDbContext db,
+            UserManager<ApplicationUser> userManager,
+            IHubContext<NotificationHub> hub,
+            INotificationService notifications)
         {
             _db = db;
             _userManager = userManager;
-            _notifier = notifier;
+            _hub = hub;
+            _notifications = notifications;
         }
 
+        private static string ThreadKey(Guid requestId) => $"REQ:{requestId}";
+
         public record ConversationVm(
-            string PartnerId,
-            string PartnerName,
-            DateTime LastMessageAt,
-            string LastMessagePreview
-        );
+            Guid RequestId,
+            string PatientId,
+            string PatientName,
+            DateTime LastAt,
+            string LastMessagePreview);
 
         public record MessageVm(
             Guid Id,
             string Body,
             DateTime SentAtLocal,
-            bool IsMine
-        );
+            bool IsMine);
 
         public class InputModel
         {
-            public string RecipientId { get; set; } = string.Empty;
+            public Guid RequestId { get; set; }
             public string NewMessageBody { get; set; } = string.Empty;
         }
 
@@ -53,130 +61,191 @@ namespace Licenta.Pages.Assistant.Messages
         public List<ConversationVm> Conversations { get; set; } = new();
         public List<MessageVm> Messages { get; set; } = new();
 
-        public string SelectedUserId { get; set; } = string.Empty;
-        public string SelectedUserName { get; set; } = string.Empty;
+        public Guid SelectedRequestId { get; set; }
+        public string SelectedPatientName { get; set; } = string.Empty;
+        public string SelectedSubject { get; set; } = string.Empty;
 
-        public async Task OnGetAsync(string? userId)
+        public string CurrentConversationKey { get; set; } = string.Empty;
+        public bool CanSend { get; set; }
+        public bool CanClose { get; set; }
+
+        public int PendingRequestsCount { get; set; }
+
+        public async Task OnGetAsync(Guid? requestId)
         {
-            var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
-                return;
+            var assistant = await _userManager.GetUserAsync(User);
+            if (assistant == null) return;
 
-            var raw = await _db.InternalMessages
-                .Include(m => m.Sender)
-                .Include(m => m.Recipient)
-                .Where(m => m.SenderId == currentUser.Id || m.RecipientId == currentUser.Id)
+            PendingRequestsCount = await _db.PatientMessageRequests
+                .AsNoTracking()
+                .Where(r =>
+                    r.Status == PatientMessageRequestStatus.Pending &&
+                    (string.IsNullOrWhiteSpace(assistant.ClinicId) ||
+                     r.Patient!.ClinicId == assistant.ClinicId))
+                .CountAsync();
+
+            var requests = await _db.PatientMessageRequests
+                .Include(r => r.Patient)
+                .Where(r =>
+                    r.AssistantId == assistant.Id &&
+                    r.Status == PatientMessageRequestStatus.AssistantChat)
+                .OrderByDescending(r => r.UpdatedAt ?? r.CreatedAt)
                 .ToListAsync();
 
-            var convGroups = raw
-                .Select(m => new
-                {
-                    PartnerId = m.SenderId == currentUser.Id ? m.RecipientId : m.SenderId,
-                    PartnerName = m.SenderId == currentUser.Id
-                        ? (m.Recipient.FullName ?? m.Recipient.Email ?? m.Recipient.UserName)
-                        : (m.Sender.FullName ?? m.Sender.Email ?? m.Sender.UserName),
-                    m.SentAt,
-                    m.Body
-                })
-                .GroupBy(x => new { x.PartnerId, x.PartnerName })
-                .Select(g =>
-                {
-                    var last = g.OrderByDescending(x => x.SentAt).First();
-                    var preview = last.Body;
-                    if (!string.IsNullOrEmpty(preview) && preview.Length > 40)
-                        preview = preview[..40] + "...";
+            foreach (var r in requests)
+            {
+                var last = await _db.InternalMessages
+                    .AsNoTracking()
+                    .Where(m =>
+                        m.Subject == ThreadKey(r.Id) &&
+                        ((m.SenderId == assistant.Id && m.RecipientId == r.PatientId) ||
+                         (m.SenderId == r.PatientId && m.RecipientId == assistant.Id)))
+                    .OrderByDescending(m => m.SentAt)
+                    .FirstOrDefaultAsync();
 
-                    return new ConversationVm(
-                        g.Key.PartnerId,
-                        g.Key.PartnerName,
-                        last.SentAt,
-                        preview
-                    );
-                })
-                .OrderByDescending(c => c.LastMessageAt)
-                .ToList();
+                var preview = last?.Body ?? r.Subject ?? "";
+                if (preview.Length > 40)
+                    preview = preview[..40] + "...";
 
-            Conversations = convGroups;
+                Conversations.Add(new ConversationVm(
+                    r.Id,
+                    r.PatientId!,
+                    r.Patient?.FullName ?? r.Patient?.Email ?? "Patient",
+                    last?.SentAt ?? r.CreatedAt,
+                    preview));
+            }
 
-            if (!Conversations.Any())
+            if (requestId == null)
                 return;
 
-            SelectedUserId = !string.IsNullOrEmpty(userId)
-                ? userId
-                : Conversations.First().PartnerId;
+            var req = requests.FirstOrDefault(x => x.Id == requestId.Value);
+            if (req == null)
+                return;
 
-            var selectedConv = Conversations.FirstOrDefault(c => c.PartnerId == SelectedUserId);
-            SelectedUserName = selectedConv?.PartnerName ?? "Conversation";
+            SelectedRequestId = req.Id;
+            SelectedPatientName = req.Patient?.FullName ?? req.Patient?.Email ?? "Patient";
+            SelectedSubject = req.Subject;
+
+            CurrentConversationKey = $"patient:{req.Id}:assistant";
+            CanSend = true;
+            CanClose = true;
 
             Messages = await _db.InternalMessages
+                .AsNoTracking()
                 .Where(m =>
-                    (m.SenderId == currentUser.Id && m.RecipientId == SelectedUserId) ||
-                    (m.SenderId == SelectedUserId && m.RecipientId == currentUser.Id))
+                    m.Subject == ThreadKey(req.Id) &&
+                    ((m.SenderId == assistant.Id && m.RecipientId == req.PatientId) ||
+                     (m.SenderId == req.PatientId && m.RecipientId == assistant.Id)))
                 .OrderBy(m => m.SentAt)
                 .Select(m => new MessageVm(
                     m.Id,
                     m.Body,
                     m.SentAt.ToLocalTime(),
-                    m.SenderId == currentUser.Id
-                ))
+                    m.SenderId == assistant.Id))
                 .ToListAsync();
 
-            Input.RecipientId = SelectedUserId;
+            Input.RequestId = req.Id;
         }
 
-        public async Task<IActionResult> OnPostAsync(string? userId)
+        public async Task<IActionResult> OnPostAsync()
         {
-            var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser == null)
+            var assistant = await _userManager.GetUserAsync(User);
+            if (assistant == null)
                 return Unauthorized();
 
-            if (string.IsNullOrWhiteSpace(Input.RecipientId))
-            {
-                ModelState.AddModelError(string.Empty, "No recipient selected.");
-            }
+            if (Input.RequestId == Guid.Empty)
+                return BadRequest();
 
-            if (string.IsNullOrWhiteSpace(Input.NewMessageBody))
-            {
-                ModelState.AddModelError(nameof(Input.NewMessageBody), "Message cannot be empty.");
-            }
+            var body = (Input.NewMessageBody ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(body))
+                return new JsonResult(new { ok = false, error = "Message cannot be empty." }) { StatusCode = 400 };
 
-            var recipient = await _db.Users.FirstOrDefaultAsync(u => u.Id == Input.RecipientId);
-            if (recipient == null)
-            {
-                ModelState.AddModelError(string.Empty, "Selected recipient does not exist.");
-            }
+            var req = await _db.PatientMessageRequests
+                .Include(r => r.Patient)
+                .FirstOrDefaultAsync(r =>
+                    r.Id == Input.RequestId &&
+                    r.AssistantId == assistant.Id &&
+                    r.Status == PatientMessageRequestStatus.AssistantChat);
 
-            if (!ModelState.IsValid)
-            {
-                await OnGetAsync(Input.RecipientId);
-                return Page();
-            }
+            if (req == null)
+                return BadRequest();
 
-            var message = new InternalMessage
+            var msg = new InternalMessage
             {
                 Id = Guid.NewGuid(),
-                SenderId = currentUser.Id,
-                RecipientId = Input.RecipientId,
-                Subject = string.Empty,
-                Body = Input.NewMessageBody,
+                SenderId = assistant.Id,
+                RecipientId = req.PatientId!,
+                Subject = ThreadKey(req.Id),
+                Body = body,
                 SentAt = DateTime.UtcNow,
                 IsRead = false
             };
 
-            _db.InternalMessages.Add(message);
+            _db.InternalMessages.Add(msg);
             await _db.SaveChangesAsync();
 
-            var senderName = currentUser.FullName ?? currentUser.Email ?? currentUser.UserName;
-            await _notifier.NotifyAsync(
-                recipient!,
-                NotificationType.Message,
-                "New message received",
-                $"You received a new message from <b>{senderName}</b>.",
-                relatedEntity: "InternalMessage",
-                relatedEntityId: message.Id.ToString()
-            );
+            var senderName = string.IsNullOrWhiteSpace(assistant.FullName)
+                ? (assistant.Email ?? assistant.UserName ?? "Assistant")
+                : assistant.FullName;
 
-            return RedirectToPage(new { userId = Input.RecipientId });
+            if (req.Patient != null)
+            {
+                await _notifications.NotifyAsync(
+                    req.Patient,
+                    NotificationType.Message,
+                    "New message",
+                    $"New message from assistant <b>{senderName}</b>",
+                    "Message",
+                    req.Id.ToString()
+                );
+            }
+
+            var payload = new
+            {
+                conversationKey = $"patient:{req.Id}:assistant",
+                messageId = msg.Id,
+                senderId = msg.SenderId,
+                body = msg.Body,
+                sentAtUtc = msg.SentAt
+            };
+
+            await _hub.Clients.Group($"USER_{req.PatientId}")
+                .SendAsync("message:new", payload);
+
+            await _hub.Clients.Group($"USER_{assistant.Id}")
+                .SendAsync("message:new", payload);
+
+            return new JsonResult(new
+            {
+                ok = true,
+                messageId = msg.Id,
+                sentAtUtc = msg.SentAt
+            });
+        }
+
+        public async Task<IActionResult> OnPostCloseAsync(Guid id)
+        {
+            var assistant = await _userManager.GetUserAsync(User);
+            if (assistant == null)
+                return Unauthorized();
+
+            var req = await _db.PatientMessageRequests
+                .FirstOrDefaultAsync(r =>
+                    r.Id == id &&
+                    r.AssistantId == assistant.Id &&
+                    r.Status == PatientMessageRequestStatus.AssistantChat);
+
+            if (req == null)
+                return NotFound();
+
+            req.Status = PatientMessageRequestStatus.Closed;
+            req.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+
+            TempData["StatusMessage"] = "Conversation archived.";
+
+            return RedirectToPage();
         }
     }
 }

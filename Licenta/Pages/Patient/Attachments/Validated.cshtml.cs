@@ -27,19 +27,14 @@ namespace Licenta.Pages.Patient.Attachments
         public async Task OnGetAsync()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                Items = new();
-                return;
-            }
+            if (user == null) return;
 
             Items = await _db.MedicalAttachments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
-                .Where(a =>
-                    a.Patient != null &&
-                    a.Patient.UserId == user.Id &&
-                    a.Status == AttachmentStatus.Validated)
-                .OrderByDescending(a => a.ValidatedAtUtc ?? a.UploadedAt)
+                .Include(a => a.Doctor).ThenInclude(d => d.User)
+                .Where(a => a.Patient != null && a.Patient.UserId == user.Id)
+                .Where(a => a.Status == AttachmentStatus.Validated || a.Status == AttachmentStatus.Rejected)
+                .OrderByDescending(a => a.ValidatedAtUtc)
                 .ToListAsync();
         }
     }

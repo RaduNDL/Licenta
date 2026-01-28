@@ -3,16 +3,13 @@
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Licenta.Services;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Licenta.Areas.Identity.Pages.Account
@@ -40,8 +37,6 @@ namespace Licenta.Areas.Identity.Pages.Account
         [BindProperty]
         public InputModel Input { get; set; }
 
-        public IList<AuthenticationScheme> ExternalLogins { get; set; }
-
         public string ReturnUrl { get; set; }
 
         [TempData]
@@ -64,24 +59,15 @@ namespace Licenta.Areas.Identity.Pages.Account
         public async Task OnGetAsync(string returnUrl = null)
         {
             if (!string.IsNullOrEmpty(ErrorMessage))
-            {
                 ModelState.AddModelError(string.Empty, ErrorMessage);
-            }
 
-            returnUrl ??= Url.Content("~/");
-
-            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-
-            ReturnUrl = returnUrl;
+            ReturnUrl = returnUrl ?? Url.Content("~/");
+            await Task.CompletedTask;
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
-
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            ReturnUrl = returnUrl ?? Url.Content("~/");
 
             if (!ModelState.IsValid)
                 return Page();
@@ -96,7 +82,6 @@ namespace Licenta.Areas.Identity.Pages.Account
             {
                 _logger.LogInformation("User logged in.");
 
-                // Notify all administrators about this login
                 var loggedInUser = await _userManager.FindByEmailAsync(Input.Email);
                 if (loggedInUser != null)
                 {
@@ -122,11 +107,11 @@ namespace Licenta.Areas.Identity.Pages.Account
                     }
                 }
 
-                if (!string.IsNullOrEmpty(returnUrl)
-                    && Url.IsLocalUrl(returnUrl)
-                    && !returnUrl.Contains("/Identity/Account/Logout", StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(ReturnUrl)
+                    && Url.IsLocalUrl(ReturnUrl)
+                    && !ReturnUrl.Contains("/Identity/Account/Logout", StringComparison.OrdinalIgnoreCase))
                 {
-                    return LocalRedirect(returnUrl);
+                    return LocalRedirect(ReturnUrl);
                 }
 
                 return Redirect("~/");
@@ -134,13 +119,14 @@ namespace Licenta.Areas.Identity.Pages.Account
 
             if (result.RequiresTwoFactor)
             {
-                return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, Input.RememberMe });
+                ModelState.AddModelError(string.Empty, "Two-factor authentication is not enabled in this build.");
+                return Page();
             }
 
             if (result.IsLockedOut)
             {
-                _logger.LogWarning("User account locked out.");
-                return RedirectToPage("./Lockout");
+                ModelState.AddModelError(string.Empty, "This account is locked out. Please contact an administrator.");
+                return Page();
             }
 
             ModelState.AddModelError(string.Empty, "Invalid login attempt.");

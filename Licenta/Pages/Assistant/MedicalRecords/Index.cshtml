@@ -1,0 +1,183 @@
+@page
+@using Licenta.Models
+@model Licenta.Pages.Assistant.MedicalRecords.IndexModel
+
+@{
+    ViewData["Title"] = "Medical Records";
+}
+
+<link rel="stylesheet" href="~/css/assmedrecord.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<div class="med-container fade-in">
+    <div class="d-flex justify-content-between align-items-center mb-4 header-section">
+        <div>
+            <h1 class="display-6 fw-bold text-primary">
+                <i class="bi bi-heart-pulse-fill me-2"></i>Medical Records
+            </h1>
+            <p class="text-muted mb-0">Manage patient history and documentation</p>
+        </div>
+        <div class="search-wrapper">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" id="globalSearch" class="form-control search-input" placeholder="Search patient, doctor or diagnosis..." onkeyup="filterRecords()">
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-header bg-white p-0 border-bottom-0">
+            <ul class="nav nav-tabs med-tabs" id="recordTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-content" type="button" role="tab">
+                        <i class="bi bi-activity me-2"></i>Active Records
+                        <span class="badge rounded-pill bg-primary-subtle text-primary ms-2">@Model.ActiveRecords.Count</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed-content" type="button" role="tab">
+                        <i class="bi bi-check-circle-fill me-2"></i>Completed
+                        <span class="badge rounded-pill bg-success-subtle text-success ms-2">@Model.CompletedRecords.Count</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="tab-content" id="recordTabsContent">
+
+                <div class="tab-pane fade show active" id="active-content" role="tabpanel">
+                    @if (!Model.ActiveRecords.Any())
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-clipboard-pulse"></i>
+                            <h4>No Active Records</h4>
+                            <p class="text-muted">There are currently no active medical cases.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table med-table table-hover align-middle mb-0" id="activeTable">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">Visit Date</th>
+                                        <th>Patient</th>
+                                        <th>Doctor</th>
+                                        <th>Diagnosis</th>
+                                        <th class="text-end pe-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var r in Model.ActiveRecords)
+                                    {
+                                        <tr>
+                                            <td class="ps-4">
+                                                <div class="d-flex flex-column">
+                                                    <span class="fw-semibold">@r.VisitDateUtc.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                                                    <small class="text-muted">@r.VisitDateUtc.ToLocalTime().ToString("HH:mm")</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-circle bg-primary-subtle text-primary me-2">
+                                                        @((r.Patient?.User?.FullName ?? "P").Substring(0, 1).ToUpper())
+                                                    </div>
+                                                    <span class="fw-medium">@(r.Patient?.User?.FullName ?? r.Patient?.User?.Email ?? "Unknown")</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="text-secondary">Dr. @(r.Doctor?.User?.FullName ?? "Unknown")</span>
+                                            </td>
+                                            <td>
+                                                @if (string.IsNullOrWhiteSpace(r.Diagnosis))
+                                                {
+                                                    <span class="badge bg-secondary-subtle text-secondary fw-normal">Pending</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-dark">@r.Diagnosis</span>
+                                                }
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <a class="btn btn-icon btn-light text-primary" asp-page="/Assistant/MedicalRecords/Details" asp-route-id="@r.Id" title="View Details">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a class="btn btn-icon btn-light text-danger" asp-page="/Assistant/MedicalRecords/PrescriptionPdf" asp-route-id="@r.Id" title="Download PDF">
+                                                    <i class="bi bi-file-earmark-pdf"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+
+                <div class="tab-pane fade" id="completed-content" role="tabpanel">
+                    @if (!Model.CompletedRecords.Any())
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-journal-check"></i>
+                            <h4>No Completed Records</h4>
+                            <p class="text-muted">History is empty.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table med-table table-hover align-middle mb-0" id="completedTable">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">Visit Date</th>
+                                        <th>Patient</th>
+                                        <th>Doctor</th>
+                                        <th>Diagnosis</th>
+                                        <th class="text-end pe-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var r in Model.CompletedRecords)
+                                    {
+                                        <tr class="completed-row">
+                                            <td class="ps-4">
+                                                <div class="d-flex flex-column">
+                                                    <span class="fw-semibold text-secondary">@r.VisitDateUtc.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                                                    <small class="text-muted">@r.VisitDateUtc.ToLocalTime().ToString("HH:mm")</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-circle bg-success-subtle text-success me-2">
+                                                        @((r.Patient?.User?.FullName ?? "P").Substring(0, 1).ToUpper())
+                                                    </div>
+                                                    <span class="fw-medium text-secondary">@(r.Patient?.User?.FullName ?? r.Patient?.User?.Email ?? "Unknown")</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="text-muted">Dr. @(r.Doctor?.User?.FullName ?? "Unknown")</span>
+                                            </td>
+                                            <td>
+                                                <span class="text-secondary">@r.Diagnosis</span>
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <a class="btn btn-icon btn-light text-primary" asp-page="/Assistant/MedicalRecords/Details" asp-route-id="@r.Id" title="View Details">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a class="btn btn-icon btn-light text-secondary" asp-page="/Assistant/MedicalRecords/PrescriptionPdf" asp-route-id="@r.Id" title="Download PDF">
+                                                    <i class="bi bi-file-earmark-pdf"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/assmedrecord.js"></script>

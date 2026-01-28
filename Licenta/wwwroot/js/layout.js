@@ -1,92 +1,57 @@
-﻿(function () {
-    var body = document.body;
-    if (!body) return;
+﻿document.addEventListener('DOMContentLoaded', function () {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
 
-    var userId = body.getAttribute("data-current-user-id");
-    if (!userId) return;
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.nav-link');
 
-    if (typeof signalR === "undefined") {
-        console.error("SignalR client library not found. Make sure it is restored to ~/lib/microsoft/signalr.");
-        return;
-    }
+    navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href !== '#' && currentPath.toLowerCase().startsWith(href.toLowerCase())) {
+            link.classList.add('active');
 
-    var connection = new signalR.HubConnectionBuilder()
-        .withUrl("/notificationHub")
-        .withAutomaticReconnect()
-        .build();
-
-    function getBellButton() {
-        var btn = document.querySelector(".notification-bell-btn");
-        return btn || null;
-    }
-
-    function updateBadge() {
-        var btn = getBellButton();
-        if (!btn) return;
-
-        var badge = btn.querySelector(".notification-badge");
-        var current = 0;
-
-        if (badge && badge.textContent) {
-            var txt = badge.textContent.trim();
-            current = (txt === "99+") ? 99 : parseInt(txt) || 0;
+            const dropdownParent = link.closest('.dropdown');
+            if (dropdownParent) {
+                const parentToggle = dropdownParent.querySelector('.dropdown-toggle');
+                if (parentToggle) parentToggle.classList.add('active');
+            }
         }
+    });
 
-        current += 1;
+    const notifDropdown = document.querySelector('.notif-dropdown');
+    const notifBell = document.getElementById('notifBell');
 
-        if (!badge) {
-            badge = document.createElement("span");
-            badge.className = "notification-badge";
-            btn.appendChild(badge);
-        }
+    if (notifDropdown && notifBell && window.bootstrap && bootstrap.Dropdown) {
+        const dd = bootstrap.Dropdown.getOrCreateInstance(notifBell, { autoClose: 'outside' });
 
-        badge.textContent = current > 99 ? "99+" : current.toString();
-    }
+        let hideTimer = null;
 
-    function showNotificationToast(title, messageHtml) {
-        var container = document.getElementById("notification-toast-container");
-        if (!container) return;
+        const showMenu = () => {
+            if (hideTimer) {
+                clearTimeout(hideTimer);
+                hideTimer = null;
+            }
+            dd.show();
+        };
 
-        var toast = document.createElement("div");
-        toast.className = "notification-toast shadow";
+        const hideMenuSoon = () => {
+            if (hideTimer) clearTimeout(hideTimer);
+            hideTimer = setTimeout(() => dd.hide(), 180);
+        };
 
-        toast.innerHTML =
-            '<div class="notification-toast-header">' +
-            '  <span class="notification-toast-title">' + title + '</span>' +
-            '  <button type="button" class="btn-close btn-close-white btn-close-sm" aria-label="Close"></button>' +
-            '</div>' +
-            '<div class="notification-toast-body"></div>';
+        notifDropdown.addEventListener('mouseenter', showMenu);
+        notifDropdown.addEventListener('mouseleave', hideMenuSoon);
 
-        var bodyElem = toast.querySelector(".notification-toast-body");
-        bodyElem.innerHTML = messageHtml;
-
-        var closeBtn = toast.querySelector(".btn-close");
-        closeBtn.addEventListener("click", function () {
-            toast.classList.add("hide");
-            setTimeout(function () {
-                toast.remove();
-            }, 200);
+        notifBell.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = notifBell.href;
+            if (target) window.location.href = target;
         });
 
-        container.appendChild(toast);
-
-
-        setTimeout(function () {
-            if (!toast.classList.contains("hide")) {
-                toast.classList.add("hide");
-                setTimeout(function () {
-                    toast.remove();
-                }, 200);
-            }
-        }, 7000);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') dd.hide();
+        });
     }
-
-    connection.on("ReceiveNotification", function (payload) {
-        updateBadge();
-        showNotificationToast(payload.title, payload.message);
-    });
-
-    connection.start().catch(function (err) {
-        console.error("SignalR connection error:", err.toString());
-    });
-})();
+});

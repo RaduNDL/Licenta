@@ -1,0 +1,71 @@
+﻿@page "{id:guid}"
+@model Licenta.Pages.Doctor.Predictions.RecordModel
+@{
+    ViewData["Title"] = "AI Analysis Result";
+}
+
+<div class="container py-4">
+    <div class="mb-3">
+        <a asp-page="/Doctor/Attachments/Inbox" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Inbox
+        </a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h4 class="alert-heading">Analysis Failed</h4>
+            <p>@Model.ErrorMessage</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        <i class="bi bi-robot me-2"></i>AI Diagnosis
+                    </div>
+                    <div class="card-body text-center p-5">
+                        <h1 class="display-4 fw-bold text-primary mb-0">@Model.ResultLabel</h1>
+                        <p class="lead text-muted">Detected Condition</p>
+                        <hr />
+                        <div class="row mt-4">
+                            <div class="col-6 border-end">
+                                <small class="text-uppercase text-muted fw-bold">Confidence</small>
+                                <div class="fs-4 fw-bold">@Model.Confidence</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-uppercase text-muted fw-bold">Risk Level</small>
+                                <div class="fs-4 fw-bold text-danger">@Model.RiskLevel</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 p-3 bg-light rounded text-start">
+                            <strong><i class="bi bi-info-circle me-1"></i> Note:</strong> @Model.MedicalNote
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white fw-bold">Detailed Probabilities</div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            @foreach (var prob in Model.Probabilities)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @prob.Key
+                                    <span class="badge bg-primary rounded-pill">@prob.Value.ToString("P1")</span>
+                                </li>
+                            }
+                        </ul>
+                        <div class="mt-4 text-center">
+                            <img src="@Model.ImageUrl" class="img-thumbnail" style="max-height: 200px;" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

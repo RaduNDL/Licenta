@@ -1,20 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Licenta.Areas.Identity.Data;
+﻿using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 
 namespace Licenta.Pages.Patient.Attachments
 {
@@ -38,151 +35,89 @@ namespace Licenta.Pages.Patient.Attachments
             _notifier = notifier;
         }
 
-        public SelectList Doctors { get; set; } = default!;
-
         [BindProperty]
         public InputModel Input { get; set; } = new();
 
-        [BindProperty]
-        public List<IFormFile> Files { get; set; } = new();
-
         public class InputModel
         {
-            [Required]
-            public Guid DoctorId { get; set; }
+            [Required(ErrorMessage = "Please select a document type.")]
+            public string Type { get; set; } = "";
 
-            [MaxLength(2000)]
             public string? Notes { get; set; }
-        }
 
-        public async Task OnGetAsync()
-        {
-            Doctors = new SelectList(
-                await _db.Doctors
-                    .Include(d => d.User)
-                    .OrderBy(d => d.User.FullName)
-                    .ToListAsync(),
-                "Id", "User.FullName");
+            [Required(ErrorMessage = "Please select a file.")]
+            public IFormFile File { get; set; } = null!;
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            await OnGetAsync();
-
             if (!ModelState.IsValid)
-            {
-                TempData["StatusMessage"] = "Please fix form errors.";
                 return Page();
-            }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
-            {
-                TempData["StatusMessage"] = "User not found.";
-                return Page();
-            }
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
 
             var patient = await _db.Patients
-                .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.UserId == user.Id);
 
             if (patient == null)
+                return Forbid();
+
+            var uploadsFolder = Path.Combine(
+                _env.WebRootPath,
+                "uploads",
+                "patient_docs");
+
+            Directory.CreateDirectory(uploadsFolder);
+
+            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(Input.File.FileName)}";
+            var physicalPath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            await using (var stream = new FileStream(physicalPath, FileMode.Create))
             {
-                TempData["StatusMessage"] = "Patient profile not found.";
-                return Page();
+                await Input.File.CopyToAsync(stream);
             }
 
-            if (Files == null || Files.Count == 0)
+            var attachment = new MedicalAttachment
             {
-                TempData["StatusMessage"] = "Please select at least one image.";
-                return Page();
-            }
+                Id = Guid.NewGuid(),
+                PatientId = patient.Id,
+                FileName = Input.File.FileName,
+                FilePath = $"/uploads/patient_docs/{uniqueFileName}",
+                ContentType = Input.File.ContentType,
+                Type = Input.Type,
+                PatientNotes = Input.Notes,
+                Status = AttachmentStatus.Pending,
+                UploadedAt = DateTime.UtcNow
+            };
 
-            var uploadsRoot = Path.Combine(_env.WebRootPath, "uploads", "patient", patient.Id.ToString());
-            Directory.CreateDirectory(uploadsRoot);
+            _db.MedicalAttachments.Add(attachment);
+            await _db.SaveChangesAsync();
 
-            int saved = 0;
-            foreach (var file in Files)
+            var doctors = await _userManager.GetUsersInRoleAsync("Doctor");
+
+            foreach (var doctor in doctors)
             {
-                if (file.Length <= 0) continue;
-
-                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-                if (ext != ".jpg" && ext != ".jpeg" && ext != ".png")
+                if (!string.IsNullOrWhiteSpace(user.ClinicId) &&
+                    doctor.ClinicId != user.ClinicId)
                     continue;
 
-                if (file.Length > 10 * 1024 * 1024)
-                    continue;
-
-                var safeName = $"{DateTime.UtcNow:yyyyMMdd_HHmmssfff}_{Guid.NewGuid():N}{ext}";
-                var fullPath = Path.Combine(uploadsRoot, safeName);
-
-                using (var stream = System.IO.File.Create(fullPath))
-                    await file.CopyToAsync(stream);
-
-                var relPath = $"/uploads/patient/{patient.Id}/{safeName}";
-
-                var attachment = new MedicalAttachment
-                {
-                    Id = Guid.NewGuid(),
-                    FileName = Path.GetFileName(file.FileName),
-                    FilePath = relPath,
-                    Type = "MedicalImage",
-                    UploadedAt = DateTime.UtcNow,
-                    Status = AttachmentStatus.Pending,
-                    ValidationNotes = Input.Notes,
-                    DoctorId = Input.DoctorId,
-                    PatientId = patient.Id,
-                    UploadedByAssistantId = null,
-                    ContentType = file.ContentType
-                };
-
-                _db.MedicalAttachments.Add(attachment);
-                saved++;
+                await _notifier.NotifyAsync(
+                    doctor,
+                    NotificationType.Document,
+                    "New medical document uploaded",
+                    $"A patient uploaded a new document:<br/><b>{attachment.FileName}</b>",
+                    relatedEntity: "MedicalAttachment",
+                    relatedEntityId: attachment.Id.ToString(),
+                    sendEmail: false
+                );
             }
 
-            if (saved > 0)
-            {
-                await _db.SaveChangesAsync();
+            TempData["StatusMessage"] =
+                "Document uploaded successfully. Your doctor has been notified.";
 
-                var patientName = patient.User?.FullName ?? patient.User?.Email ?? patient.User?.UserName ?? "patient";
-
-                var doctorProfile = await _db.Doctors
-                    .Include(d => d.User)
-                    .FirstOrDefaultAsync(d => d.Id == Input.DoctorId);
-
-                if (doctorProfile?.User != null)
-                {
-                    var title = "New medical images uploaded";
-                    var message =
-                        $"Patient <b>{patientName}</b> uploaded <b>{saved}</b> medical image(s) for review.";
-
-                    await _notifier.NotifyAsync(
-                        doctorProfile.User,
-                        NotificationType.Info,
-                        title,
-                        message,
-                        relatedEntity: "MedicalAttachment",
-                        relatedEntityId: patient.Id.ToString());
-                }
-
-                if (patient.User != null)
-                {
-                    await _notifier.NotifyAsync(
-                        patient.User,
-                        NotificationType.Info,
-                        "Images uploaded",
-                        $"{saved} medical image(s) were uploaded and sent for validation.",
-                        relatedEntity: "MedicalAttachment",
-                        relatedEntityId: patient.Id.ToString(),
-                        sendEmail: false);
-                }
-
-                TempData["StatusMessage"] = $"{saved} file(s) uploaded and sent for validation.";
-                return RedirectToPage();
-            }
-
-            TempData["StatusMessage"] = "No files were uploaded.";
-            return Page();
+            return RedirectToPage("/Patient/Attachments/Index");
         }
     }
 }

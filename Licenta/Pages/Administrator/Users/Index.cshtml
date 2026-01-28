@@ -4,7 +4,7 @@
     ViewData["Title"] = "Users & Roles";
 }
 @section Styles {
-    <link rel="stylesheet" href="~/css/admin.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -14,6 +14,7 @@
     </div>
     <div class="d-flex gap-2">
         <form method="post" asp-page-handler="Export">
+            @Html.AntiForgeryToken()
             <button class="btn btn-light text-success border-0 shadow-sm"><i class="bi bi-file-earmark-excel me-2"></i>Export</button>
         </form>
         <a class="btn btn-primary" asp-page="/Administrator/Users/Create"><i class="bi bi-plus-lg me-2"></i>New User</a>
@@ -50,7 +51,7 @@
                         <tr>
                             <td class="ps-4">
                                 <div>
-                                    <div class="fw-bold text-dark">@(u.FullName ?? "Unset Name")</div>
+                                    <div class="fw-bold text-dark">@(string.IsNullOrWhiteSpace(u.FullName) ? "Unset Name" : u.FullName)</div>
                                     <div class="small text-muted">@u.Email</div>
                                 </div>
                             </td>
@@ -64,6 +65,7 @@
                                 {
                                     var badgeClass = r == "Administrator" ? "bg-dark text-white" :
                                     r == "Doctor" ? "bg-primary-subtle text-primary" :
+                                    r == "Assistant" ? "bg-secondary-subtle text-secondary" :
                                     "bg-secondary-subtle text-secondary";
                                     <span class="badge @badgeClass me-1">@r</span>
                                 }
@@ -94,6 +96,7 @@
                                         {
                                             <li>
                                                 <form method="post" asp-page-handler="ToggleLock" asp-route-id="@u.Id">
+                                                    @Html.AntiForgeryToken()
                                                     <button class="dropdown-item @(isLocked ? "text-success" : "text-danger")">
                                                         <i class="bi @(isLocked ? "bi-unlock" : "bi-lock") me-2"></i>
                                                         @(isLocked ? "Unblock Access" : "Block Access")

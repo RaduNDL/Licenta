@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
 namespace Licenta.Pages.Administrator.Overview
 {
@@ -25,15 +25,16 @@ namespace Licenta.Pages.Administrator.Overview
         public int TotalRoles { get; set; }
         public Dictionary<string, int> UsersPerRole { get; set; } = new();
 
-        public async Task OnGet()
+        public async Task OnGetAsync()
         {
-            TotalUsers = _userManager.Users.Count();
-            TotalRoles = _roleManager.Roles.Count();
+            TotalUsers = await _userManager.Users.CountAsync();
+            TotalRoles = await _roleManager.Roles.CountAsync();
 
-            foreach (var role in _roleManager.Roles)
+            var roles = await _roleManager.Roles.Select(r => r.Name!).ToListAsync();
+            foreach (var role in roles)
             {
-                var usersInRole = await _userManager.GetUsersInRoleAsync(role.Name!);
-                UsersPerRole[role.Name!] = usersInRole.Count;
+                var usersInRole = await _userManager.GetUsersInRoleAsync(role);
+                UsersPerRole[role] = usersInRole.Count;
             }
         }
     }

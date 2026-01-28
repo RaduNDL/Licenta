@@ -3,8 +3,9 @@
 @{
     ViewData["Title"] = "System Settings";
 }
+
 @section Styles {
-    <link rel="stylesheet" href="~/css/admin.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
 }
 
 <div class="row justify-content-center">
@@ -24,33 +25,41 @@
             <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4">@msg</div>
         }
 
+        @if (TempData["Error"] is string err)
+        {
+            <div class="alert alert-danger border-0 shadow-sm rounded-3 mb-4">@err</div>
+        }
+
         <form method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
 
             <div class="card mb-4">
                 <div class="card-header bg-transparent border-0 pb-0 pt-4">
-                    <h5 class="fw-bold text-primary"><i class="bi bi-stars me-2"></i>Branding & Uploads</h5>
+                    <h5 class="fw-bold text-primary">
+                        <i class="bi bi-stars me-2"></i>Branding & Uploads
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-8">
                             <label class="form-label text-muted small fw-bold">CLINIC NAME</label>
-                            <input asp-for="Input.ClinicName" class="form-control form-control-lg" placeholder="e.g. Regina Maria" />
+                            <input asp-for="Input.ClinicName" class="form-control form-control-lg" />
                         </div>
                         <div class="col-md-4">
                             <label class="form-label text-muted small fw-bold">MAX UPLOAD (MB)</label>
                             <div class="input-group">
-                                <input asp-for="Input.MaxUploadMb" class="form-control form-control-lg" type="number" />
-                                <span class="input-group-text bg-light border-start-0">MB</span>
+                                <input asp-for="Input.MaxUploadMb" class="form-control form-control-lg" type="number" min="1" max="200" />
+                                <span class="input-group-text">MB</span>
                             </div>
                         </div>
                         <div class="col-12">
                             <label class="form-label text-muted small fw-bold">LOGO</label>
-                            <input type="file" asp-for="LogoFile" class="form-control" />
+                            <input type="file" asp-for="LogoFile" class="form-control" accept=".png,.jpg,.jpeg,.webp,.svg" />
 
-                            @if (Model.Input?.LogoPath != null)
+                            @if (!string.IsNullOrWhiteSpace(Model.Input.LogoPath))
                             {
                                 <div class="mt-3 p-3 bg-light rounded-3 d-inline-block border">
-                                    <img src="@Model.Input.LogoPath" alt="Current Logo" style="height: 50px; width: auto;" />
+                                    <img src="@Model.Input.LogoPath" style="height:50px;" />
                                 </div>
                             }
                         </div>
@@ -60,60 +69,29 @@
 
             <div class="card mb-4">
                 <div class="card-header bg-transparent border-0 pb-0 pt-4">
-                    <h5 class="fw-bold text-info"><i class="bi bi-envelope-at me-2"></i>Email (SMTP)</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-8">
-                            <label class="form-label text-muted small fw-bold">SERVER HOST</label>
-                            <input asp-for="Input.SmtpServer" class="form-control" placeholder="smtp.gmail.com" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label text-muted small fw-bold">PORT</label>
-                            <input asp-for="Input.SmtpPort" class="form-control" placeholder="587" />
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small fw-bold">USERNAME</label>
-                            <input asp-for="Input.SmtpUser" class="form-control" />
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-muted small fw-bold">PASSWORD</label>
-                            <input asp-for="Input.SmtpPassword" class="form-control" type="password" value="@(Model.Input?.SmtpPassword)" />
-                        </div>
-                        <div class="col-12">
-                            <div class="form-check form-switch">
-                                <input asp-for="Input.SmtpUseSSL" class="form-check-input" type="checkbox" role="switch" />
-                                <label class="form-check-label ms-2">Use SSL/TLS Encryption</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="card mb-4">
-                <div class="card-header bg-transparent border-0 pb-0 pt-4">
-                    <h5 class="fw-bold text-danger"><i class="bi bi-shield-lock me-2"></i>Security Policy</h5>
+                    <h5 class="fw-bold text-danger">
+                        <i class="bi bi-shield-lock me-2"></i>Security Policy
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="row g-3 align-items-center">
                         <div class="col-md-4">
-                            <label class="form-label text-muted small fw-bold">MIN LENGTH</label>
-                            <input asp-for="Input.PasswordMinLength" type="number" class="form-control" />
+                            <label class="form-label text-muted small fw-bold">MIN PASSWORD LENGTH</label>
+                            <input asp-for="Input.PasswordMinLength" type="number" class="form-control" min="4" max="128" />
                         </div>
                         <div class="col-md-8">
-                            <div class="d-flex gap-4 mt-4">
+                            <div class="d-flex gap-4 mt-4 flex-wrap">
                                 <div class="form-check">
                                     <input asp-for="Input.RequireDigit" class="form-check-input" />
-                                    <label class="form-check-label">Require Digit (0-9)</label>
+                                    <label class="form-check-label">Require digit</label>
                                 </div>
                                 <div class="form-check">
                                     <input asp-for="Input.RequireUppercase" class="form-check-input" />
-                                    <label class="form-check-label">Require Uppercase (A-Z)</label>
+                                    <label class="form-check-label">Require uppercase</label>
                                 </div>
                                 <div class="form-check">
                                     <input asp-for="Input.RequireSpecialChar" class="form-check-input" />
-                                    <label class="form-check-label">Require Special (!@@#)</label>
+                                    <label class="form-check-label">Require special character</label>
                                 </div>
                             </div>
                         </div>
@@ -122,7 +100,7 @@
             </div>
 
             <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-5">
-                <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill shadow-lg">
+                <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill">
                     <i class="bi bi-save me-2"></i>Save Configuration
                 </button>
             </div>

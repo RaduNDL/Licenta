@@ -1,0 +1,68 @@
+﻿@page
+@model Licenta.Pages.Doctor.Appointments.ApprovalDetailsModel
+@{
+    ViewData["Title"] = "Approval Details";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-1 fw-bold">Approval Details</h2>
+            <div class="text-muted">Confirm or reject the assistant proposal</div>
+        </div>
+        <a asp-page="/Doctor/Appointments/Approvals" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info border-0 shadow-sm">@status</div>
+    }
+
+    @if (Model.Item == null)
+    {
+        <div class="alert alert-warning border-0 shadow-sm mb-0">Item not found.</div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="text-muted small">Patient</div>
+                        <div class="fw-semibold">@Model.Item.PatientName</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-muted small">Submitted</div>
+                        <div class="fw-semibold">@Model.Item.UploadedAtLocal</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="text-muted small">Reason</div>
+                        <div class="fw-semibold">@Model.Item.Reason</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="text-muted small">Requested</div>
+                        <div class="fw-semibold">@Model.Item.RequestedDisplay</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="text-muted small">Suggested by assistant</div>
+                        <div class="fw-semibold">@Model.Item.SuggestedDisplay</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="post" class="d-flex flex-wrap gap-2">
+                    <input type="hidden" asp-for="AttachmentId" />
+                    <button type="submit" asp-page-handler="Approve" class="btn btn-success">
+                        Approve
+                    </button>
+                    <button type="submit" asp-page-handler="Reject" class="btn btn-outline-danger">
+                        Reject
+                    </button>
+                </form>
+            </div>
+        </div>
+    }
+</div>

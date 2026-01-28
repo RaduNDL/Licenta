@@ -92,7 +92,7 @@ namespace Licenta.Pages.Administrator.Users
 
             user.Email = emailToSet;
             user.UserName = emailToSet;
-            user.FullName = Input.FullName?.Trim() ?? string.Empty;
+            user.FullName = (Input.FullName ?? string.Empty).Trim();
             user.EmailConfirmed = Input.EmailConfirmed;
 
             var result = await _userManager.UpdateAsync(user);

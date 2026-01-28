@@ -39,7 +39,6 @@ namespace Licenta.Pages.Administrator.Users
         public string? ErrorMessage { get; set; }
         public string? SuccessMessage { get; set; }
 
-
         public async Task<IActionResult> OnGetAsync(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
@@ -58,7 +57,6 @@ namespace Licenta.Pages.Administrator.Users
             return Page();
         }
 
-
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)
@@ -72,7 +70,6 @@ namespace Licenta.Pages.Administrator.Users
             }
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-
             var reset = await _userManager.ResetPasswordAsync(user, token, NewPassword);
 
             if (!reset.Succeeded)
@@ -82,7 +79,6 @@ namespace Licenta.Pages.Administrator.Users
             }
 
             SuccessMessage = "Password successfully reset.";
-
             return Page();
         }
     }

@@ -1,53 +1,67 @@
-﻿@page
+﻿@page "{id:guid}"
 @model Licenta.Pages.Doctor.Attachments.ValidateModel
 @{
-    ViewData["Title"] = "Validate Analyses";
+    ViewData["Title"] = "Validate Attachment";
+    bool isImage = Model.Item != null
+        && !string.IsNullOrWhiteSpace(Model.Item.ContentType)
+        && Model.Item.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
 }
+
 @section Styles {
-    <link rel="stylesheet" href="~/css/doctor.css" />
-}
-<h2>Analyses pending validation (uploaded by patients)</h2>
-
-@if (TempData["StatusMessage"] != null)
-{
-    <div class="alert alert-info">@TempData["StatusMessage"]</div>
+    <link rel="stylesheet" href="~/css/doctor.css" asp-append-version="true" />
 }
 
-@if (!Model.Pending.Any())
-{
-    <div class="alert alert-secondary">No analyses pending.</div>
-}
-else
-{
-    <table class="table table-striped align-middle">
-        <thead>
-            <tr>
-                <th>File</th>
-                <th>Patient</th>
-                <th>Uploaded</th>
-                <th>Type</th>
-                <th>Notes</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var a in Model.Pending)
-            {
-                <tr>
-                    <td><a href="@a.FilePath" target="_blank">@a.FileName</a></td>
-                    <td>@(a.Patient?.User?.FullName ?? a.Patient?.User?.Email)</td>
-                    <td>@a.UploadedAt.ToLocalTime().ToString("g")</td>
-                    <td>@a.Type</td>
-                    <td>@(string.IsNullOrWhiteSpace(a.ValidationNotes) ? "-" : a.ValidationNotes)</td>
-                    <td class="text-end">
-                        <form method="post" class="d-inline">
-                            <input type="hidden" name="id" value="@a.Id" />
-                            <button name="action" value="approve" class="btn btn-success btn-sm">Validate</button>
-                            <button name="action" value="reject" class="btn btn-outline-danger btn-sm ms-2">Reject</button>
-                        </form>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<div class="container py-4">
+    <h3 class="mb-3">Validate Attachment</h3>
+
+    @if (Model.Item == null)
+    {
+        <div class="alert alert-danger">Attachment not found.</div>
+        <a asp-page="/Doctor/Attachments/Inbox" class="btn btn-secondary">Back</a>
+    }
+    else
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Patient:</strong>
+                    @(Model.Item.Patient?.User?.FullName ?? Model.Item.Patient?.User?.Email)
+                </div>
+
+                <div class="mb-2">
+                    <strong>File:</strong> @Model.Item.FileName
+                </div>
+
+                <div class="mb-3">
+                    <a asp-page="/Files/Attachment"
+                       asp-route-id="@Model.Item.Id"
+                       target="_blank"
+                       class="btn btn-sm btn-outline-secondary">
+                        Download
+                    </a>
+                </div>
+
+                @if (isImage)
+                {
+                    <div class="border rounded p-2 bg-light mb-3">
+                        <img src="@Url.Page("/Files/Attachment", new { id = Model.Item.Id })"
+                             style="max-width:100%; height:auto;" />
+                    </div>
+                }
+
+                <form method="post">
+                    <button type="submit"
+                            class="btn btn-success">
+                        <i class="bi bi-check2-circle me-1"></i>
+                        Accept & Run Prediction
+                    </button>
+
+                    <a asp-page="/Doctor/Attachments/Inbox"
+                       class="btn btn-outline-secondary ms-2">
+                        Cancel
+                    </a>
+                </form>
+            </div>
+        </div>
+    }
+</div>

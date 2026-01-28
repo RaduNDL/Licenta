@@ -1,103 +1,78 @@
 ﻿@page
 @model Licenta.Pages.Patient.Appointments.RequestModel
-
 @{
     ViewData["Title"] = "Request Appointment";
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/patient.css" />
+    <link rel="stylesheet" href="~/css/RequestAppointment.css" />
 }
 
-<h2 class="mb-3">Request Appointment</h2>
-
-@if (TempData["StatusMessage"] is string status)
-{
-    <div class="alert alert-info">@status</div>
-}
-
-<form method="post">
-    <div class="mb-3">
-        <label asp-for="Input.DoctorId" class="form-label">Doctor</label>
-        <select asp-for="Input.DoctorId"
-                asp-items="Model.Doctors"
-                class="form-select"
-                id="doctorSelect">
-        </select>
-        <span asp-validation-for="Input.DoctorId" class="text-danger"></span>
-    </div>
-
-    @if (Model.DoctorSchedule != null && Model.DoctorSchedule.Count > 0)
-    {
-        <div class="mb-3">
-            <h5>Doctor schedule</h5>
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Day</th>
-                        <th>Start</th>
-                        <th>End</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var day in Model.DoctorSchedule)
-                    {
-                        <tr>
-                            <td>@day.DayOfWeek</td>
-                            <td>@day.StartTime.ToString(@"hh\:mm")</td>
-                            <td>@day.EndTime.ToString(@"hh\:mm")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="text-muted mb-0">
-                Please choose a preferred date and time within these working hours.
-            </p>
+<div class="request-appointment-wrapper">
+    <div class="header-section row align-items-center">
+        <div class="col-md-8">
+            <h2 class="mb-1">Request Appointment</h2>
+            <p class="text-muted mb-0">Choose an available slot and describe the reason.</p>
         </div>
-    }
-    else
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">
+                My Appointments
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string status)
     {
-        <p class="text-muted">No schedule is defined for this doctor.</p>
+        <div class="alert alert-info">@status</div>
     }
 
-    <div class="mb-3 mt-3">
-        <label asp-for="Input.PreferredDate" class="form-label">Preferred date</label>
-        <input asp-for="Input.PreferredDate" class="form-control" type="date" />
-        <span asp-validation-for="Input.PreferredDate" class="text-danger"></span>
-    </div>
+    <div class="form-card">
+        <div class="card-body">
+            @if (Model.AvailableSlots == null || !Model.AvailableSlots.Any())
+            {
+                <div class="text-center py-5">
+                    <svg class="empty-state-icon" width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <h5 class="text-muted fw-bold">No Slots Available</h5>
+                    <p class="text-muted mb-0">There are no available appointment slots at this time.</p>
+                    <p class="small text-muted">Please try again later or contact the clinic directly.</p>
+                </div>
+            }
+            else
+            {
+                <form method="post">
+                    <div class="mb-4">
+                        <label class="form-label">Available slots</label>
+                        <select class="form-select" asp-for="Input.SelectedSlotKey" required>
+                            <option value="" selected disabled>Select a time slot...</option>
+                            @foreach (var s in Model.AvailableSlots)
+                            {
+                                <option value="@s.Key">@s.Display</option>
+                            }
+                        </select>
+                        <span class="text-danger" asp-validation-for="Input.SelectedSlotKey"></span>
+                    </div>
 
-    <div class="mb-3">
-        <label asp-for="Input.PreferredTime" class="form-label">Preferred time</label>
-        <input asp-for="Input.PreferredTime"
-               class="form-control"
-               type="time"
-               step="900" />
-        <span asp-validation-for="Input.PreferredTime" class="text-danger"></span>
-    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Reason for Visit</label>
+                        <textarea class="form-control" rows="4" asp-for="Input.Reason" placeholder="Please briefly explain your symptoms or reason for the appointment..."></textarea>
+                        <span class="text-danger" asp-validation-for="Input.Reason"></span>
+                    </div>
 
-    <div class="mb-3">
-        <label asp-for="Input.Reason" class="form-label">Reason</label>
-        <textarea asp-for="Input.Reason" class="form-control" rows="3"></textarea>
-        <span asp-validation-for="Input.Reason" class="text-danger"></span>
+                    <div class="d-flex gap-3 pt-2">
+                        <a asp-page="/Patient/Index" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            Submit Request
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
     </div>
-
-    <button class="btn btn-primary" type="submit">Send request</button>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            var select = document.getElementById("doctorSelect");
-            if (!select) return;
-
-            select.addEventListener("change", function () {
-                var value = this.value;
-                if (value) {
-                    var url = '@Url.Page("Request")' + '?doctorId=' + encodeURIComponent(value);
-                    window.location.href = url;
-                }
-            });
-        });
-    </script>
+    <script src="~/js/RequestAppointment.js"></script>
 }

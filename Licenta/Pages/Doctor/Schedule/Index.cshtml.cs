@@ -1,5 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -33,9 +37,7 @@ namespace Licenta.Pages.Doctor.Schedule
         public class DayAvailabilityInput
         {
             public DayOfWeek DayOfWeek { get; set; }
-
             public string DayName { get; set; } = "";
-
             public bool IsActive { get; set; }
 
             [DataType(DataType.Time)]
@@ -81,16 +83,21 @@ namespace Licenta.Pages.Doctor.Schedule
 
             if (doctor == null)
             {
-                doctor = new DoctorProfile
+                var created = new Licenta.Models.DoctorProfile
                 {
                     Id = Guid.NewGuid(),
                     UserId = user.Id
                 };
-                _db.Doctors.Add(doctor);
+
+                _db.Doctors.Add(created);
                 await _db.SaveChangesAsync();
+
+                doctor = await _db.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == created.Id);
+                if (doctor == null)
+                    return Page();
             }
 
-            DoctorName = doctor.User.FullName ?? doctor.User.Email ?? "Doctor";
+            DoctorName = doctor.User?.FullName ?? doctor.User?.Email ?? "Doctor";
 
             await LoadDaysFromDatabaseAsync(doctor.Id);
 
@@ -114,16 +121,16 @@ namespace Licenta.Pages.Doctor.Schedule
             if (user == null)
                 return Challenge();
 
-            var doctor = await _db.Doctors
-                .FirstOrDefaultAsync(d => d.UserId == user.Id);
+            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
 
             if (doctor == null)
             {
-                doctor = new DoctorProfile
+                doctor = new Licenta.Models.DoctorProfile
                 {
                     Id = Guid.NewGuid(),
                     UserId = user.Id
                 };
+
                 _db.Doctors.Add(doctor);
                 await _db.SaveChangesAsync();
             }
@@ -155,24 +162,20 @@ namespace Licenta.Pages.Doctor.Schedule
                 if (!day.IsActive)
                 {
                     if (entity != null)
-                    {
                         _db.DoctorAvailabilities.Remove(entity);
-                    }
                     continue;
                 }
 
                 if (day.StartTime == null || day.EndTime == null)
                 {
-                    ModelState.AddModelError(nameof(ScheduleText),
-                        $"Please provide valid start and end time for {day.DayName}.");
+                    ModelState.AddModelError(nameof(ScheduleText), $"Please provide valid start and end time for {day.DayName}.");
                     await LoadDaysFromDatabaseAsync(doctor.Id);
                     return Page();
                 }
 
                 if (day.EndTime <= day.StartTime)
                 {
-                    ModelState.AddModelError(nameof(ScheduleText),
-                        $"End time must be after start time for {day.DayName}.");
+                    ModelState.AddModelError(nameof(ScheduleText), $"End time must be after start time for {day.DayName}.");
                     await LoadDaysFromDatabaseAsync(doctor.Id);
                     return Page();
                 }
@@ -223,10 +226,7 @@ namespace Licenta.Pages.Doctor.Schedule
                 .ToList();
         }
 
-        private bool TryParseScheduleText(
-            string text,
-            out List<DayAvailabilityInput> parsedDays,
-            out string? errorMessage)
+        private bool TryParseScheduleText(string text, out List<DayAvailabilityInput> parsedDays, out string? errorMessage)
         {
             parsedDays = Enum.GetValues(typeof(DayOfWeek))
                 .Cast<DayOfWeek>()
@@ -243,15 +243,13 @@ namespace Licenta.Pages.Doctor.Schedule
             errorMessage = null;
 
             var lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-
             if (lines.Length == 0)
             {
                 errorMessage = "Schedule text is empty.";
                 return false;
             }
 
-            var timeRegex = new Regex(@"(\d{1,2})(?::(\d{2}))?\s*(AM|PM|am|pm)?",
-                RegexOptions.Compiled);
+            var timeRegex = new Regex(@"(\d{1,2})(?::(\d{2}))?\s*(AM|PM|am|pm)?", RegexOptions.Compiled);
 
             foreach (var rawLine in lines)
             {

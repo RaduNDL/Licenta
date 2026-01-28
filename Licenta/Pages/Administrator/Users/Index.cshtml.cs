@@ -4,10 +4,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Licenta.Pages.Administrator.Users
@@ -20,9 +20,7 @@ namespace Licenta.Pages.Administrator.Users
 
         private const bool PROTECT_DOCTOR_FROM_LOCK = true;
 
-        public IndexModel(
-            UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+        public IndexModel(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -37,8 +35,11 @@ namespace Licenta.Pages.Administrator.Users
             CurrentUserId = _userManager.GetUserId(User);
 
             Users = await _userManager.Users
+                .AsNoTracking()
                 .OrderBy(u => u.Email ?? u.UserName)
                 .ToListAsync();
+
+            RolesByUserId = new Dictionary<string, List<string>>(StringComparer.Ordinal);
 
             foreach (var u in Users)
             {
@@ -52,6 +53,7 @@ namespace Licenta.Pages.Administrator.Users
         public async Task<IActionResult> OnPostExportAsync()
         {
             var users = await _userManager.Users
+                .AsNoTracking()
                 .OrderBy(u => u.Email ?? u.UserName)
                 .ToListAsync();
 
@@ -80,20 +82,6 @@ namespace Licenta.Pages.Administrator.Users
         private static string Quote(string? s)
             => "\"" + (s ?? string.Empty).Replace("\"", "\"\"") + "\"";
 
-        public async Task<IActionResult> OnPostLockAsync(string id)
-        {
-            var (ok, message) = await TryChangeLockAsync(id, shouldLock: true);
-            TempData["StatusMessage"] = message;
-            return RedirectToPage();
-        }
-
-        public async Task<IActionResult> OnPostUnlockAsync(string id)
-        {
-            var (ok, message) = await TryChangeLockAsync(id, shouldLock: false);
-            TempData["StatusMessage"] = message;
-            return RedirectToPage();
-        }
-
         public async Task<IActionResult> OnPostToggleLockAsync(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
@@ -118,18 +106,18 @@ namespace Licenta.Pages.Administrator.Users
 
             var roles = await _userManager.GetRolesAsync(target);
 
-            if (PROTECT_DOCTOR_FROM_LOCK && roles.Contains("Doctor"))
+            if (PROTECT_DOCTOR_FROM_LOCK && roles.Contains("Doctor") && !IsLocked(target))
             {
                 TempData["StatusMessage"] = "Doctors are protected from locking.";
                 return RedirectToPage();
             }
 
-            if (roles.Contains("Administrator"))
+            if (roles.Contains("Administrator") && !IsLocked(target))
             {
                 var admins = await _userManager.GetUsersInRoleAsync("Administrator");
                 var otherActiveAdmins = admins
                     .Where(a => a.Id != target.Id)
-                    .Count(a => !IsLocked(a));
+                    .Count(a => !IsLocked(a) && !a.IsSoftDeleted);
 
                 if (otherActiveAdmins == 0)
                 {
@@ -139,8 +127,8 @@ namespace Licenta.Pages.Administrator.Users
             }
 
             var locked = IsLocked(target);
-            var (ok2, message2) = await TryChangeLockAsync(target.Id, shouldLock: !locked);
-            TempData["StatusMessage"] = message2;
+            var (_, message) = await TryChangeLockAsync(target.Id, shouldLock: !locked);
+            TempData["StatusMessage"] = message;
             return RedirectToPage();
         }
 
@@ -167,7 +155,7 @@ namespace Licenta.Pages.Administrator.Users
                 var admins = await _userManager.GetUsersInRoleAsync("Administrator");
                 var otherActiveAdmins = admins
                     .Where(a => a.Id != target.Id)
-                    .Count(a => !IsLocked(a));
+                    .Count(a => !IsLocked(a) && !a.IsSoftDeleted);
 
                 if (otherActiveAdmins == 0)
                     return (false, "System must keep at least one active Administrator.");
@@ -182,15 +170,13 @@ namespace Licenta.Pages.Administrator.Users
                     ? (true, $"User {target.Email ?? target.UserName} blocked.")
                     : (false, string.Join("; ", res.Errors.Select(e => e.Description)));
             }
-            else
-            {
-                target.LockoutEnd = null;
-                target.AccessFailedCount = 0;
-                var res = await _userManager.UpdateAsync(target);
-                return res.Succeeded
-                    ? (true, $"User {target.Email ?? target.UserName} unblocked.")
-                    : (false, string.Join("; ", res.Errors.Select(e => e.Description)));
-            }
+
+            target.LockoutEnd = null;
+            target.AccessFailedCount = 0;
+            var res2 = await _userManager.UpdateAsync(target);
+            return res2.Succeeded
+                ? (true, $"User {target.Email ?? target.UserName} unblocked.")
+                : (false, string.Join("; ", res2.Errors.Select(e => e.Description)));
         }
     }
 }

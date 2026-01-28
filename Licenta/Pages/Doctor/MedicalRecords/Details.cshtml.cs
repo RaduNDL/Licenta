@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
@@ -13,12 +13,12 @@ namespace Licenta.Pages.Doctor.MedicalRecords
     [Authorize(Roles = "Doctor")]
     public class DetailsModel : PageModel
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public DetailsModel(AppDbContext context, UserManager<ApplicationUser> userManager)
+        public DetailsModel(AppDbContext db, UserManager<ApplicationUser> userManager)
         {
-            _context = context;
+            _db = db;
             _userManager = userManager;
         }
 
@@ -27,23 +27,19 @@ namespace Licenta.Pages.Doctor.MedicalRecords
         public async Task<IActionResult> OnGetAsync(Guid id)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return NotFound();
+            if (user == null) return Challenge();
 
-            var doctor = await _context.Doctors
+            var doctor = await _db.Doctors.AsNoTracking().FirstOrDefaultAsync(d => d.UserId == user.Id);
+            if (doctor == null) return Forbid();
+
+            var record = await _db.MedicalRecords
                 .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.UserId == user.Id);
-
-            var record = await _context.MedicalRecords
                 .Include(r => r.Patient).ThenInclude(p => p.User)
                 .Include(r => r.Doctor).ThenInclude(d => d.User)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
-            if (record == null)
-                return NotFound();
-
-            if (doctor == null || record.DoctorId != doctor.Id)
-                return Forbid();
+            if (record == null) return NotFound();
+            if (record.DoctorId != doctor.Id) return Forbid();
 
             Record = record;
             return Page();
@@ -52,25 +48,23 @@ namespace Licenta.Pages.Doctor.MedicalRecords
         public async Task<IActionResult> OnPostValidateAsync(Guid id)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return NotFound();
+            if (user == null) return Challenge();
 
-            var doctor = await _context.Doctors
-                .FirstOrDefaultAsync(d => d.UserId == user.Id);
+            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
+            if (doctor == null) return Forbid();
 
-            var record = await _context.MedicalRecords
-                .FirstOrDefaultAsync(r => r.Id == id);
+            var record = await _db.MedicalRecords.FirstOrDefaultAsync(r => r.Id == id);
+            if (record == null) return NotFound();
+            if (record.DoctorId != doctor.Id) return Forbid();
 
-            if (record == null)
-                return NotFound();
+            if (record.Status != RecordStatus.Validated)
+            {
+                record.Status = RecordStatus.Validated;
+                record.ValidatedAtUtc = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+                TempData["StatusMessage"] = "Record validated. The patient can now see it in their portal.";
+            }
 
-            if (doctor == null || record.DoctorId != doctor.Id)
-                return Forbid();
-
-            record.Status = RecordStatus.Validated;
-            record.ValidatedAtUtc = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
             return RedirectToPage(new { id });
         }
     }

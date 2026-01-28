@@ -1,0 +1,232 @@
+﻿@page
+@model Licenta.Pages.Patient.PatientProfile.IndexModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/patientprofile.css" asp-append-version="true" />
+}
+
+<div class="profile-wrapper py-5">
+    <div class="container-fluid">
+
+        @if (TempData["StatusMessage"] is string ok && !string.IsNullOrWhiteSpace(ok))
+        {
+            <div class="alert alert-success custom-alert mb-4">
+                <i class="bi bi-check-circle-fill me-2"></i> @ok
+            </div>
+        }
+        @if (TempData["ErrorMessage"] is string err && !string.IsNullOrWhiteSpace(err))
+        {
+            <div class="alert alert-danger custom-alert mb-4">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> @err
+            </div>
+        }
+
+        <div class="row g-4">
+            <div class="col-lg-4 col-xl-3">
+                <div class="card profile-sidebar-card">
+                    <div class="card-body text-center p-4">
+                        <div class="avatar-wrapper mb-3">
+                            <div class="profile-avatar">
+                                @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                                {
+                                    <img src="@Model.ProfileImageUrl" alt="Profile" />
+                                }
+                                else
+                                {
+                                    <div class="avatar-fallback">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                }
+                            </div>
+                            <div class="status-dot"></div>
+                        </div>
+
+                        <h4 class="profile-name">@Model.DisplayName</h4>
+                        <p class="profile-email">@Model.Email</p>
+
+                        <div class="d-flex justify-content-center gap-2 mb-4">
+                            <span class="badge badge-role">Patient</span>
+                            <span class="badge badge-clinic">
+                                <i class="bi bi-building-fill me-1"></i>
+                                @(string.IsNullOrWhiteSpace(Model.ClinicId) ? "No Clinic" : Model.ClinicId)
+                            </span>
+                        </div>
+
+                        <div class="stats-container">
+                            <div class="stat-box">
+                                <span class="stat-number">@Model.StatsUpcomingAppointments</span>
+                                <span class="stat-title">Upcoming</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-number">@Model.StatsMedicalRecords</span>
+                                <span class="stat-title">Records</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-number">@Model.StatsLabResults</span>
+                                <span class="stat-title">Labs</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-number">@Model.StatsUnreadMessages</span>
+                                <span class="stat-title">Messages</span>
+                            </div>
+                        </div>
+
+                        <div class="upload-section mt-4 pt-4 border-top">
+                            <form method="post" enctype="multipart/form-data" asp-page-handler="UploadPhoto">
+                                @Html.AntiForgeryToken()
+                                <div class="file-upload-wrapper">
+                                    <input asp-for="PhotoFile" type="file" id="fileInput" accept=".png,.jpg,.jpeg,.webp" hidden />
+                                    <label for="fileInput" class="btn btn-outline-primary w-100 btn-upload">
+                                        <i class="bi bi-camera me-2"></i> Change Photo
+                                    </label>
+                                    <div id="fileName" class="file-name-display"></div>
+                                </div>
+                                <span asp-validation-for="PhotoFile" class="text-danger small d-block mt-2"></span>
+
+                                <div class="mt-2 d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-sm rounded-pill" id="uploadBtn" style="display:none;">Save Photo</button>
+                                    @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                                    {
+                                        <button type="submit" class="btn btn-light btn-sm text-danger rounded-pill" asp-page-handler="RemovePhoto">Remove Current</button>
+                                    }
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8 col-xl-9">
+                <div class="card content-card h-100">
+                    <div class="card-header bg-transparent border-0 p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div>
+                            <h3 class="fw-bold mb-1">Account Settings</h3>
+                            <p class="text-muted mb-0 small">Manage your personal information and contact details.</p>
+                        </div>
+                        <a asp-page="/Patient/Index" class="btn btn-light btn-back">
+                            <i class="bi bi-arrow-left me-2"></i> Dashboard
+                        </a>
+                    </div>
+
+                    <div class="px-4">
+                        <ul class="nav nav-pills custom-tabs" id="profileTabs" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pane-account">
+                                    <i class="bi bi-person-badge me-2"></i>Account
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-personal">
+                                    <i class="bi bi-file-person me-2"></i>Personal
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-contact">
+                                    <i class="bi bi-geo-alt me-2"></i>Contact
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <form method="post">
+                            @Html.AntiForgeryToken()
+
+                            <div class="tab-content">
+                                <div class="tab-pane fade show active" id="pane-account">
+                                    <h5 class="section-header">Basic Information</h5>
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Full Name</label>
+                                            <input asp-for="Input.FullName" class="form-control" />
+                                            <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Email Address</label>
+                                            <input class="form-control" value="@Model.Email" disabled />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Clinic ID</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="bi bi-hospital"></i></span>
+                                                <input class="form-control" value="@Model.ClinicId" disabled />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">User ID</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                                <input class="form-control" value="@Model.UserId" disabled />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="pane-personal">
+                                    <h5 class="section-header">Identity Details</h5>
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label">National ID (CNP)</label>
+                                            <input asp-for="Input.NationalId" class="form-control" placeholder="19..." />
+                                            <span asp-validation-for="Input.NationalId" class="text-danger small"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Date of Birth</label>
+                                            <input asp-for="Input.DateOfBirth" class="form-control" type="date" />
+                                            <span asp-validation-for="Input.DateOfBirth" class="text-danger small"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="pane-contact">
+                                    <h5 class="section-header">Contact Information</h5>
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Phone Number</label>
+                                            <input asp-for="Input.Phone" class="form-control" placeholder="+40..." />
+                                            <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label">Home Address</label>
+                                            <textarea asp-for="Input.Address" class="form-control" rows="3" placeholder="Full address..."></textarea>
+                                            <span asp-validation-for="Input.Address" class="text-danger small"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="preview-banner mt-4">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-box"><i class="bi bi-eye"></i></div>
+                                            <div>
+                                                <small class="text-uppercase fw-bold text-muted">Preview</small>
+                                                <div class="small fw-semibold text-dark">
+                                                    @(string.IsNullOrWhiteSpace(Model.Input.Phone) ? "No phone set" : Model.Input.Phone) •
+                                                    @(string.IsNullOrWhiteSpace(Model.Input.Address) ? "No address set" : Model.Input.Address)
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-4 text-muted opacity-25" />
+
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary px-5 py-2 rounded-pill shadow-sm">
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/patientprofile.js" asp-append-version="true"></script>
+}

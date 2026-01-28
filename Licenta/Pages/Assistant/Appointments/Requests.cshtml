@@ -2,81 +2,44 @@
 @model Licenta.Pages.Assistant.Appointments.AppointmentRequestsPageModel
 
 @{
-    ViewData["Title"] = "Appointment requests";
+    ViewData["Title"] = "Appointment Requests";
 }
 
-<h2>Appointment requests</h2>
+<h2 class="mb-4">Appointment Requests</h2>
 
-@if (TempData["StatusMessage"] is string status)
+@if (!Model.PendingRequests.Any())
 {
-    <div class="alert alert-info">@status</div>
-}
-
-@if (Model.PendingRequests == null || !Model.PendingRequests.Any())
-{
-    <p>No pending appointment requests.</p>
+    <div class="alert alert-secondary">No pending appointment requests.</div>
 }
 else
 {
-    <table class="table table-striped table-sm align-middle">
+    <table class="table table-striped align-middle">
         <thead>
             <tr>
                 <th>Patient</th>
-                <th>Doctor</th>
                 <th>Uploaded</th>
-                <th>Preferred date</th>
-                <th>Preferred time</th>
+                <th>Requested Time</th>
                 <th>Reason</th>
-                <th style="width: 260px;">Actions</th>
+                <th style="width:180px;">Action</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var row in Model.PendingRequests)
+            @foreach (var r in Model.PendingRequests)
             {
                 <tr>
-                    <td>@row.PatientName</td>
-                    <td>@row.DoctorName</td>
-                    <td>@row.UploadedAt.ToLocalTime().ToString("g")</td>
-                    <td>@(row.PreferredDate?.ToString("yyyy-MM-dd") ?? "-")</td>
-                    <td>@(string.IsNullOrWhiteSpace(row.PreferredTime) ? "-" : row.PreferredTime)</td>
-                    <td>@row.Reason</td>
+                    <td>@r.PatientName</td>
+                    <td>@r.UploadedAt.ToLocalTime().ToString("g")</td>
+                    <td>@r.RequestedDisplay</td>
+                    <td>@r.Reason</td>
                     <td>
-                        <div class="d-flex flex-column gap-1">
-                            <form method="post" asp-page-handler="Accept" class="d-flex flex-column gap-1">
-                                <input type="hidden" name="attachmentId" value="@row.AttachmentId" />
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">When</span>
-                                    <input type="datetime-local"
-                                           name="scheduledLocal"
-                                           class="form-control form-control-sm"
-                                           value="@row.SuggestedScheduledLocal" />
-                                </div>
-                                <button type="submit" class="btn btn-success btn-sm mt-1">
-                                    Accept and create appointment
-                                </button>
-                            </form>
-
-                            <form method="post" asp-page-handler="Reject" class="d-flex flex-column gap-1 mt-2">
-                                <input type="hidden" name="attachmentId" value="@row.AttachmentId" />
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">Reason</span>
-                                    <input type="text"
-                                           name="reason"
-                                           class="form-control form-control-sm"
-                                           placeholder="Optional rejection reason" />
-                                </div>
-                                <button type="submit" class="btn btn-outline-danger btn-sm mt-1">
-                                    Reject request
-                                </button>
-                            </form>
-                        </div>
+                        <a class="btn btn-sm btn-primary"
+                           asp-page="/Assistant/Appointments/Process"
+                           asp-route-attachmentId="@r.AttachmentId">
+                            Process
+                        </a>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
-}
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
 }

@@ -1,55 +1,108 @@
 ﻿@page
 @model Licenta.Pages.Assistant.Messages.Requests.IndexModel
 @{
-    ViewData["Title"] = "Patient message requests";
+    ViewData["Title"] = "Patient Requests";
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/css/assistant.css" />
 }
 
-<h2 class="mb-3">Patient message requests</h2>
+<h2 class="mb-3">Patient Requests</h2>
 
 @if (TempData["StatusMessage"] is string status)
 {
     <div class="alert alert-info">@status</div>
 }
 
-<div class="mb-3">
-    <a class="btn btn-outline-secondary btn-sm @(Model.StatusFilter == null ? "active" : "")" asp-route-status="">All</a>
-    <a class="btn btn-outline-secondary btn-sm @(Model.StatusFilter == "Pending" ? "active" : "")" asp-route-status="Pending">Pending</a>
-    <a class="btn btn-outline-secondary btn-sm @(Model.StatusFilter == "Approved" ? "active" : "")" asp-route-status="Approved">Approved</a>
-    <a class="btn btn-outline-secondary btn-sm @(Model.StatusFilter == "Rejected" ? "active" : "")" asp-route-status="Rejected">Rejected</a>
+<div class="mb-3 d-flex gap-2 flex-wrap">
+    <a class="btn btn-outline-secondary btn-sm" asp-route-status="">All</a>
+    <a class="btn btn-outline-secondary btn-sm" asp-route-status="Pending">Pending</a>
+    <a class="btn btn-outline-secondary btn-sm" asp-route-status="AssistantChat">AssistantChat</a>
+    <a class="btn btn-outline-secondary btn-sm" asp-route-status="WaitingDoctorApproval">WaitingDoctorApproval</a>
+    <a class="btn btn-outline-secondary btn-sm" asp-route-status="ActiveDoctorChat">ActiveDoctorChat</a>
+    <a class="btn btn-outline-secondary btn-sm" asp-route-status="RejectedByDoctor">RejectedByDoctor</a>
+    <a class="btn btn-outline-secondary btn-sm" asp-route-status="Closed">Closed</a>
 </div>
 
-<table class="table table-hover">
-    <thead>
-        <tr>
-            <th>Patient</th>
-            <th>Doctor</th>
-            <th>Subject</th>
-            <th>Created</th>
-            <th>Status</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var r in Model.Requests)
-        {
-            <tr class="@(r.Status == Licenta.Models.PatientMessageRequestStatus.Pending ? "table-warning" : "")">
-                <td>@(r.Patient.FullName ?? r.Patient.UserName)</td>
-                <td>@(r.Doctor.FullName ?? r.Doctor.UserName)</td>
-                <td>@r.Subject</td>
-                <td>@r.CreatedAt.ToLocalTime().ToString("g")</td>
-                <td>@r.Status.ToString()</td>
-                <td>
-                    <a class="btn btn-sm btn-primary"
-                       asp-page="/Assistant/Messages/Requests/Review"
-                       asp-route-id="@r.Id">
-                        Review
-                    </a>
-                </td>
+@if (!Model.Requests.Any())
+{
+    <div class="alert alert-secondary">No requests.</div>
+}
+else
+{
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Created</th>
+                <th>Patient</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Doctor</th>
+                <th>Assigned</th>
+                <th class="text-end">Actions</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Requests)
+            {
+                var isPending = r.Status == Licenta.Models.PatientMessageRequestStatus.Pending;
+                var isUnassigned = string.IsNullOrWhiteSpace(r.AssistantId);
+                var isMine = !string.IsNullOrWhiteSpace(r.AssistantId) && r.AssistantId == Model.CurrentAssistantId;
+
+                <tr>
+                    <td>@r.CreatedAt.ToLocalTime().ToString("g")</td>
+                    <td>@(r.Patient?.FullName ?? r.Patient?.Email ?? r.Patient?.UserName ?? "-")</td>
+                    <td>@r.Subject</td>
+                    <td>@r.Status</td>
+                    <td>@(r.Doctor?.FullName ?? r.Doctor?.Email ?? r.Doctor?.UserName ?? "-")</td>
+                    <td>
+                        @if (isUnassigned)
+                        {
+                            <span class="badge bg-secondary">Unassigned</span>
+                        }
+                        else if (isMine)
+                        {
+                            <span class="badge bg-success">Me</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-light text-dark border">Other</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-2">
+                            @if (isPending && (isUnassigned || isMine))
+                            {
+                                <form method="post"
+                                      asp-page-handler="Accept"
+                                      asp-route-id="@r.Id"
+                                      class="d-inline">
+                                    <button type="submit"
+                                            class="btn btn-success btn-sm">
+                                        Accept
+                                    </button>
+                                </form>
+                            }
+
+                            <a asp-page="/Assistant/Messages/Requests/Review"
+                               asp-route-id="@r.Id"
+                               class="btn btn-sm btn-primary">
+                                Review
+                            </a>
+
+                            @if (isMine && r.Status == Licenta.Models.PatientMessageRequestStatus.AssistantChat)
+                            {
+                                <a asp-page="/Assistant/Messages/Inbox"
+                                   asp-route-requestId="@r.Id"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Open chat
+                                </a>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -4,7 +4,7 @@
     ViewData["Title"] = "Delete User";
 }
 @section Styles {
-    <link rel="stylesheet" href="~/css/admin.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
 }
 <h2 class="mb-3 text-danger">Delete User</h2>
 
@@ -33,12 +33,12 @@
             <p><em>No roles assigned</em></p>
         }
 
-        <p>Are you sure you want to permanently delete this user?</p>
+        <p>Are you sure you want to deactivate this user?</p>
 
         <form method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="UserId" />
-            <button type="submit" class="btn btn-danger">Confirm delete</button>
+            <button type="submit" class="btn btn-danger">Confirm deactivate</button>
             <a asp-page="./Index" class="btn btn-outline-secondary ms-2">Cancel</a>
         </form>
     </div>

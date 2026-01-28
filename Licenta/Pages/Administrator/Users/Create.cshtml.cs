@@ -1,14 +1,14 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
-using Licenta.Areas.Identity.Data;
+﻿using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Administrator.Users
 {
@@ -18,9 +18,7 @@ namespace Licenta.Pages.Administrator.Users
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
-        public CreateModel(
-            UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+        public CreateModel(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -35,6 +33,9 @@ namespace Licenta.Pages.Administrator.Users
         {
             [Required, EmailAddress]
             public string Email { get; set; } = string.Empty;
+
+            [MaxLength(256)]
+            public string? FullName { get; set; }
 
             [Required, MinLength(6)]
             [DataType(DataType.Password)]
@@ -70,6 +71,20 @@ namespace Licenta.Pages.Administrator.Users
                 return Page();
             }
 
+            var admin = await _userManager.GetUserAsync(User);
+            if (admin == null)
+            {
+                ModelState.AddModelError(string.Empty, "Admin user not found.");
+                return Page();
+            }
+
+            var adminClinicId = (admin.ClinicId ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(adminClinicId))
+            {
+                ModelState.AddModelError(string.Empty, "Your admin account is not linked to a clinic.");
+                return Page();
+            }
+
             var email = Input.Email.Trim();
             var existing = await _userManager.FindByEmailAsync(email);
             if (existing != null)
@@ -82,7 +97,9 @@ namespace Licenta.Pages.Administrator.Users
             {
                 UserName = email,
                 Email = email,
-                EmailConfirmed = Input.EmailConfirmed
+                EmailConfirmed = Input.EmailConfirmed,
+                ClinicId = adminClinicId,
+                FullName = (Input.FullName ?? string.Empty).Trim()
             };
 
             var create = await _userManager.CreateAsync(user, Input.Password);
@@ -93,22 +110,16 @@ namespace Licenta.Pages.Administrator.Users
                 return Page();
             }
 
-            if (string.IsNullOrEmpty(user.ClinicId))
+            var addRole = await _userManager.AddToRoleAsync(user, Input.Role);
+            if (!addRole.Succeeded)
             {
-                user.ClinicId = GenerateClinicId();
-                await _userManager.UpdateAsync(user);
+                foreach (var e in addRole.Errors)
+                    ModelState.AddModelError(string.Empty, e.Description);
+                return Page();
             }
-
-            await _userManager.AddToRoleAsync(user, Input.Role);
 
             TempData["StatusMessage"] = $"User {Input.Email} created with role '{Input.Role}'.";
             return RedirectToPage("./Index");
-        }
-
-        private static string GenerateClinicId()
-        {
-            var guid = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
-            return $"CL-{guid}";
         }
     }
 }

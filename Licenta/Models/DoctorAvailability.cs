@@ -16,8 +16,10 @@ namespace Licenta.Models
 
         [Required]
         public TimeSpan StartTime { get; set; }
+
         [Required]
         public TimeSpan EndTime { get; set; }
+
         public bool IsActive { get; set; } = true;
     }
 }

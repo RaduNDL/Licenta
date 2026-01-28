@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Doctor.Attachments
 {
@@ -20,75 +23,67 @@ namespace Licenta.Pages.Doctor.Attachments
             _userManager = userManager;
         }
 
-        public List<MedicalAttachment> Pending { get; set; } = new();
+        [BindProperty(SupportsGet = true)]
+        public Guid Id { get; set; }
 
-        public async Task OnGetAsync()
+        public MedicalAttachment? Item { get; set; }
+
+        public async Task<IActionResult> OnGetAsync(CancellationToken ct)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                TempData["StatusMessage"] = "User not found.";
-                Pending = new();
-                return;
-            }
+            if (user == null) return Forbid();
 
-            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
-            if (doctor == null)
-            {
-                TempData["StatusMessage"] = "Doctor profile not found.";
-                Pending = new();
-                return;
-            }
+            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id, ct);
+            if (doctor == null) return Forbid();
 
-            Pending = await _db.MedicalAttachments
-                .Include(a => a.Patient).ThenInclude(p => p.User)
-                .Where(a => a.DoctorId == doctor.Id && a.Status == AttachmentStatus.Pending)
-                .OrderByDescending(a => a.UploadedAt)
-                .ToListAsync();
+            Item = await LoadForDoctorAsync(user, doctor.Id, Id, ct);
+            return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync(Guid id, string action)
+        public async Task<IActionResult> OnPostAsync(CancellationToken ct)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
+            if (user == null) return Forbid();
+
+            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id, ct);
+            if (doctor == null) return Forbid();
+
+            var att = await LoadForDoctorAsync(user, doctor.Id, Id, ct);
+            if (att == null) return RedirectToPage("/Doctor/Attachments/Inbox");
+
+            if (att.Status != AttachmentStatus.Validated)
             {
-                TempData["StatusMessage"] = "User not found.";
-                return RedirectToPage();
+                att.Status = AttachmentStatus.Validated;
+                att.ValidatedAtUtc = DateTime.UtcNow;
+                await _db.SaveChangesAsync(ct);
             }
 
-            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
-            if (doctor == null)
+            return RedirectToPage("/Doctor/Predictions/FromAttachment", new { id = att.Id });
+        }
+
+        private async Task<MedicalAttachment?> LoadForDoctorAsync(ApplicationUser user, Guid doctorId, Guid attachmentId, CancellationToken ct)
+        {
+            var att = await _db.MedicalAttachments
+                .Include(a => a.Patient).ThenInclude(p => p!.User)
+                .FirstOrDefaultAsync(a => a.Id == attachmentId, ct);
+
+            if (att == null) return null;
+
+            if (!string.IsNullOrWhiteSpace(user.ClinicId))
             {
-                TempData["StatusMessage"] = "Doctor profile not found.";
-                return RedirectToPage();
+                if (att.Patient?.User?.ClinicId != user.ClinicId) return null;
             }
 
-            var attachment = await _db.MedicalAttachments
-                .Include(x => x.Patient).ThenInclude(p => p.User)
-                .FirstOrDefaultAsync(x => x.Id == id && x.DoctorId == doctor.Id);
-
-            if (attachment == null)
+            if (att.DoctorId == null || att.DoctorId == Guid.Empty)
             {
-                TempData["StatusMessage"] = "Attachment not found.";
-                return RedirectToPage();
+                att.DoctorId = doctorId;
+                att.AssignedAtUtc = DateTime.UtcNow;
+                await _db.SaveChangesAsync(ct);
             }
 
-            if (string.Equals(action, "approve", StringComparison.OrdinalIgnoreCase))
-            {
-                attachment.Status = AttachmentStatus.Validated;
-            }
-            else
-            {
-                attachment.Status = AttachmentStatus.Rejected;
-            }
+            if (att.DoctorId != doctorId) return null;
 
-            attachment.ValidatedAtUtc = DateTime.UtcNow;
-            attachment.ValidatedByDoctorId = doctor.Id;
-
-            await _db.SaveChangesAsync();
-            TempData["StatusMessage"] = $"Attachment {attachment.FileName} -> {attachment.Status}.";
-
-            return RedirectToPage();
+            return att;
         }
     }
 }

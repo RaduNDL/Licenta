@@ -27,42 +27,44 @@ namespace Licenta.Data
                 {
                     var result = await roleManager.CreateAsync(new IdentityRole(role));
                     if (!result.Succeeded)
-                    {
-                        throw new Exception(
-                            $"Failed to create role '{role}': " +
-                            string.Join(", ", result.Errors.Select(e => e.Description))
-                        );
-                    }
+                        throw new Exception($"Failed to create role '{role}': " +
+                            string.Join(", ", result.Errors.Select(e => e.Description)));
                 }
             }
+
+            var sharedClinicId = await EnsureSharedClinicIdAsync(userManager);
 
             var admin = await EnsureUserInRole(
                 userManager,
                 email: "admin@gmail.com",
                 password: "Parola123!",
                 fullName: "System Administrator",
-                role: "Administrator");
+                role: "Administrator",
+                clinicId: sharedClinicId);
 
             var doctorUser = await EnsureUserInRole(
                 userManager,
                 email: "doctor@gmail.com",
                 password: "Parola123!",
                 fullName: "Default Doctor",
-                role: "Doctor");
+                role: "Doctor",
+                clinicId: sharedClinicId);
 
             var assistantUser = await EnsureUserInRole(
                 userManager,
                 email: "assistant@gmail.com",
                 password: "Parola123!",
                 fullName: "Default Assistant",
-                role: "Assistant");
+                role: "Assistant",
+                clinicId: sharedClinicId);
 
             var patientUser = await EnsureUserInRole(
                 userManager,
                 email: "patient@gmail.com",
                 password: "Parola123!",
                 fullName: "Default Patient",
-                role: "Patient");
+                role: "Patient",
+                clinicId: sharedClinicId);
 
             await EnsureDoctorProfileAsync(db, doctorUser);
             await EnsurePatientProfileAsync(db, patientUser);
@@ -70,14 +72,26 @@ namespace Licenta.Data
             await db.SaveChangesAsync();
         }
 
+        private static async Task<string> EnsureSharedClinicIdAsync(UserManager<ApplicationUser> userManager)
+        {
+            var assistant = await userManager.FindByEmailAsync("assistant@gmail.com");
+            var cid = (assistant?.ClinicId ?? "").Trim();
+            if (!string.IsNullOrWhiteSpace(cid))
+                return cid;
+
+            return GenerateClinicId();
+        }
+
         private static async Task<ApplicationUser> EnsureUserInRole(
             UserManager<ApplicationUser> userManager,
             string email,
             string password,
             string fullName,
-            string role)
+            string role,
+            string clinicId)
         {
             var user = await userManager.FindByEmailAsync(email);
+
             if (user == null)
             {
                 user = new ApplicationUser
@@ -85,25 +99,43 @@ namespace Licenta.Data
                     UserName = email,
                     Email = email,
                     EmailConfirmed = true,
-                    FullName = fullName
+                    FullName = fullName,
+                    ClinicId = clinicId
                 };
 
                 var createResult = await userManager.CreateAsync(user, password);
                 if (!createResult.Succeeded)
-                {
                     throw new Exception($"Failed creating default user '{email}': " +
                         string.Join(", ", createResult.Errors.Select(e => e.Description)));
-                }
             }
-
-            if (string.IsNullOrEmpty(user.ClinicId))
+            else
             {
-                user.ClinicId = GenerateClinicId();
-                var updateResult = await userManager.UpdateAsync(user);
-                if (!updateResult.Succeeded)
+                var needUpdate = false;
+
+                if (user.EmailConfirmed != true)
                 {
-                    throw new Exception($"Failed setting ClinicId for '{email}': " +
-                        string.Join(", ", updateResult.Errors.Select(e => e.Description)));
+                    user.EmailConfirmed = true;
+                    needUpdate = true;
+                }
+
+                if ((user.FullName ?? "").Trim() != fullName.Trim())
+                {
+                    user.FullName = fullName;
+                    needUpdate = true;
+                }
+
+                if ((user.ClinicId ?? "").Trim() != clinicId.Trim())
+                {
+                    user.ClinicId = clinicId;
+                    needUpdate = true;
+                }
+
+                if (needUpdate)
+                {
+                    var updateResult = await userManager.UpdateAsync(user);
+                    if (!updateResult.Succeeded)
+                        throw new Exception($"Failed updating default user '{email}': " +
+                            string.Join(", ", updateResult.Errors.Select(e => e.Description)));
                 }
             }
 
@@ -111,10 +143,8 @@ namespace Licenta.Data
             {
                 var addRoleResult = await userManager.AddToRoleAsync(user, role);
                 if (!addRoleResult.Succeeded)
-                {
                     throw new Exception($"Failed assigning role '{role}' to '{email}': " +
                         string.Join(", ", addRoleResult.Errors.Select(e => e.Description)));
-                }
             }
 
             return user;
@@ -122,38 +152,32 @@ namespace Licenta.Data
 
         private static string GenerateClinicId()
         {
-            var guid = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
+            var guid = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
             return $"CL-{guid}";
         }
 
         private static async Task EnsureDoctorProfileAsync(AppDbContext db, ApplicationUser doctorUser)
         {
             var existing = await db.Doctors.FirstOrDefaultAsync(d => d.UserId == doctorUser.Id);
-            if (existing != null)
-                return;
+            if (existing != null) return;
 
-            var profile = new DoctorProfile
+            db.Doctors.Add(new DoctorProfile
             {
                 Id = Guid.NewGuid(),
                 UserId = doctorUser.Id
-            };
-
-            db.Doctors.Add(profile);
+            });
         }
 
         private static async Task EnsurePatientProfileAsync(AppDbContext db, ApplicationUser patientUser)
         {
             var existing = await db.Patients.FirstOrDefaultAsync(p => p.UserId == patientUser.Id);
-            if (existing != null)
-                return;
+            if (existing != null) return;
 
-            var profile = new PatientProfile
+            db.Patients.Add(new PatientProfile
             {
                 Id = Guid.NewGuid(),
                 UserId = patientUser.Id
-            };
-
-            db.Patients.Add(profile);
+            });
         }
     }
 }

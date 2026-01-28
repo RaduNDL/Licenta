@@ -23,8 +23,8 @@ namespace Infrastructure.Audit
 
             var sw = Stopwatch.StartNew();
 
-            string userId = context.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
-            string userName = context.User?.Identity?.IsAuthenticated == true
+            var userId = context.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous";
+            var userName = context.User?.Identity?.IsAuthenticated == true
                 ? (context.User.Identity?.Name ?? "unknown")
                 : "anonymous";
 
@@ -35,7 +35,9 @@ namespace Infrastructure.Audit
             finally
             {
                 sw.Stop();
+
                 Log.ForContext("AuditType", "Request")
+                   .ForContext("TimestampUtc", System.DateTime.UtcNow.ToString("O"))
                    .ForContext("UserId", userId)
                    .ForContext("UserName", userName)
                    .ForContext("Method", context.Request.Method)
@@ -43,7 +45,7 @@ namespace Infrastructure.Audit
                    .ForContext("StatusCode", context.Response?.StatusCode)
                    .ForContext("ElapsedMs", sw.ElapsedMilliseconds)
                    .Information("HTTP {Method} {Path} responded {StatusCode} in {ElapsedMs} ms",
-                                context.Request.Method, path, context.Response?.StatusCode, sw.ElapsedMilliseconds);
+                        context.Request.Method, path, context.Response?.StatusCode, sw.ElapsedMilliseconds);
             }
         }
     }

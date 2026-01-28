@@ -1,4 +1,4 @@
-﻿ using Licenta.Models;
+﻿using Licenta.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +7,6 @@ namespace Licenta.Areas.Identity.Data
     public partial class AppDbContext : IdentityDbContext<ApplicationUser>
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-
         public DbSet<PatientProfile> Patients => Set<PatientProfile>();
         public DbSet<DoctorProfile> Doctors => Set<DoctorProfile>();
         public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
@@ -25,9 +24,10 @@ namespace Licenta.Areas.Identity.Data
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<UserActivityLog> UserActivityLogs => Set<UserActivityLog>();
         public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
-        public DbSet<InventoryItem> InventoryItems { get; set; } = null!;
-        public DbSet<SterilizationCycle> SterilizationCycles { get; set; } = null!;
-
+        public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+        public DbSet<SterilizationCycle> SterilizationCycles => Set<SterilizationCycle>();
+        public DbSet<AppointmentRescheduleRequest> AppointmentRescheduleRequests => Set<AppointmentRescheduleRequest>();
+        public DbSet<AppointmentRescheduleOption> AppointmentRescheduleOptions => Set<AppointmentRescheduleOption>();
         protected override void OnModelCreating(ModelBuilder b)
         {
             base.OnModelCreating(b);
@@ -35,11 +35,11 @@ namespace Licenta.Areas.Identity.Data
             b.Entity<ApplicationUser>().HasQueryFilter(u => !u.IsSoftDeleted);
 
             b.Entity<ApplicationUser>()
-     .HasOne(u => u.PatientProfile)
-     .WithOne(p => p.User)
-     .HasForeignKey<PatientProfile>(p => p.UserId)
-     .OnDelete(DeleteBehavior.Restrict)
-     .IsRequired(false);
+                .HasOne(u => u.PatientProfile)
+                .WithOne(p => p.User)
+                .HasForeignKey<PatientProfile>(p => p.UserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
 
             b.Entity<ApplicationUser>()
                 .HasOne(u => u.DoctorProfile)
@@ -150,20 +150,19 @@ namespace Licenta.Areas.Identity.Data
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(false);
 
-            
             b.Entity<InternalMessage>()
                 .HasOne(m => m.Sender)
                 .WithMany()
                 .HasForeignKey(m => m.SenderId)
                 .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired(false);   
+                .IsRequired(false);
 
             b.Entity<InternalMessage>()
                 .HasOne(m => m.Recipient)
                 .WithMany()
                 .HasForeignKey(m => m.RecipientId)
                 .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired(false);   
+                .IsRequired(false);
 
             b.Entity<Prediction>()
                 .HasOne(p => p.Patient)
@@ -181,27 +180,24 @@ namespace Licenta.Areas.Identity.Data
                 .HasOne(p => p.RequestedByAssistant)
                 .WithMany()
                 .HasForeignKey(p => p.RequestedByAssistantId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired(false);
+                .OnDelete(DeleteBehavior.SetNull);
 
             b.Entity<PatientMessageRequest>()
                 .HasOne(r => r.Patient)
                 .WithMany()
                 .HasForeignKey(r => r.PatientId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired(false);
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<PatientMessageRequest>()
+                .HasOne(r => r.Assistant)
+                .WithMany()
+                .HasForeignKey(r => r.AssistantId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             b.Entity<PatientMessageRequest>()
                 .HasOne(r => r.Doctor)
                 .WithMany()
                 .HasForeignKey(r => r.DoctorId)
-                .OnDelete(DeleteBehavior.Restrict)
-                .IsRequired(false);
-
-            b.Entity<PatientMessageRequest>()
-                .HasOne(r => r.ReviewedByAdmin)
-                .WithMany()
-                .HasForeignKey(r => r.ReviewedByAdminId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(false);
 
@@ -215,7 +211,6 @@ namespace Licenta.Areas.Identity.Data
                 .HasIndex(a => new { a.DoctorId, a.DayOfWeek })
                 .IsUnique();
 
-            
             b.Entity<Prescription>()
                 .HasOne(p => p.Patient)
                 .WithMany(pat => pat.Prescriptions)
@@ -257,7 +252,7 @@ namespace Licenta.Areas.Identity.Data
                 .WithMany(u => u.Notifications)
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade)
-                .IsRequired(false);  
+                .IsRequired(false);
 
             b.Entity<MlIntakeForm>(entity =>
             {
@@ -281,6 +276,57 @@ namespace Licenta.Areas.Identity.Data
                       .HasForeignKey(e => e.PatientId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
+
+            b.Entity<AppointmentRescheduleRequest>()
+                .Property(r => r.Status)
+                .HasConversion<int>()
+                .HasDefaultValue(AppointmentRescheduleStatus.Requested);
+
+            b.Entity<AppointmentRescheduleRequest>()
+                .HasOne(r => r.Appointment)
+                .WithMany()
+                .HasForeignKey(r => r.AppointmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<AppointmentRescheduleRequest>()
+                .HasOne(r => r.Patient)
+                .WithMany()
+                .HasForeignKey(r => r.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<AppointmentRescheduleRequest>()
+                .HasOne(r => r.Doctor)
+                .WithMany()
+                .HasForeignKey(r => r.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.Entity<AppointmentRescheduleRequest>()
+                .HasOne(r => r.SelectedOption)
+                .WithMany()
+                .HasForeignKey(r => r.SelectedOptionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            b.Entity<AppointmentRescheduleRequest>()
+                .HasIndex(r => new { r.AppointmentId, r.Status });
+
+            b.Entity<AppointmentRescheduleRequest>()
+                .HasIndex(r => new { r.DoctorId, r.Status });
+
+            b.Entity<AppointmentRescheduleRequest>()
+                .HasIndex(r => new { r.PatientId, r.Status });
+
+            b.Entity<AppointmentRescheduleOption>()
+                .HasOne(o => o.RescheduleRequest)
+                .WithMany()
+                .HasForeignKey(o => o.RescheduleRequestId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            b.Entity<AppointmentRescheduleOption>()
+                .HasIndex(o => new { o.RescheduleRequestId, o.ProposedStartUtc });
+
+            b.Entity<AppointmentRescheduleOption>()
+                .Property(o => o.Location)
+                .HasMaxLength(120);
         }
     }
 }

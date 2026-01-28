@@ -1,0 +1,68 @@
+﻿@page
+@model Licenta.Pages.Assistant.Appointments.ProcessModel
+@{
+    ViewData["Title"] = "Process request";
+}
+
+<h2>Process appointment request</h2>
+
+@if (TempData["StatusMessage"] is string status)
+{
+    <div class="alert alert-info">@status</div>
+}
+
+<div class="card p-3 shadow-sm mb-3">
+    <div><b>Patient:</b> @Model.PatientName</div>
+    <div><b>Requested slot:</b> @Model.PreferredDisplay</div>
+    <div><b>Reason:</b> @Model.Reason</div>
+</div>
+
+<form method="post" class="card p-3 shadow-sm">
+    <input type="hidden" asp-for="AttachmentId" />
+
+    <div class="mb-3">
+        <label class="form-label">Doctor</label>
+        <select asp-for="SelectedDoctorId" asp-items="Model.Doctors" class="form-select"></select>
+        <span asp-validation-for="SelectedDoctorId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Slot</label>
+        <select asp-for="SelectedLocalIso" class="form-select" required>
+            @foreach (var s in Model.AvailableSlots)
+            {
+                <option value="@s.LocalIso">@s.Display</option>
+            }
+        </select>
+        <span asp-validation-for="SelectedLocalIso" class="text-danger"></span>
+
+        @if (!Model.AvailableSlots.Any())
+        {
+            <div class="text-muted small mt-2">No available slots for this doctor (schedule missing or fully booked).</div>
+        }
+    </div>
+
+    <div class="d-flex gap-2">
+        <button class="btn btn-success"
+                type="submit"
+                asp-page-handler="ScheduleNow"
+                disabled="@(!Model.AvailableSlots.Any())">
+            A) Schedule now
+        </button>
+
+        <button class="btn btn-warning"
+                type="submit"
+                asp-page-handler="SendToDoctor"
+                disabled="@(!Model.AvailableSlots.Any())">
+            B) Escalate to doctor approval
+        </button>
+
+        <a asp-page="/Assistant/Appointments/Requests" class="btn btn-outline-secondary ms-auto">Back</a>
+    </div>
+
+    <div asp-validation-summary="All" class="text-danger mt-2"></div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

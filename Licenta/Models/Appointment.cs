@@ -21,18 +21,17 @@ namespace Licenta.Models
         public AppointmentStatus Status { get; set; }
         public VisitStage VisitStage { get; set; } = VisitStage.NotArrived;
 
-
         public string? CancelReason { get; set; }
         public string? RescheduleReason { get; set; }
 
         public DateTime CreatedAtUtc { get; set; }
         public DateTime? UpdatedAtUtc { get; set; }
-        public DateTime StartTimeUtc { get; internal set; }
-        public string Location { get; internal set; }
+        public DateTime StartTimeUtc { get; set; }
+        public string Location { get; set; } = "Clinic";
 
         public Appointment()
         {
-            Status = AppointmentStatus.Pending;   
+            Status = AppointmentStatus.Pending;
             CreatedAtUtc = DateTime.UtcNow;
         }
     }

@@ -9,13 +9,18 @@
     @{
         if (User.Identity?.IsAuthenticated ?? false)
         {
-            <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/", new { area = "" })" method="post">
-                <button type="submit" class="nav-link btn btn-link text-dark">Click here to Logout</button>
+            <form asp-area="Identity"
+                  asp-page="/Account/Logout"
+                  asp-route-returnUrl="@Url.Page("/Index", new { area = "" })"
+                  method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-link p-0">Click here to Logout</button>
             </form>
         }
         else
         {
             <p>You have successfully logged out of the application.</p>
+            <p><a asp-area="" asp-page="/Index">Back to Home</a></p>
         }
     }
 </header>

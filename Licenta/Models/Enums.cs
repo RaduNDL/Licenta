@@ -7,7 +7,20 @@
         Completed = 2,
         Cancelled = 3,
         Rescheduled = 4,
-        NoShow = 5
+        NoShow = 5,
+        Confirmed = 6,
+        Rejected = 7
+    }
+
+    public enum AppointmentRescheduleStatus
+    {
+        Requested = 0,
+        Proposed = 1,
+        PatientSelected = 2,
+        Approved = 3,
+        Rejected = 4,
+        Cancelled = 5,
+        Expired = 6
     }
 
     public enum RecordStatus
@@ -48,15 +61,17 @@
         Appointment = 1,
         Document = 2,
         Message = 3,
-        System = 4
+        System = 4,
+        Attachment = 5
     }
+
     public enum VisitStage
     {
-        NotArrived = 0,    
-        CheckedIn = 1,       
-        InTriage = 2,       
-        WaitingDoctor = 3,   
-        InConsultation = 4,  
-        Finished = 5         
+        NotArrived = 0,
+        CheckedIn = 1,
+        InTriage = 2,
+        WaitingDoctor = 3,
+        InConsultation = 4,
+        Finished = 5
     }
 }

@@ -5,13 +5,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace Licenta.Pages.Patient.Messages
 {
@@ -22,10 +19,7 @@ namespace Licenta.Pages.Patient.Messages
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly INotificationService _notifier;
 
-        public CreateRequestModel(
-            AppDbContext db,
-            UserManager<ApplicationUser> userManager,
-            INotificationService notifier)
+        public CreateRequestModel(AppDbContext db, UserManager<ApplicationUser> userManager, INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
@@ -34,113 +28,121 @@ namespace Licenta.Pages.Patient.Messages
 
         public class InputModel
         {
-            [Required]
-            public string DoctorId { get; set; } = null!;
-
-            [Required, MaxLength(200)]
+            [System.ComponentModel.DataAnnotations.Required]
+            [System.ComponentModel.DataAnnotations.MaxLength(200)]
             public string Subject { get; set; } = string.Empty;
 
-            [Required, MaxLength(4000)]
+            [System.ComponentModel.DataAnnotations.Required]
+            [System.ComponentModel.DataAnnotations.MaxLength(4000)]
             public string Body { get; set; } = string.Empty;
         }
 
         [BindProperty]
         public InputModel Input { get; set; } = new();
 
-        public SelectList Doctors { get; set; } = default!;
-
-        public async Task OnGetAsync(string? doctorId)
-        {
-            await LoadDoctorsAsync(doctorId);
-        }
+        public IActionResult OnGet() => Page();
 
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)
-            {
-                await LoadDoctorsAsync(Input.DoctorId);
                 return Page();
-            }
 
             var patient = await _userManager.GetUserAsync(User);
-            if (patient == null)
-                return Unauthorized();
+            if (patient == null) return Unauthorized();
 
-            var doctor = await _db.Users.FirstOrDefaultAsync(u => u.Id == Input.DoctorId);
-            if (doctor == null)
+            var clinicId = (patient.ClinicId ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(clinicId))
             {
-                ModelState.AddModelError(nameof(Input.DoctorId), "Selected doctor does not exist.");
-                await LoadDoctorsAsync(Input.DoctorId);
-                return Page();
+                TempData["StatusMessage"] = "Your account is not linked to a clinic.";
+                return RedirectToPage("/Patient/Messages/RequestList");
             }
 
-            var request = new PatientMessageRequest
+            var assistantRoleId = await _db.Roles
+                .Where(r => r.Name == "Assistant")
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrWhiteSpace(assistantRoleId))
+            {
+                TempData["StatusMessage"] = "Assistant role not found.";
+                return RedirectToPage("/Patient/Messages/RequestList");
+            }
+
+            var clinicAssistants = await _db.Users
+                .Where(u =>
+                    !u.IsSoftDeleted &&
+                    (u.ClinicId ?? "").Trim() == clinicId &&
+                    _db.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == assistantRoleId))
+                .ToListAsync();
+
+            if (!clinicAssistants.Any())
+            {
+                TempData["StatusMessage"] = "No assistant available in your clinic.";
+                return RedirectToPage("/Patient/Messages/RequestList");
+            }
+
+          
+            var hasOpen = await _db.PatientMessageRequests
+                .AnyAsync(r => r.PatientId == patient.Id && r.Status != PatientMessageRequestStatus.Closed);
+
+            if (hasOpen)
+            {
+                TempData["StatusMessage"] = "You already have an open request.";
+                return RedirectToPage("/Patient/Messages/RequestList");
+            }
+
+            var openCounts = await _db.PatientMessageRequests
+                .Where(r => r.Status != PatientMessageRequestStatus.Closed)
+                .GroupBy(r => r.AssistantId)
+                .Select(g => new { AssistantId = g.Key, Cnt = g.Count() })
+                .ToListAsync();
+
+            var chosenAssistant = clinicAssistants
+                .Select(a => new
+                {
+                    User = a,
+                    Cnt = openCounts.FirstOrDefault(x => x.AssistantId == a.Id)?.Cnt ?? 0
+                })
+                .OrderBy(x => x.Cnt)
+                .First()
+                .User;
+
+            var req = new PatientMessageRequest
             {
                 Id = Guid.NewGuid(),
                 PatientId = patient.Id,
-                DoctorId = Input.DoctorId,
-                Subject = Input.Subject,
-                Body = Input.Body,
+                AssistantId = chosenAssistant.Id,
+                Subject = Input.Subject.Trim(),
+                Body = Input.Body.Trim(),
+                Status = PatientMessageRequestStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
-                Status = PatientMessageRequestStatus.Pending
+                UpdatedAt = DateTime.UtcNow
             };
 
-            _db.PatientMessageRequests.Add(request);
+            _db.PatientMessageRequests.Add(req);
             await _db.SaveChangesAsync();
 
-            var patientName = patient.FullName ?? patient.Email ?? patient.UserName;
-            var doctorName = doctor.FullName ?? doctor.Email ?? doctor.UserName;
-
-            var title = "New patient message request";
-            var msg =
-                $"Patient <b>{patientName}</b> requested permission to contact doctor " +
-                $"<b>{doctorName}</b>.<br/>" +
-                $"Subject: <b>{Input.Subject}</b>.";
-
-            var assistants = await _userManager.GetUsersInRoleAsync("Assistant");
-            foreach (var assistant in assistants)
-            {
-                await _notifier.NotifyAsync(
-                    assistant,
-                    NotificationType.Info,
-                    title,
-                    msg,
-                    relatedEntity: "PatientMessageRequest",
-                    relatedEntityId: request.Id.ToString());
-            }
+            await _notifier.NotifyAsync(
+                chosenAssistant,
+                NotificationType.Message,
+                "New patient request",
+                $"New request from <b>{patient.FullName ?? patient.Email}</b><br/>Subject: <b>{req.Subject}</b>",
+                relatedEntity: "PatientMessageRequest",
+                relatedEntityId: req.Id.ToString()
+            );
 
             await _notifier.NotifyAsync(
                 patient,
                 NotificationType.Info,
-                "Message request submitted",
-                "Your message request was sent to the medical assistant and is pending review.",
+                "Request submitted",
+                "Your request was sent to an assistant and is waiting to be accepted.",
                 relatedEntity: "PatientMessageRequest",
-                relatedEntityId: request.Id.ToString(),
-                sendEmail: false);
-
-            TempData["MessageRequestSuccess"] = "Your request was sent to the medical assistant and is pending review.";
-            return RedirectToPage("/Patient/Messages/RequestList");
-        }
-
-        private async Task LoadDoctorsAsync(string? preselectId)
-        {
-            var doctorsInRole = await _userManager.GetUsersInRoleAsync("Doctor");
-
-            var doctors = doctorsInRole
-                .OrderBy(u => u.FullName ?? u.Email)
-                .Select(u => new
-                {
-                    u.Id,
-                    Name = string.IsNullOrWhiteSpace(u.FullName) ? u.Email : u.FullName
-                })
-                .ToList();
-
-            Doctors = new SelectList(
-                doctors,
-                "Id",
-                "Name",
-                preselectId
+                relatedEntityId: req.Id.ToString(),
+                sendEmail: false
             );
+
+            TempData["StatusMessage"] = "Request submitted.";
+            return RedirectToPage("/Patient/Messages/RequestList");
         }
     }
 }

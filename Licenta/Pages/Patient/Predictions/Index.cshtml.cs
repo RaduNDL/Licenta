@@ -22,18 +22,20 @@ namespace Licenta.Pages.Patient.Predictions
             _userManager = userManager;
         }
 
-        public List<MedicalAttachment> Items { get; set; } = new();
+        public List<Prediction> Items { get; set; } = new();
 
         public async Task OnGetAsync()
         {
             var user = await _userManager.GetUserAsync(User);
+            if (user == null) return;
 
-            Items = await _db.MedicalAttachments
-                .Include(a => a.Patient)
-                .Where(a => a.Patient != null &&
-                            a.Patient.UserId == user.Id &&
-                            (a.Type.Contains("Prediction") || a.FileName.EndsWith(".pred.json")))
-                .OrderByDescending(a => a.UploadedAt)
+            var patient = await _db.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == user.Id);
+            if (patient == null) return;
+
+            Items = await _db.Predictions
+                .AsNoTracking()
+                .Where(p => p.PatientId == patient.Id && p.Status == PredictionStatus.Accepted)
+                .OrderByDescending(p => p.CreatedAtUtc)
                 .ToListAsync();
         }
     }

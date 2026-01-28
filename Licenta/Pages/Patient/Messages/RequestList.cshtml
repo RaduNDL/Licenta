@@ -1,53 +1,115 @@
 ﻿@page
 @model Licenta.Pages.Patient.Messages.RequestListModel
 @{
-    ViewData["Title"] = "Message requests";
+    ViewData["Title"] = "My Requests";
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/css/patient.css" />
+    <link rel="stylesheet" href="~/css/RequestList.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 }
 
-<h2 class="mb-3">Message requests</h2>
+<div class="dashboard-container">
 
-@if (TempData["MessageRequestSuccess"] is string successMessage)
-{
-    <div class="alert alert-success">@successMessage</div>
-}
+    <div class="dashboard-header">
+        <div>
+            <h1>My Requests</h1>
+            <p class="text-white-50">Track your medical assistance history</p>
+        </div>
+        <div class="header-actions">
+            <a asp-page="/Patient/Messages/Inbox" class="btn-modern btn-glass">
+                <i class="fa-solid fa-inbox"></i> Inbox
+            </a>
+            <a asp-page="/Patient/Messages/CreateRequest" class="btn-modern btn-white">
+                <i class="fa-solid fa-plus"></i> New Request
+            </a>
+        </div>
+    </div>
 
-<div class="mb-3">
-    <a class="btn btn-primary btn-sm" asp-page="/Patient/Messages/CreateRequest">
-        New request
-    </a>
-</div>
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert-floating" id="statusAlert">
+            <i class="fa-solid fa-check-circle"></i> @status
+        </div>
+    }
 
-@if (!Model.Requests.Any())
-{
-    <div class="alert alert-secondary">No message requests yet.</div>
-}
-else
-{
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>Doctor</th>
-                <th>Subject</th>
-                <th>Created</th>
-                <th>Status</th>
-                <th>Admin note</th>
-            </tr>
-        </thead>
-        <tbody>
+    <div class="toolbar">
+        <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="requestSearch" placeholder="Search by subject..." />
+        </div>
+        <span class="request-count">@Model.Requests.Count() Records</span>
+    </div>
+
+    @if (!Model.Requests.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+            <h3>No requests found</h3>
+            <p>You haven't submitted any medical assistance requests yet.</p>
+            <a asp-page="/Patient/Messages/CreateRequest" class="btn-modern btn-primary-soft">
+                Start your first request
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="requests-grid">
             @foreach (var r in Model.Requests)
             {
-                <tr>
-                    <td>@(r.Doctor.FullName ?? r.Doctor.UserName)</td>
-                    <td>@r.Subject</td>
-                    <td>@r.CreatedAt.ToLocalTime().ToString("g")</td>
-                    <td>@r.Status.ToString()</td>
-                    <td>@r.AdminNote</td>
-                </tr>
+                var statusClass = r.Status.ToString().ToLower() switch
+                {
+                    "pending" => "status-pending",
+                    "completed" => "status-completed",
+                    "rejected" => "status-rejected",
+                    _ => "status-active"
+                };
+
+                <div class="request-card" data-subject="@r.Subject.ToLower()">
+                    <div class="card-top">
+                        <span class="date-badge">
+                            <i class="fa-regular fa-calendar"></i> @r.CreatedAt.ToLocalTime().ToString("MMM dd, HH:mm")
+                        </span>
+                        <span class="status-badge @statusClass">
+                            @r.Status.ToString()
+                        </span>
+                    </div>
+
+                    <h3 class="card-subject">@r.Subject</h3>
+
+                    <div class="card-divider"></div>
+
+                    <div class="card-people">
+                        <div class="person">
+                            <div class="avatar assistant-avatar">
+                                <i class="fa-solid fa-headset"></i>
+                            </div>
+                            <div class="person-info">
+                                <span class="label">Assistant</span>
+                                <span class="name">@(r.Assistant?.FullName ?? r.Assistant?.UserName ?? "Waiting...")</span>
+                            </div>
+                        </div>
+
+                        <div class="person">
+                            <div class="avatar doctor-avatar">
+                                <i class="fa-solid fa-user-doctor"></i>
+                            </div>
+                            <div class="person-info">
+                                <span class="label">Doctor</span>
+                                <span class="name">@(r.Doctor?.FullName ?? r.Doctor?.UserName ?? "-")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             }
-        </tbody>
-    </table>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/RequestList.js"></script>
 }

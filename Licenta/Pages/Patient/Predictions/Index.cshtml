@@ -3,40 +3,82 @@
 @{
     ViewData["Title"] = "Predictions";
 }
-@section Styles {
-    <link rel="stylesheet" href="~/css/patient.css" />
-}
-<h2>ML Predictions</h2>
 
-@if (!Model.Items.Any())
-{
-    <div class="alert alert-secondary">No predictions available yet.</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/PatientPredictions.css" />
 }
-else
-{
-    <table class="table table-striped align-middle">
-        <thead>
-            <tr>
-                <th>File</th>
-                <th>Type</th>
-                <th>Uploaded</th>
-                <th>Status</th>
-                <th>Validated</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var a in Model.Items)
-            {
-                <tr>
-                    <td>@a.FileName</td>
-                    <td>@a.Type</td>
-                    <td>@a.UploadedAt.ToLocalTime().ToString("g")</td>
-                    <td>@a.Status</td>
-                    <td>@(a.ValidatedAtUtc?.ToLocalTime().ToString("g") ?? "-")</td>
-                    <td><a class="btn btn-sm btn-primary" href="@a.FilePath" target="_blank">Open</a></td>
-                </tr>
-            }
-        </tbody>
-    </table>
+
+<div class="predictions-container">
+    <div class="predictions-header">
+        <h2>
+            <svg class="header-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+            ML Predictions
+        </h2>
+    </div>
+
+    @if (!Model.Items.Any())
+    {
+        <div class="empty-state">
+            <p>No predictions available yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Result</th>
+                        <th>Confidence</th>
+                        <th>Date</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Items)
+                    {
+                        var confidence = p.Probability ?? 0;
+                        var confidenceClass = confidence > 0.8 ? "confidence-high" : (confidence > 0.5 ? "confidence-med" : "confidence-low");
+                        var percentage = (confidence * 100).ToString("0") + "%";
+
+                        <tr>
+                            <td>
+                                <span class="model-badge">@p.ModelName</span>
+                            </td>
+                            <td data-type="result">@(string.IsNullOrWhiteSpace(p.ResultLabel) ? "-" : p.ResultLabel)</td>
+                            <td>
+                                <div class="confidence-meter">
+                                    <span style="min-width: 48px; font-weight:600; font-size:0.85rem;">
+                                        @(p.Probability.HasValue? p.Probability.Value.ToString("P2") : "-")
+                                    </span>
+                                    @if (p.Probability.HasValue)
+                                    {
+                                        <div class="meter-track">
+                                            <div class="meter-fill @confidenceClass" style="width: 0%" data-width="@percentage"></div>
+                                        </div>
+                                    }
+                                </div>
+                            </td>
+                            <td class="date-cell">@p.CreatedAtUtc.ToLocalTime().ToString("g")</td>
+                            <td style="text-align: right;">
+                                <a asp-page="/Patient/Predictions/Details" asp-route-id="@p.Id" class="btn-details">
+                                    View Analysis
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/PatientPredictions.js"></script>
 }

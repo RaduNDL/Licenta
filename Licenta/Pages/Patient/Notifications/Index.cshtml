@@ -6,37 +6,68 @@
     ViewData["Title"] = "Notifications";
 }
 
-<h2>Notifications</h2>
-
-@if (!Model.Items.Any())
-{
-    <p>You have no notifications in the last 30 days.</p>
+@section Styles {
+    <link rel="stylesheet" href="~/css/notifications.css" />
 }
-else
-{
-    <form method="post" asp-page-handler="MarkAllRead" class="mb-2">
-        <button type="submit" class="btn btn-sm btn-secondary">Mark all as read</button>
-    </form>
 
-    <table class="table table-striped table-sm">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Title</th>
-                <th>Message</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var n in Model.Items)
-            {
-                <tr class="@(n.IsRead ? "" : "table-info")">
-                    <td>@n.When.ToString("g")</td>
-                    <td>@n.Type</td>
-                    <td>@n.Title</td>
-                    <td>@Html.Raw(n.Message)</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<div class="page-container">
+    <div class="page-header">
+        <h2 class="page-title">
+            <i class="bi bi-heart-pulse text-success"></i> My Notifications
+        </h2>
+
+        @if (Model.Items.Any(n => !n.IsRead))
+        {
+            <form method="post" asp-page-handler="MarkAllRead">
+                <button type="submit" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-check2-all me-1"></i> Mark all as read
+                </button>
+            </form>
+        }
+    </div>
+
+    @if (!Model.Items.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-bell-slash"></i>
+            <h5>No Notifications</h5>
+            <p>You have no notifications from the last 30 days.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-notifications">
+                <thead>
+                    <tr>
+                        <th width="15%">Date</th>
+                        <th width="10%">Type</th>
+                        <th width="25%">Title</th>
+                        <th width="50%">Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var n in Model.Items)
+                    {
+                        <tr class="notification-row @(!n.IsRead ? "unread" : "")">
+                            <td>
+                                <div class="notification-date">
+                                    <i class="bi bi-clock me-1"></i> @n.When.ToString("MMM dd, HH:mm")
+                                </div>
+                            </td>
+                            <td>
+                                <span class="notification-type-badge" style="background-color: #198754;">@n.Type</span>
+                            </td>
+                            <td>
+                                <div class="notification-title">@n.Title</div>
+                            </td>
+                            <td>
+                                <div class="notification-message">@Html.Raw(n.Message)</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

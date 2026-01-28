@@ -1,0 +1,79 @@
+﻿@page "{id:guid}"
+@model Licenta.Pages.Doctor.Attachments.ReviewModel
+@{
+    ViewData["Title"] = "Review Document";
+    bool isImage = Model.Item?.ContentType?.StartsWith("image/") ?? false;
+}
+
+<div class="container py-4">
+    <div class="mb-4">
+        <a asp-page="/Doctor/Attachments/Inbox" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Inbox
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold bg-white">File Preview</div>
+                <div class="card-body bg-light d-flex align-items-center justify-content-center text-center">
+                    @if (isImage)
+                    {
+                        <img src="@Model.Item.FilePath" class="img-fluid rounded" style="max-height: 500px;" />
+                    }
+                    else
+                    {
+                        <div>
+                            <i class="bi bi-file-earmark-text display-1 text-muted"></i>
+                            <p class="mt-2">Preview not available.</p>
+                            <a href="@Model.Item.FilePath" target="_blank" class="btn btn-primary btn-sm">Download File</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold mb-3">Assessment</h5>
+
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold">PATIENT</label>
+                        <div>@(Model.Item?.Patient?.User?.FullName ?? "Unknown")</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small text-muted fw-bold">PATIENT NOTES</label>
+                        <div class="fst-italic bg-light p-2 rounded">"@(Model.Item?.PatientNotes ?? "-")"</div>
+                    </div>
+
+                    <form method="post">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Doctor Notes</label>
+                            <textarea asp-for="Input.DoctorNotes" class="form-control" rows="4"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            @if (isImage)
+                            {
+                                <button type="submit" name="action" value="ai" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-robot me-2"></i>Analyze with AI
+                                </button>
+                                <div class="text-center text-muted small">- OR -</div>
+                            }
+
+                            <button type="submit" name="action" value="validate" class="btn btn-success">
+                                <i class="bi bi-check-lg me-2"></i>Validate Manually
+                            </button>
+
+                            <button type="submit" name="action" value="reject" class="btn btn-outline-danger">
+                                <i class="bi bi-x-lg me-2"></i>Reject
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

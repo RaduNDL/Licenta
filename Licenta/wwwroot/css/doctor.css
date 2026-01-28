@@ -1,224 +1,159 @@
-﻿/* ========= GENERAL STATS CARDS ========= */
+﻿:root {
+    --doc-primary: #0d6efd;
+    --doc-bg: #f5f7fb;
+    --doc-card-bg: #ffffff;
+    --doc-text: #2c3e50;
+    --doc-muted: #6c757d;
+    --doc-border-radius: 12px;
+    --doc-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
 
-.stats-card {
+body {
+    background-color: var(--doc-bg);
+    color: var(--doc-text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.dashboard-container {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.stat-card {
+    background: var(--doc-card-bg);
+    border-radius: var(--doc-border-radius);
+    padding: 1.5rem;
     display: flex;
     align-items: center;
-    padding: 1rem 1.25rem;
-    border-radius: 12px;
-    background: #ffffff;
-}
-
-.stats-icon {
-    font-size: 2rem;
-    margin-right: 1rem;
-    color: var(--primary-color);
-}
-
-.stats-info h3 {
-    margin: 0;
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #1e293b;
-}
-
-.stats-info p {
-    margin: 0;
-    font-size: 0.9rem;
-    color: #64748b;
-}
-
-/* ========= ML OVERVIEW ON DASHBOARD ========= */
-
-.ml-overview-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: stretch;
-    gap: 1.5rem;
-    padding: 1.5rem 1.75rem;
-    border-radius: 16px;
-    background: radial-gradient(circle at top left, #2563eb 0%, #0f172a 55%, #020617 100%);
-    color: #e5f0ff;
-    box-shadow: var(--box-shadow);
-}
-
-.ml-overview-left {
-    max-width: 60%;
-}
-
-.ml-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.15rem 0.6rem;
-    border-radius: 999px;
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(148, 163, 184, 0.4);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 0.5rem;
-}
-
-.ml-title {
-    margin: 0 0 0.25rem 0;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #f9fafb;
-}
-
-.ml-subtitle {
-    margin: 0;
-    font-size: 0.9rem;
-    color: #cbd5f5;
-}
-
-.ml-overview-right {
-    text-align: right;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
-}
-
-.ml-overview-number {
-    font-size: 2.4rem;
-    font-weight: 800;
-    line-height: 1;
-    color: #bfdbfe;
-}
-
-.ml-overview-label {
-    font-size: 0.85rem;
-    color: #e5e7eb;
-}
-
-/* ========= PREDICTION MODEL CARDS ========= */
-
-.prediction-model-card {
-    background: #ffffff;
-    border-radius: 14px;
-    padding: 1.25rem 1.25rem 1rem;
-    box-shadow: var(--box-shadow);
-    border: 1px solid #e2e8f0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    box-shadow: var(--doc-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
     height: 100%;
 }
 
-.prediction-model-icon {
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin-right: 1.25rem;
+}
+
+.stat-content h3 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: var(--doc-text);
+}
+
+.stat-content p {
+    margin: 0;
+    color: var(--doc-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.dashboard-panel {
+    background: var(--doc-card-bg);
+    border-radius: var(--doc-border-radius);
+    box-shadow: var(--doc-shadow);
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+}
+
+.empty-state-panel {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+}
+
+.icon-box-sm {
     width: 40px;
     height: 40px;
-    border-radius: 12px;
-    margin-bottom: 0.25rem;
-    background: #e5e7eb;
-}
-
-    /* poți schimba gradientele cum vrei */
-    .prediction-model-icon.skin {
-        background: linear-gradient(135deg, #fb7185, #f97316);
-    }
-
-    .prediction-model-icon.breast {
-        background: linear-gradient(135deg, #ec4899, #6366f1);
-    }
-
-    .prediction-model-icon.all {
-        background: linear-gradient(135deg, #22c55e, #0ea5e9);
-    }
-
-.prediction-model-title {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: #0f172a;
-}
-
-.prediction-model-text {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.9rem;
-    color: #6b7280;
-}
-
-/* ========= CALENDAR & APPOINTMENTS ========= */
-
-.calendar-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    background: white;
-    padding: 1rem;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
+    justify-content: center;
+    font-size: 1.2rem;
 }
 
-.appointment-slot {
-    border-left: 4px solid transparent;
-    background: white;
-    padding: 1rem;
-    margin-bottom: 0.5rem;
-    border-radius: 8px;
-    border: 1px solid #f1f5f9;
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 0.5rem;
+    background: var(--doc-bg);
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    color: var(--doc-text);
+    text-decoration: none;
     transition: all 0.2s;
-}
-
-    .appointment-slot.booked {
-        border-left-color: var(--primary-color);
-        background: #f8fafc;
-    }
-
-    .appointment-slot.cancelled {
-        border-left-color: var(--danger-color);
-        opacity: 0.7;
-    }
-
-.appointment-time {
-    font-weight: 700;
-    color: var(--primary-color);
-    font-size: 1.1rem;
-}
-
-/* ========= MEDICAL RECORD LAYOUT ========= */
-
-.record-header {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    color: white;
-    padding: 2rem;
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-}
-
-.record-body {
-    padding: 2rem;
-    background: white;
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
-    box-shadow: var(--box-shadow);
-}
-
-.diagnosis-box {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #1e40af;
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-}
-
-/* ========= PROBABILITY BAR ========= */
-
-.probability-bar {
-    height: 10px;
-    background: #e2e8f0;
-    border-radius: 5px;
-    overflow: hidden;
-    margin-top: 0.5rem;
-}
-
-.probability-fill {
     height: 100%;
-    background: linear-gradient(90deg, #34d399 0%, #10b981 100%);
-    transition: width 1s ease-in-out;
 }
 
-    .probability-fill.high-risk {
-        background: linear-gradient(90deg, #f87171 0%, #ef4444 100%);
+    .quick-action-btn:hover {
+        background: #fff;
+        border-color: var(--doc-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(13, 110, 253, 0.1);
     }
+
+    .quick-action-btn i {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .quick-action-btn span {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+.text-purple {
+    color: #6f42c1 !important;
+}
+
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    color: var(--doc-muted);
+}
+
+.notification-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.notification-item:last-child {
+    border-bottom: none !important;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}

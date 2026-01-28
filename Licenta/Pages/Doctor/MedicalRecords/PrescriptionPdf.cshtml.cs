@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Licenta.Services;
@@ -26,17 +28,22 @@ namespace Licenta.Pages.Doctor.MedicalRecords
         public async Task<IActionResult> OnGetAsync(Guid id)
         {
             var user = await _userManager.GetUserAsync(User);
-            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
+            if (user == null) return Challenge();
+
+            var doctor = await _db.Doctors.AsNoTracking().FirstOrDefaultAsync(d => d.UserId == user.Id);
+            if (doctor == null) return Forbid();
 
             var record = await _db.MedicalRecords
+                .AsNoTracking()
                 .Include(r => r.Patient).ThenInclude(p => p.User)
+                .Include(r => r.Doctor).ThenInclude(d => d.User)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
-            if (record == null || record.DoctorId != doctor.Id)
-                return NotFound();
+            if (record == null) return NotFound();
+            if (record.DoctorId != doctor.Id) return Forbid();
 
             var pdfBytes = _pdf.GeneratePrescription(record);
-            var fileName = $"Prescription_{record.Patient?.User?.FullName ?? "patient"}_{record.VisitDateUtc:yyyyMMdd}.pdf";
+            var fileName = $"Prescription_{(record.Patient?.User?.FullName ?? "patient")}_{record.VisitDateUtc:yyyyMMdd}.pdf";
             return File(pdfBytes, "application/pdf", fileName);
         }
     }

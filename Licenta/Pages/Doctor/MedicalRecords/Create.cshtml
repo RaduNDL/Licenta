@@ -1,45 +1,92 @@
-﻿@page
+@page
 @model Licenta.Pages.Doctor.MedicalRecords.CreateModel
-@section Styles {
-    <link rel="stylesheet" href="~/css/doctor.css" />
+
+@{
+    ViewData["Title"] = "Create Medical Record";
 }
 
-<h2>Create Medical Record</h2>
+@section Styles {
+    <link rel="stylesheet" href="~/css/medicalrecords.css" />
+}
 
-<form method="post">
-    <div class="mb-3">
-        <label asp-for="Record.PatientId" class="form-label"></label>
-        <select asp-for="Record.PatientId" asp-items="Model.Patients" class="form-select"></select>
-        <span asp-validation-for="Record.PatientId" class="text-danger"></span>
+<div class="page-container" style="max-width: 800px; margin: 0 auto;">
+    <div class="page-header">
+        <h2 class="page-title">
+            <i class="bi bi-file-earmark-plus text-primary"></i> Create Medical Record
+        </h2>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="Record.Diagnosis" class="form-label"></label>
-        <input asp-for="Record.Diagnosis" class="form-control" />
-        <span asp-validation-for="Record.Diagnosis" class="text-danger"></span>
-    </div>
+    @if (TempData["StatusMessage"] is string msg)
+    {
+        <div class="alert alert-info border-0 shadow-sm mb-3">@msg</div>
+    }
 
-    <div class="mb-3">
-        <label asp-for="Record.Symptoms" class="form-label">Symptoms</label>
-        <textarea asp-for="Record.Symptoms" rows="4" class="form-control"></textarea>
-        <span asp-validation-for="Record.Symptoms" class="text-danger"></span>
-    </div>
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-warning border-0 shadow-sm mb-3">
+            <i class="bi bi-exclamation-triangle me-2"></i>Please fix the validation errors and try again.
+        </div>
+    }
 
-    <div class="mb-3">
-        <label asp-for="Record.Notes" class="form-label">Notes</label>
-        <textarea asp-for="Record.Notes" rows="5" class="form-control"></textarea>
-        <span asp-validation-for="Record.Notes" class="text-danger"></span>
-    </div>
+    @if (Model.Appointment != null)
+    {
+        <div class="alert-box">
+            <div class="mb-1"><i class="bi bi-calendar-event me-2"></i><strong>Appointment:</strong> @Model.Appointment.ScheduledAt.ToLocalTime().ToString("f")</div>
+            <div class="mb-1"><i class="bi bi-person me-2"></i><strong>Patient:</strong> @(Model.Appointment.Patient?.User?.FullName ?? Model.Appointment.Patient?.User?.Email ?? "Patient")</div>
+            <div><i class="bi bi-chat-left-text me-2"></i><strong>Reason:</strong> @(string.IsNullOrWhiteSpace(Model.Appointment.Reason) ? "-" : Model.Appointment.Reason)</div>
+        </div>
+    }
 
-    <div class="mb-3">
-        <label asp-for="Record.Treatment" class="form-label">Treatment / Recommendations</label>
-        <textarea asp-for="Record.Treatment" rows="4" class="form-control"></textarea>
-        <span asp-validation-for="Record.Treatment" class="text-danger"></span>
-    </div>
+    <form method="post">
+        <input type="hidden" asp-for="AppointmentId" />
 
-    <button class="btn btn-primary">Save</button>
-    <a asp-page="/Doctor/MedicalRecords/Index" class="btn btn-secondary ms-2">Back</a>
-</form>
+        @if (Model.Appointment != null)
+        {
+            <input type="hidden" asp-for="Record.PatientId" />
+        }
+        else
+        {
+            <div class="form-section">
+                <label asp-for="Record.PatientId" class="form-label">Select Patient</label>
+                <select asp-for="Record.PatientId" asp-items="Model.Patients" class="form-select form-select-lg">
+                    <option value="">-- Select patient --</option>
+                </select>
+                <span asp-validation-for="Record.PatientId" class="text-danger"></span>
+            </div>
+        }
+
+        <div class="form-section">
+            <label asp-for="Record.Diagnosis" class="form-label">Diagnosis</label>
+            <input asp-for="Record.Diagnosis" class="form-control form-control-lg" placeholder="Primary diagnosis..." />
+            <span asp-validation-for="Record.Diagnosis" class="text-danger"></span>
+        </div>
+
+        <div class="form-section">
+            <label asp-for="Record.Symptoms" class="form-label">Symptoms</label>
+            <textarea asp-for="Record.Symptoms" rows="3" class="form-control" placeholder="Describe reported symptoms..."></textarea>
+            <span asp-validation-for="Record.Symptoms" class="text-danger"></span>
+        </div>
+
+        <div class="form-section">
+            <label asp-for="Record.Notes" class="form-label">Clinical Notes</label>
+            <textarea asp-for="Record.Notes" rows="5" class="form-control" placeholder="Detailed observations..."></textarea>
+            <span asp-validation-for="Record.Notes" class="text-danger"></span>
+        </div>
+
+        <div class="form-section">
+            <label asp-for="Record.Treatment" class="form-label">Treatment / Recommendations</label>
+            <textarea asp-for="Record.Treatment" rows="4" class="form-control" placeholder="Prescribed treatment plan..."></textarea>
+            <span asp-validation-for="Record.Treatment" class="text-danger"></span>
+        </div>
+
+        <div class="form-actions">
+            <a asp-page="/Doctor/MedicalRecords/Index" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-save me-2"></i> Save Draft
+            </button>
+        </div>
+    </form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

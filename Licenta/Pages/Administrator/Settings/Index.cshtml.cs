@@ -1,14 +1,15 @@
 ﻿using Licenta.Areas.Identity.Data;
-using Licenta.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Http;
-using System.IO;
 using System;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Licenta.Pages.Administrator.Settings
@@ -17,10 +18,12 @@ namespace Licenta.Pages.Administrator.Settings
     public class IndexModel : PageModel
     {
         private readonly AppDbContext _db;
+        private readonly IWebHostEnvironment _env;
 
-        public IndexModel(AppDbContext db)
+        public IndexModel(AppDbContext db, IWebHostEnvironment env)
         {
             _db = db;
+            _env = env;
         }
 
         [BindProperty]
@@ -31,48 +34,28 @@ namespace Licenta.Pages.Administrator.Settings
 
         public class InputModel
         {
-            [Display(Name = "Clinic name")]
+            [MaxLength(200)]
             public string? ClinicName { get; set; }
 
-            [Display(Name = "Max upload (MB)")]
+            [Range(1, 200)]
             public int MaxUploadMb { get; set; } = 10;
 
             public string? LogoPath { get; set; }
 
-            [Display(Name = "SMTP server")]
-            public string? SmtpServer { get; set; }
-
-            [Display(Name = "SMTP port")]
-            public int SmtpPort { get; set; } = 587;
-
-            [Display(Name = "Use SSL/TLS")]
-            public bool SmtpUseSSL { get; set; }
-
-            [Display(Name = "SMTP user")]
-            public string? SmtpUser { get; set; }
-
-            [Display(Name = "SMTP password")]
-            [DataType(DataType.Password)]
-            public string? SmtpPassword { get; set; }
-
-            [Display(Name = "Password min length")]
+            [Range(4, 128)]
             public int PasswordMinLength { get; set; } = 6;
 
-            [Display(Name = "Require digit")]
             public bool RequireDigit { get; set; }
 
-            [Display(Name = "Require uppercase")]
             public bool RequireUppercase { get; set; }
 
-            [Display(Name = "Require special character")]
             public bool RequireSpecialChar { get; set; }
         }
 
         public async Task OnGetAsync()
         {
-            var settings = await _db.SystemSettings.FirstOrDefaultAsync();
-
-            if (settings == null)
+            var s = await _db.SystemSettings.AsNoTracking().FirstOrDefaultAsync();
+            if (s == null)
             {
                 Input = new InputModel();
                 return;
@@ -80,79 +63,79 @@ namespace Licenta.Pages.Administrator.Settings
 
             Input = new InputModel
             {
-                ClinicName = settings.ClinicName,
-                MaxUploadMb = settings.MaxUploadMb,
-                LogoPath = settings.LogoPath,
-
-                SmtpServer = settings.SmtpServer,
-                SmtpPort = settings.SmtpPort,
-                SmtpUser = settings.SmtpUser,
-                SmtpUseSSL = settings.SmtpUseSSL,
-
-                PasswordMinLength = settings.PasswordMinLength,
-                RequireDigit = settings.RequireDigit,
-                RequireUppercase = settings.RequireUppercase,
-                RequireSpecialChar = settings.RequireSpecialChar
+                ClinicName = s.ClinicName,
+                MaxUploadMb = s.MaxUploadMb,
+                LogoPath = s.LogoPath,
+                PasswordMinLength = s.PasswordMinLength,
+                RequireDigit = s.RequireDigit,
+                RequireUppercase = s.RequireUppercase,
+                RequireSpecialChar = s.RequireSpecialChar
             };
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)
-                return Page();
-
-            var settings = await _db.SystemSettings.FirstOrDefaultAsync();
-
-            if (settings == null)
             {
-                settings = new SystemSetting();
-                _db.SystemSettings.Add(settings);
+                await ReloadLogoPathAsync();
+                return Page();
             }
 
-            settings.ClinicName = Input.ClinicName?.Trim() ?? string.Empty;
-            settings.MaxUploadMb = Input.MaxUploadMb;
+            var s = await _db.SystemSettings.FirstOrDefaultAsync();
+            if (s == null)
+            {
+                s = new SystemSetting();
+                _db.SystemSettings.Add(s);
+            }
+
+            s.ClinicName = (Input.ClinicName ?? "").Trim();
+            s.MaxUploadMb = Clamp(Input.MaxUploadMb, 1, 200);
+
+            s.PasswordMinLength = Clamp(Input.PasswordMinLength, 4, 128);
+            s.RequireDigit = Input.RequireDigit;
+            s.RequireUppercase = Input.RequireUppercase;
+            s.RequireSpecialChar = Input.RequireSpecialChar;
 
             if (LogoFile != null && LogoFile.Length > 0)
             {
-                var uploadsFolder = Path.Combine("wwwroot", "uploads", "logos");
-                Directory.CreateDirectory(uploadsFolder);
+                var allowed = new[] { ".png", ".jpg", ".jpeg", ".webp", ".svg" };
+                var ext = Path.GetExtension(LogoFile.FileName).ToLowerInvariant();
 
-                var ext = Path.GetExtension(LogoFile.FileName);
-                if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
-
-                var fileName = $"logo_{DateTime.UtcNow:yyyyMMddHHmmss}{ext}";
-                var filePath = Path.Combine(uploadsFolder, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                if (!allowed.Contains(ext))
                 {
-                    await LogoFile.CopyToAsync(stream);
+                    TempData["Error"] = "Invalid logo format. Allowed: .png, .jpg, .jpeg, .webp, .svg";
+                    await ReloadLogoPathAsync();
+                    return Page();
                 }
 
-                settings.LogoPath = "/uploads/logos/" + fileName;
+                var folder = Path.Combine(_env.WebRootPath, "uploads", "logos");
+                Directory.CreateDirectory(folder);
+
+                var fileName = $"logo_{Guid.NewGuid():N}{ext}";
+                var physicalPath = Path.Combine(folder, fileName);
+
+                await using (var fs = new FileStream(physicalPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    await LogoFile.CopyToAsync(fs);
+                }
+
+                s.LogoPath = "/uploads/logos/" + fileName;
             }
-
-            settings.SmtpServer = Input.SmtpServer?.Trim() ?? string.Empty;
-            settings.SmtpPort = Input.SmtpPort;
-            settings.SmtpUser = Input.SmtpUser?.Trim() ?? string.Empty;
-            settings.SmtpUseSSL = Input.SmtpUseSSL;
-
-            if (!string.IsNullOrWhiteSpace(Input.SmtpPassword))
-            {
-                settings.SmtpPassword = Input.SmtpPassword;
-            }
-
-            if (settings.SmtpPassword == null)
-                settings.SmtpPassword = string.Empty;
-
-            settings.PasswordMinLength = Input.PasswordMinLength;
-            settings.RequireDigit = Input.RequireDigit;
-            settings.RequireUppercase = Input.RequireUppercase;
-            settings.RequireSpecialChar = Input.RequireSpecialChar;
 
             await _db.SaveChangesAsync();
 
             TempData["Status"] = "Settings updated.";
             return RedirectToPage();
         }
+
+        private async Task ReloadLogoPathAsync()
+        {
+            var s = await _db.SystemSettings.AsNoTracking().FirstOrDefaultAsync();
+            if (s != null)
+                Input.LogoPath = s.LogoPath;
+        }
+
+        private static int Clamp(int v, int min, int max)
+            => v < min ? min : (v > max ? max : v);
     }
 }

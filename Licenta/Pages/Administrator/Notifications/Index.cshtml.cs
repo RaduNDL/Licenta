@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Licenta.Areas.Identity.Data;
+﻿using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Administrator.Notifications
 {
@@ -23,56 +24,67 @@ namespace Licenta.Pages.Administrator.Notifications
             _userManager = userManager;
         }
 
-        public record NotificationVm(
-            long Id,
-            string Title,
-            string Message,
-            NotificationType Type,
-            DateTime When,
-            bool IsRead);
+        public sealed class NotificationItemVm
+        {
+            public DateTime When { get; set; }
+            public string Type { get; set; } = "";
+            public string Title { get; set; } = "";
+            public string Message { get; set; } = "";
+            public bool IsRead { get; set; }
+        }
 
-        public List<NotificationVm> Items { get; set; } = new();
+        public List<NotificationItemVm> Items { get; set; } = new();
 
-        public async Task OnGetAsync()
+        public async Task<IActionResult> OnGetAsync()
+        {
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(userId))
+                return Challenge();
+
+            var sinceUtc = DateTime.UtcNow.AddDays(-30);
+
+            Items = await _db.UserNotifications
+                .AsNoTracking()
+                .Where(n => n.UserId == userId && n.CreatedAtUtc >= sinceUtc)
+                .OrderByDescending(n => n.CreatedAtUtc)
+                .Select(n => new NotificationItemVm
+                {
+                    When = n.CreatedAtUtc.ToLocalTime(),
+                    Type = n.Type.ToString(),
+                    Title = n.Title,
+                    Message = n.Message,
+                    IsRead = n.IsRead
+                })
+                .ToListAsync();
+
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostMarkAllReadAsync()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
+                return Unauthorized();
+
+            var notifier = HttpContext.RequestServices.GetService(typeof(Licenta.Services.INotificationService)) as Licenta.Services.INotificationService;
+            if (notifier != null)
             {
-                Items = new();
-                return;
+                await notifier.MarkAllReadAsync(user.Id);
+            }
+            else
+            {
+                var list = await _db.UserNotifications
+                    .Where(x => x.UserId == user.Id && !x.IsRead)
+                    .ToListAsync();
+
+                foreach (var n in list)
+                    n.IsRead = true;
+
+                await _db.SaveChangesAsync();
             }
 
-            var since = DateTime.UtcNow.AddDays(-30);
-
-            Items = await _db.UserNotifications
-                .Where(n => n.UserId == user.Id && n.CreatedAtUtc >= since)
-                .OrderByDescending(n => n.CreatedAtUtc)
-                .Select(n => new NotificationVm(
-                    n.Id,
-                    n.Title,
-                    n.Message,
-                    n.Type,
-                    n.CreatedAtUtc.ToLocalTime(),
-                    n.IsRead))
-                .ToListAsync();
-        }
-
-        public async Task OnPostMarkAllReadAsync()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return;
-
-            var items = await _db.UserNotifications
-                .Where(n => n.UserId == user.Id && !n.IsRead)
-                .ToListAsync();
-
-            foreach (var n in items)
-            {
-                n.IsRead = true;
-            }
-
-            await _db.SaveChangesAsync();
-            await OnGetAsync();
+            TempData["StatusMessage"] = "All notifications marked as read.";
+            return RedirectToPage();
         }
     }
 }

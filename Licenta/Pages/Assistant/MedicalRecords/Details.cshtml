@@ -1,0 +1,54 @@
+@page "{id:guid}"
+@using Licenta.Models
+@model Licenta.Pages.Assistant.MedicalRecords.DetailsModel
+
+@{
+    ViewData["Title"] = "Medical Record";
+}
+
+<h2>Medical Record</h2>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <strong>@(Model.Record?.Patient?.User?.FullName ?? Model.Record?.Patient?.User?.Email ?? "Patient")</strong><br />
+        <small>@Model.Record.VisitDateUtc.ToLocalTime().ToString("f")</small>
+    </div>
+    <div class="card-body">
+        <h5>Diagnosis</h5>
+        <p>@Model.Record.Diagnosis</p>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Record.Symptoms))
+        {
+            <h5>Symptoms</h5>
+            <pre class="p-2 bg-light">@Model.Record.Symptoms</pre>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Record.Notes))
+        {
+            <h5>Notes</h5>
+            <pre class="p-2 bg-light">@Model.Record.Notes</pre>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Record.Treatment))
+        {
+            <h5 class="mt-3">Treatment / Recommendations</h5>
+            <pre class="p-2 bg-light">@Model.Record.Treatment</pre>
+        }
+
+        <div class="mt-3">
+            <span class="badge bg-success">@Model.Record.Status</span>
+            @if (Model.Record.ValidatedAtUtc.HasValue)
+            {
+                <span class="ms-2 text-muted">Validated @Model.Record.ValidatedAtUtc.Value.ToLocalTime().ToString("g")</span>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-secondary"
+       asp-page="/Assistant/MedicalRecords/PrescriptionPdf"
+       asp-route-id="@Model.Record.Id">Download PDF</a>
+
+    <a asp-page="/Assistant/MedicalRecords/Index" class="btn btn-secondary">Back</a>
+</div>

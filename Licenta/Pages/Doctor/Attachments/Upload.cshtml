@@ -1,34 +1,51 @@
 ﻿@page
 @model Licenta.Pages.Doctor.Attachments.UploadModel
 @{
-    ViewData["Title"] = "Upload medical document";
+    ViewData["Title"] = "Upload Medical Document";
 }
 @section Styles {
-    <link rel="stylesheet" href="~/css/doctor.css" />
+    <link rel="stylesheet" href="~/css/doctor-attachments.css" />
 }
-<h2>Upload medical document</h2>
 
-<form method="post" enctype="multipart/form-data">
-    <div class="mb-3">
-        <label asp-for="ModelInput.PatientId" class="form-label">Patient</label>
-        <select asp-for="ModelInput.PatientId" asp-items="Model.Patients" class="form-select"></select>
+<div class="page-container" style="max-width: 700px; margin: 0 auto;">
+    <div class="page-header">
+        <h2 class="page-title">
+            <i class="bi bi-cloud-arrow-up text-primary"></i> Upload Medical Document
+        </h2>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="ModelInput.Type" class="form-label">Type</label>
-        <input asp-for="ModelInput.Type" class="form-control" placeholder="e.g. Schedule, Report, Prescription" />
-    </div>
+    <form method="post" enctype="multipart/form-data">
+        <div class="mb-4">
+            <label asp-for="ModelInput.PatientId" class="form-label fw-semibold">Select Patient</label>
+            <select asp-for="ModelInput.PatientId" asp-items="Model.Patients" class="form-select form-select-lg"></select>
+            <div class="form-text">The document will be attached to this patient's permanent record.</div>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label">File</label>
-        <input asp-for="ModelInput.File" class="form-control" type="file" />
-    </div>
+        <div class="mb-4">
+            <label asp-for="ModelInput.Type" class="form-label fw-semibold">Document Type</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-tag"></i></span>
+                <input asp-for="ModelInput.Type" class="form-control" placeholder="e.g. Lab Result, MRI Report, Prescription" />
+            </div>
+        </div>
 
-    <button type="submit" class="btn btn-primary">Upload</button>
-    <a asp-page="/Doctor/Attachments/Index"
-       asp-route-patientId="@Model.ModelInput.PatientId"
-       class="btn btn-secondary ms-2">Back</a>
-</form>
+        <div class="mb-4">
+            <label class="form-label fw-semibold">File Selection</label>
+            <input asp-for="ModelInput.File" class="form-control form-control-lg" type="file" />
+        </div>
+
+        <div class="form-actions d-flex justify-content-end gap-2">
+            <a asp-page="/Doctor/Attachments/Index"
+               asp-route-patientId="@Model.ModelInput.PatientId"
+               class="btn btn-outline-secondary">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-upload me-2"></i> Upload Document
+            </button>
+        </div>
+    </form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

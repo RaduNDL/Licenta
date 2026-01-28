@@ -1,0 +1,226 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+    --primary: #0d6efd;
+    --primary-dark: #0056b3;
+    --accent: #198754; /* Green accent for register */
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --input-bg: #f8fafc;
+    --input-border: #e2e8f0;
+    --focus-ring: rgba(13, 110, 253, 0.25);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+    background: #fff;
+}
+
+.split-screen-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Left Panel */
+.left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 8%;
+    background: #ffffff;
+    max-width: 600px;
+    position: relative;
+    z-index: 2;
+}
+
+.back-link {
+    position: absolute;
+    top: 40px;
+    left: 8%;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+    .back-link:hover {
+        color: var(--primary);
+    }
+
+.header-section {
+    margin-bottom: 2rem;
+}
+
+.auth-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+}
+
+/* Inputs */
+.input-group-modern {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+}
+
+.input-field {
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 2px solid var(--input-border);
+    background: var(--input-bg);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+    .input-field:focus {
+        border-color: var(--primary);
+        background: #fff;
+        box-shadow: 0 0 0 4px var(--focus-ring);
+    }
+
+.small-text {
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: block;
+}
+
+/* Button */
+.btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: var(--text-main); /* Dark button for register */
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+    .btn-submit:hover {
+        background: black;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0,0,0, 0.2);
+    }
+
+.footer-section {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+.register-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+    .register-link:hover {
+        text-decoration: underline;
+    }
+
+/* Right Panel */
+.right-panel {
+    flex: 1.2;
+    background: #0f172a;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.animated-bg {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    /* Distinct Green/Teal Gradient for Register */
+    background: radial-gradient(circle at 20% 50%, #15803d, #0f172a 60%), radial-gradient(circle at 80% 80%, #06b6d4, transparent 40%);
+    filter: blur(70px);
+    animation: gradientMove 15s infinite alternate ease-in-out;
+    opacity: 0.8;
+}
+
+@keyframes gradientMove {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(5%, 5%) rotate(-5deg);
+    }
+}
+
+.overlay-content {
+    position: relative;
+    z-index: 10;
+    width: 80%;
+    max-width: 500px;
+}
+
+.glass-box {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 3rem;
+    color: white;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    transform: perspective(1000px) rotateY(-5deg);
+}
+
+    .glass-box.register-variant {
+        border-left: 4px solid var(--accent);
+    }
+
+    .glass-box h3 {
+        margin: 0 0 1rem 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .glass-box p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        opacity: 0.9;
+    }
+
+.decorative-line {
+    width: 60px;
+    height: 4px;
+    background: var(--accent);
+    margin-top: 1.5rem;
+    border-radius: 2px;
+}
+
+

@@ -1,266 +1,363 @@
 ﻿@page
 @model Licenta.Pages.Doctor.IndexModel
-
 @{
-    ViewData["Title"] = "Doctor Dashboard";
+    ViewData["Title"] = "Medical Dashboard";
+
+    var todayLabel = DateTime.Now.ToString("D");
+    var hasSchedule = Model.UpcomingAppointments != null && Model.UpcomingAppointments.Any();
+    var hasAttachments = Model.PendingAttachments != null && Model.PendingAttachments.Any();
+    var hasNotifications = Model.RecentNotifications != null && Model.RecentNotifications.Any();
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/admin.css" />
-    <link rel="stylesheet" href="~/css/doctor.css" />
+    <link rel="stylesheet" href="~/css/doctorpanel.css" asp-append-version="true" />
 }
 
-<h2 class="mb-3">Doctor Dashboard</h2>
+<div class="doctor-dashboard-page">
+    <div class="container-fluid dashboard-container py-4">
 
-@if (!string.IsNullOrEmpty(Model.DoctorName))
-{
-    <div class="alert alert-light border mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <div class="fw-semibold">Logged in as:</div>
-                <div class="fs-5">@Model.DoctorName</div>
-                @if (!string.IsNullOrEmpty(Model.ClinicName))
-                {
-                    <div class="small text-muted">
-                        Clinic: @Model.ClinicName
+        <div class="hero-card rounded-4 p-4 mb-4 shadow-sm border overflow-hidden">
+            <div class="hero-glow"></div>
+
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 position-relative">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="hero-avatar rounded-4 d-flex align-items-center justify-content-center">
+                        <i class="bi bi-heart-pulse fs-2"></i>
                     </div>
-                }
-            </div>
-        </div>
-    </div>
-}
-
-<div class="row g-3 mb-4">
-    <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm">
-            <div class="stats-card">
-                <div class="stats-icon">
-                    <i class="bi bi-people"></i>
-                </div>
-                <div class="stats-info">
-                    <h3>@Model.TotalPatients</h3>
-                    <p>Patients</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm">
-            <div class="stats-card">
-                <div class="stats-icon">
-                    <i class="bi bi-journal-medical"></i>
-                </div>
-                <div class="stats-info">
-                    <h3>@Model.TotalRecords</h3>
-                    <p>Medical records</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm">
-            <div class="stats-card">
-                <div class="stats-icon">
-                    <i class="bi bi-calendar-event"></i>
-                </div>
-                <div class="stats-info">
-                    <h3>@Model.UpcomingAppointments</h3>
-                    <p>Upcoming appointments</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-        <div class="card shadow-sm">
-            <div class="stats-card">
-                <div class="stats-icon">
-                    <i class="bi bi-folder2-open"></i>
-                </div>
-                <div class="stats-info">
-                    <h3>@Model.PendingAttachments</h3>
-                    <p>Pending attachments</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-@if (Model.TotalPredictions > 0)
-{
-    <div class="ml-overview-card mb-4">
-        <div class="ml-overview-left">
-            <div class="ml-pill">AI Assistance</div>
-            <h3 class="ml-title">ML Predictions Overview</h3>
-            <p class="ml-subtitle">
-                You have <strong>@Model.TotalPredictions</strong> machine learning predictions generated
-                for your patients. Review them in the ML dashboard.
-            </p>
-        </div>
-        <div class="ml-overview-right">
-            <div class="ml-overview-number">@Model.TotalPredictions</div>
-            <div class="ml-overview-label">Total predictions</div>
-            <a asp-page="/Doctor/Predictions/Index" class="btn btn-light btn-sm mt-2">
-                Open ML Dashboard
-            </a>
-        </div>
-    </div>
-}
-
-<h4 class="mt-4 mb-3">Quick actions</h4>
-
-<div class="row g-3">
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">
-                    <i class="bi bi-people me-2"></i>Patients
-                </h5>
-                <p class="card-text text-muted">
-                    Browse all patients and open their medical records.
-                </p>
-                <div class="mt-auto">
-                    <a asp-page="/Doctor/Patients/Index" class="btn btn-primary btn-sm">
-                        Open Patients
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">
-                    <i class="bi bi-calendar-event me-2"></i>Appointments
-                </h5>
-                <p class="card-text text-muted">
-                    See your schedule by day or week and manage visits.
-                </p>
-                <div class="mt-auto">
-                    <a asp-page="/Doctor/Appointments/Index" class="btn btn-outline-primary btn-sm">
-                        View Appointments
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">
-                    <i class="bi bi-journal-medical me-2"></i>Medical Records
-                </h5>
-                <p class="card-text text-muted">
-                    View and update medical records for your patients.
-                </p>
-                <div class="mt-auto">
-                    <a asp-page="/Doctor/MedicalRecords/Index" class="btn btn-outline-primary btn-sm">
-                        Open Medical Records
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3 mt-1">
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">
-                    <i class="bi bi-folder2-open me-2"></i>Attachments
-                </h5>
-                <p class="card-text text-muted">
-                    Validate patient attachments (images, documents) and mark them as reviewed.
-                </p>
-                <div class="mt-auto d-flex flex-wrap gap-2">
-                    <a asp-page="/Doctor/Attachments/Validate" class="btn btn-primary btn-sm">
-                        Validate Pending
-                    </a>
-                    <a asp-page="/Doctor/Attachments/Index" class="btn btn-outline-secondary btn-sm">
-                        All Attachments
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">
-                    <i class="bi bi-cpu me-2"></i>ML Predictions
-                </h5>
-                <p class="card-text text-muted">
-                    Generate and review ML-based predictions for your patients.
-                </p>
-                <div class="mt-auto">
-                    <a asp-page="/Doctor/Predictions/Index" class="btn btn-primary btn-sm">
-                        Open ML Predictions
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">
-                    <i class="bi bi-chat-dots me-2"></i>Messages
-                </h5>
-                <p class="card-text text-muted">
-                    Check your latest internal messages from assistants or other doctors.
-                </p>
-                <div class="mt-auto">
-                    <a asp-page="/Doctor/Messages/Inbox" class="btn btn-outline-primary btn-sm">
-                        Open Inbox
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">
-                    <i class="bi bi-clock-history me-2"></i>My schedule
-                </h5>
-                <p class="card-text text-muted">
-                    Set the days and hours when you are available for appointments.
-                </p>
-                <div class="mt-auto">
-                    <a asp-page="/Doctor/Schedule/Index" class="btn btn-outline-primary btn-sm">
-                        Manage schedule
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-@if (Model.LatestMessages?.Any() == true)
-{
-    <h4 class="mt-4 mb-3">Latest messages</h4>
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <ul class="list-unstyled mb-0">
-                @foreach (var m in Model.LatestMessages)
-                {
-                    <li class="mb-2">
-                        <div class="fw-semibold">
-                            @m.SenderName
-                            <span class="text-muted small">(@m.SentAtLocal)</span>
+                    <div>
+                        <div class="text-muted small mb-1 d-flex align-items-center gap-2">
+                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">
+                                <i class="bi bi-circle-fill online-dot me-1"></i> Online
+                            </span>
+                            <span class="d-none d-md-inline">
+                                <i class="bi bi-calendar3 me-2"></i>@todayLabel
+                            </span>
                         </div>
-                        <div class="text-muted text-truncate">@m.Preview</div>
-                    </li>
-                }
-            </ul>
+                        <h1 class="h3 fw-bold text-dark mb-0">
+                            Welcome back, <span class="text-primary">Dr. @Model.DoctorName</span>
+                        </h1>
+                        <div class="text-muted small mt-1">
+                            Ready for today’s consults, reviews, and follow-ups.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <a asp-page="/Doctor/Schedule/Index" class="btn btn-hero-outline rounded-pill px-4">
+                        <i class="bi bi-gear me-2"></i>Schedule
+                    </a>
+                    <a asp-page="/Doctor/Predictions/Index" class="btn btn-hero-primary rounded-pill px-4">
+                        <i class="bi bi-stars me-2"></i>AI Assistant
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["StatusMessage"] is string status)
+        {
+            <div class="alert alert-info shadow-sm border-0 mb-4 rounded-3 fade show">
+                <i class="bi bi-info-circle-fill me-2"></i>@status
+            </div>
+        }
+
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card stat-primary">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Appointments</p>
+                            <h2 class="mb-0 fw-bold text-dark stat-number" data-target="@Model.AppointmentsTodayCount">@Model.AppointmentsTodayCount</h2>
+                            <div class="stat-sub text-muted small">Today</div>
+                        </div>
+                        <div class="icon-shape icon-primary rounded-circle">
+                            <i class="bi bi-calendar-check fs-4"></i>
+                        </div>
+                    </div>
+                    <a asp-page="/Doctor/Appointments/Index" class="stretched-link" aria-label="Open appointments"></a>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card stat-warning">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Pending Reviews</p>
+                            <h2 class="mb-0 fw-bold text-dark stat-number" data-target="@Model.PendingValidationsCount">@Model.PendingValidationsCount</h2>
+                            <div class="stat-sub text-muted small">Attachments</div>
+                        </div>
+                        <div class="icon-shape icon-warning rounded-circle">
+                            <i class="bi bi-file-earmark-text fs-4"></i>
+                        </div>
+                    </div>
+                    <a asp-page="/Doctor/Attachments/Inbox" class="stretched-link" aria-label="Open attachments inbox"></a>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card stat-success">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Unread Msg</p>
+                            <h2 class="mb-0 fw-bold text-dark stat-number" data-target="@Model.UnreadMessagesCount">@Model.UnreadMessagesCount</h2>
+                            <div class="stat-sub text-muted small">Inbox</div>
+                        </div>
+                        <div class="icon-shape icon-success rounded-circle">
+                            <i class="bi bi-chat-left-text fs-4"></i>
+                        </div>
+                    </div>
+                    <a asp-page="/Doctor/Messages/Inbox" class="stretched-link" aria-label="Open messages inbox"></a>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="stat-card stat-info">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted small text-uppercase fw-bold mb-1">Total Patients</p>
+                            <h2 class="mb-0 fw-bold text-dark stat-number" data-target="@Model.TotalPatientsCount">@Model.TotalPatientsCount</h2>
+                            <div class="stat-sub text-muted small">Clinic</div>
+                        </div>
+                        <div class="icon-shape icon-info rounded-circle">
+                            <i class="bi bi-people fs-4"></i>
+                        </div>
+                    </div>
+                    <a asp-page="/Doctor/Patients/Index" class="stretched-link" aria-label="Open patients list"></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-8 d-flex flex-column gap-3">
+
+                <div class="dashboard-panel card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold d-flex align-items-center gap-2">
+                            <i class="bi bi-clock-history text-primary"></i> Today's Schedule
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <a asp-page="/Doctor/Appointments/Index" class="btn btn-sm btn-light rounded-pill px-3">View Calendar</a>
+                            <a asp-page="/Doctor/Appointments/Approvals" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                Approvals
+                                @if (Model.PendingApprovalsCount > 0)
+                                {
+                                    <span class="ms-2 badge bg-danger rounded-pill">@Model.PendingApprovalsCount</span>
+                                }
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-0">
+                        @if (hasSchedule)
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="bg-light text-muted small text-uppercase">
+                                        <tr>
+                                            <th class="ps-4 py-3">Time</th>
+                                            <th class="py-3">Patient</th>
+                                            <th class="py-3">Type</th>
+                                            <th class="text-end pe-4 py-3">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var appt in Model.UpcomingAppointments)
+                                        {
+                                            var patientName = appt.Patient?.User?.FullName ?? appt.Patient?.User?.Email ?? "Unknown";
+                                            var initial = !string.IsNullOrWhiteSpace(patientName) ? patientName.Trim().Substring(0, 1).ToUpperInvariant() : "?";
+
+                                            <tr>
+                                                <td class="ps-4 fw-bold text-dark" style="width: 110px;">
+                                                    <div class="time-pill">
+                                                        @appt.ScheduledAt.ToLocalTime().ToString("HH:mm")
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-3 d-flex align-items-center justify-content-center">
+                                                            <span class="fw-bold">@initial</span>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-semibold text-dark">@patientName</div>
+                                                            <div class="small text-muted">ID: #@appt.PatientId.ToString().Substring(0, 4)</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge pill-muted">
+                                                        @(string.IsNullOrEmpty(appt.Reason) ? "Consultation" : appt.Reason)
+                                                    </span>
+                                                </td>
+                                                <td class="text-end pe-4">
+                                                    <a asp-page="/Doctor/MedicalRecords/Create" asp-route-appointmentId="@appt.Id" class="btn btn-sm btn-primary rounded-pill px-3">
+                                                        Start <i class="bi bi-arrow-right ms-1"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <div class="mb-3 opacity-25"><i class="bi bi-cup-hot display-4"></i></div>
+                                <h6 class="text-muted mb-1">No appointments remaining today.</h6>
+                                <div class="small text-muted">Use the calendar to plan the week.</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="dashboard-panel card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold d-flex align-items-center gap-2">
+                            <i class="bi bi-exclamation-circle text-danger"></i> Action Required
+                        </h5>
+                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3">
+                            @Model.PendingValidationsCount Pending
+                        </span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            @if (hasAttachments)
+                            {
+                                @foreach (var att in Model.PendingAttachments.Take(5))
+                                {
+                                    <div class="list-group-item px-4 py-3 d-flex align-items-center justify-content-between hover-bg-light">
+                                        <div class="d-flex align-items-center gap-3 overflow-hidden">
+                                            <div class="file-icon">
+                                                <i class="bi bi-file-earmark-pdf fs-5"></i>
+                                            </div>
+                                            <div class="text-truncate">
+                                                <div class="fw-semibold text-dark text-truncate">@att.FileName</div>
+                                                <div class="small text-muted">
+                                                    Uploaded by @(att.Patient?.User?.FullName ?? "Patient") &bull; @att.UploadedAt.ToLocalTime().ToString("MMM dd")
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <a asp-page="/Doctor/Attachments/Review" asp-route-id="@att.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                            Review
+                                        </a>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="empty-state">
+                                    <i class="bi bi-check2-all text-success display-6 mb-3 d-block opacity-50"></i>
+                                    <span class="text-muted">All documents are up to date.</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-lg-4 d-flex flex-column gap-3">
+
+                <div class="dashboard-panel card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">Quick Actions</h5>
+                        <span class="badge bg-light text-dark border rounded-pill px-3">
+                            @Model.PendingApprovalsCount approvals • @Model.PendingRescheduleApprovalsCount reschedules
+                        </span>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <a asp-page="/Doctor/Patients/Index" class="quick-btn-modern p-3 d-flex flex-column align-items-center justify-content-center border rounded-3 text-decoration-none bg-light h-100">
+                                    <i class="bi bi-search fs-3 text-primary mb-2"></i>
+                                    <span class="small fw-semibold text-dark">Find Patient</span>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a asp-page="/Doctor/Predictions/Index" class="quick-btn-modern p-3 d-flex flex-column align-items-center justify-content-center border rounded-3 text-decoration-none bg-light h-100">
+                                    <i class="bi bi-stars fs-3 text-purple mb-2"></i>
+                                    <span class="small fw-semibold text-dark">AI Tools</span>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a asp-page="/Doctor/Appointments/Approvals" class="quick-btn-modern p-3 d-flex flex-column align-items-center justify-content-center border rounded-3 text-decoration-none bg-light h-100 position-relative">
+                                    <i class="bi bi-calendar-check fs-3 text-success mb-2"></i>
+                                    <span class="small fw-semibold text-dark">Approvals</span>
+                                    @if (Model.PendingApprovalsCount > 0)
+                                    {
+                                        <span class="position-absolute top-0 end-0 m-2 badge bg-danger rounded-pill">@Model.PendingApprovalsCount</span>
+                                    }
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a asp-page="/Doctor/Appointments/RescheduleApprovals" class="quick-btn-modern p-3 d-flex flex-column align-items-center justify-content-center border rounded-3 text-decoration-none bg-light h-100 position-relative">
+                                    <i class="bi bi-arrow-repeat fs-3 text-warning mb-2"></i>
+                                    <span class="small fw-semibold text-dark">Reschedules</span>
+                                    @if (Model.PendingRescheduleApprovalsCount > 0)
+                                    {
+                                        <span class="position-absolute top-0 end-0 m-2 badge bg-danger rounded-pill">@Model.PendingRescheduleApprovalsCount</span>
+                                    }
+                                </a>
+                            </div>
+
+                            <div class="col-12 mt-2">
+                                <a asp-page="/Doctor/Attachments/Inbox" class="wide-action d-flex align-items-center p-3 border rounded-3 text-decoration-none bg-white shadow-sm">
+                                    <div class="wide-icon wide-info me-3"><i class="bi bi-file-earmark-check fs-5"></i></div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold text-dark">Validate Documents</div>
+                                        <div class="small text-muted">Review incoming files</div>
+                                    </div>
+                                    <i class="bi bi-chevron-right text-muted"></i>
+                                </a>
+                            </div>
+                            <div class="col-12">
+                                <a asp-page="/Doctor/LabResults/Index" class="wide-action d-flex align-items-center p-3 border rounded-3 text-decoration-none bg-white shadow-sm">
+                                    <div class="wide-icon wide-primary me-3"><i class="bi bi-activity fs-5"></i></div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold text-dark">Lab Results</div>
+                                        <div class="small text-muted">Analyze patient data</div>
+                                    </div>
+                                    <i class="bi bi-chevron-right text-muted"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-panel card border-0 shadow-sm rounded-4 flex-fill">
+                    <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-bell text-warning me-2"></i>Notifications</h5>
+                        <a asp-page="/Doctor/Notifications/Index" class="small text-muted text-decoration-underline">View All</a>
+                    </div>
+                    <div class="card-body p-0 overflow-auto" style="max-height: 420px;">
+                        @if (hasNotifications)
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var note in Model.RecentNotifications.Take(8))
+                                {
+                                    <div class="list-group-item px-4 py-3 border-bottom-0 border-top">
+                                        <div class="d-flex w-100 justify-content-between mb-1">
+                                            <span class="badge bg-light text-dark border">@note.Type</span>
+                                            <small class="text-muted" style="font-size: 0.75rem;">@note.TimeAgo</small>
+                                        </div>
+                                        <p class="mb-0 small text-dark lh-sm">@Html.Raw(note.Message)</p>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="p-4 text-center text-muted small">
+                                No new notifications
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/doctorpanel.js" asp-append-version="true"></script>
 }

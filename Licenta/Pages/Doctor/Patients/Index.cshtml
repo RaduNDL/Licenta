@@ -6,47 +6,104 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/doctor.css" />
+    <link rel="stylesheet" href="~/css/drpatientlist.css" />
 }
 
-<h2>Patients</h2>
+<div class="page-container">
+    <div class="page-header">
+        <h2 class="page-title">
+            <i class="bi bi-people-fill text-primary"></i> Patient Directory
+        </h2>
 
-<table class="table table-striped table-hover">
-    <thead>
-        <tr>
-            <th>Full name</th>
-            <th>Email</th>
-            <th>DOB</th>
-            <th style="width: 30%;">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var p in Model.Patients)
-        {
-            <tr>
-                <td>@(p.User.FullName ?? p.User.Email)</td>
-                <td>@p.User.Email</td>
-                <td>@(p.DateOfBirth?.ToString("d") ?? "-")</td>
-                <td>
-                    <a class="btn btn-sm btn-primary"
-                       asp-page="/Doctor/MedicalRecords/Index"
-                       asp-route-patientId="@p.Id">
-                        Records
-                    </a>
+        <div class="d-flex gap-2">
+            <div class="input-group input-group-sm" style="width: 250px;">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control bg-light border-start-0" placeholder="Search patients...">
+            </div>
+        </div>
+    </div>
 
-                    <a class="btn btn-sm btn-outline-secondary"
-                       asp-page="/Doctor/Attachments/Index"
-                       asp-route-patientId="@p.Id">
-                        Documents
-                    </a>
+    @if (Model.Patients == null || !Model.Patients.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-person-x"></i>
+            <h5>No Patients Found</h5>
+            <p>Your patient directory is currently empty.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-patients">
+                <thead>
+                    <tr>
+                        <th width="40%">Patient</th>
+                        <th width="25%">Date of Birth</th>
+                        <th width="35%" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Patients)
+                    {
+                        var name = p.User?.FullName ?? p.User?.Email ?? p.User?.UserName ?? "Unknown";
+                        var email = p.User?.Email ?? "-";
+                        var userId = p.UserId ?? "";
 
-                    <a class="btn btn-sm btn-outline-primary"
-                       asp-page="/Doctor/Messages/Create"
-                       asp-route-patientId="@p.UserId">
-                        Message
-                    </a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                        <tr>
+                            <td>
+                                <div class="patient-info">
+                                    <div class="patient-avatar">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                    <div class="patient-details">
+                                        <span class="patient-name">@name</span>
+                                        <span class="patient-email">@email</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center text-muted">
+                                    <i class="bi bi-calendar3 me-2"></i>
+                                    @(p.DateOfBirth?.ToString("MMMM dd, yyyy") ?? "-")
+                                </div>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a class="btn btn-sm btn-outline-primary btn-icon-text"
+                                       asp-page="/Doctor/MedicalRecords/Index"
+                                       asp-route-patientId="@p.Id"
+                                       title="View Medical Records">
+                                        <i class="bi bi-journal-medical"></i> Records
+                                    </a>
+
+                                    <a class="btn btn-sm btn-outline-secondary btn-icon-text"
+                                       asp-page="/Doctor/Attachments/Index"
+                                       asp-route-patientId="@p.Id"
+                                       title="View Documents">
+                                        <i class="bi bi-folder2-open"></i> Docs
+                                    </a>
+
+                                    @if (!string.IsNullOrWhiteSpace(userId))
+                                    {
+                                        <a class="btn btn-sm btn-primary btn-icon-text"
+                                           asp-page="/Doctor/Messages/Inbox"
+                                           asp-route-userId="@userId"
+                                           title="Send Message">
+                                            <i class="bi bi-chat-dots-fill"></i> Message
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-secondary btn-icon-text" type="button" disabled title="Patient user missing">
+                                            <i class="bi bi-chat-dots-fill"></i> Message
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

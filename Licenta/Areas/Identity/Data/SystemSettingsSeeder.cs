@@ -1,6 +1,6 @@
-﻿using System.Threading.Tasks;
-using Licenta.Models;
+﻿using Licenta.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace Licenta.Areas.Identity.Data
 {
@@ -8,8 +8,6 @@ namespace Licenta.Areas.Identity.Data
     {
         public static async Task SeedAsync(AppDbContext db)
         {
-            await db.Database.MigrateAsync();
-
             if (!await db.SystemSettings.AnyAsync())
             {
                 db.SystemSettings.Add(new SystemSetting

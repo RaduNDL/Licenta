@@ -3,91 +3,210 @@
 
 @{
     ViewData["Title"] = "My Schedule";
+    bool hasSchedule = Model.Days != null && Model.Days.Any(d => d.IsActive && d.StartTime.HasValue && d.EndTime.HasValue);
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/admin.css" />
-    <link rel="stylesheet" href="~/css/doctor.css" />
+    <link rel="stylesheet" href="~/css/doctor.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ScheduleDR.css" asp-append-version="true" />
 }
 
-<h2 class="mb-3">My Schedule</h2>
+<div class="schedule-page">
+    <div class="container py-4">
+        <div class="schedule-hero mb-4">
+            <div class="schedule-hero-left">
+                <div class="schedule-badge">
+                    <i class="bi bi-calendar2-week"></i>
+                    <span>Doctor Workspace</span>
+                </div>
 
-@if (!string.IsNullOrEmpty(Model.DoctorName))
-{
-    <p class="text-muted">Doctor: <strong>@Model.DoctorName</strong></p>
-}
+                <h2 class="schedule-title mb-1">My Schedule</h2>
+                <div class="schedule-subtitle">
+                    Define your weekly availability in a natural format and keep it always up to date.
+                </div>
 
-@if (TempData["StatusMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["StatusMessage"]</div>
-}
+                @if (!string.IsNullOrEmpty(Model.DoctorName))
+                {
+                    <div class="schedule-meta mt-2">
+                        <i class="bi bi-person-badge"></i>
+                        <span>Doctor: <strong>@Model.DoctorName</strong></span>
+                    </div>
+                }
+            </div>
 
-<form method="post" class="card shadow-sm p-3">
-    <p>Write your weekly schedule in a natural text format. The system will parse it and save your availability.</p>
+            <div class="schedule-hero-right">
+                <div class="schedule-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-label">Status</div>
+                            <div class="stat-value">@((hasSchedule) ? "Active schedule" : "Not set")</div>
+                        </div>
+                    </div>
 
-    <div class="alert alert-info small">
-        <strong>Tip:</strong> You can write one line per day, for example:<br />
-        <code>Monday from 2 PM to 4 PM</code><br />
-        <code>Tuesday 08:00 - 17:00</code><br />
-        <code>Friday 09:30 - 13:00</code><br />
-        When you save, the schedule below will be updated.
-    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-label">Lines supported</div>
+                            <div class="stat-value">One per day</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="mb-3">
-        <label asp-for="ScheduleText" class="form-label">Schedule</label>
-        <textarea asp-for="ScheduleText"
-                  class="form-control"
-                  rows="5"
-                  placeholder="Monday from 2 PM to 4 PM&#10;Tuesday 08:00 - 17:00"></textarea>
-        <span asp-validation-for="ScheduleText" class="text-danger"></span>
-        <div class="form-text">
-            Accepted format: one or more lines like
-            <code>Monday 14:00 - 16:00</code> or <code>Monday from 2 PM to 4 PM</code>.
+        @if (TempData["StatusMessage"] is string status && !string.IsNullOrWhiteSpace(status))
+        {
+            <div class="alert alert-success border-0 shadow-sm mb-4 schedule-toast">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <div>@status</div>
+                </div>
+            </div>
+        }
+
+        <div class="row g-4 align-items-stretch">
+            <div class="col-12 col-lg-7">
+                <div class="card schedule-card shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="schedule-card-header">
+                            <div class="schedule-card-title">
+                                <i class="bi bi-pencil-square"></i>
+                                <span>Schedule editor</span>
+                            </div>
+
+                            <div class="schedule-actions">
+                                <button type="button" class="btn btn-sm btn-outline-secondary schedule-btn" id="btnInsertExample">
+                                    <i class="bi bi-magic"></i>
+                                    Insert example
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary schedule-btn" id="btnClear">
+                                    <i class="bi bi-eraser"></i>
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="schedule-hint mt-3">
+                            <div class="hint-icon"><i class="bi bi-lightbulb"></i></div>
+                            <div class="hint-text">
+                                Write one line per day. Examples:
+                                <span class="hint-code">Monday from 2 PM to 4 PM</span>
+                                <span class="hint-code">Tuesday 08:00 - 17:00</span>
+                                <span class="hint-code">Friday 09:30 - 13:00</span>
+                            </div>
+                        </div>
+
+                        <form method="post" class="mt-3" id="scheduleForm">
+                            <div class="mb-2">
+                                <label asp-for="ScheduleText" class="form-label schedule-label">Schedule</label>
+
+                                <div class="schedule-textarea-wrap">
+                                    <textarea asp-for="ScheduleText"
+                                              class="form-control schedule-textarea"
+                                              rows="8"
+                                              placeholder="Monday 09:00 - 13:00&#10;Tuesday 14:00 - 18:00"></textarea>
+
+                                    <div class="schedule-counter">
+                                        <span id="scheduleLineCount">0</span> lines
+                                    </div>
+                                </div>
+
+                                <span asp-validation-for="ScheduleText" class="text-danger"></span>
+                                <div class="form-text schedule-help">
+                                    Accepted format: one or more lines like <span class="help-chip">Monday 14:00 - 16:00</span> or <span class="help-chip">Monday from 2 PM to 4 PM</span>.
+                                </div>
+                            </div>
+
+                            <div asp-validation-summary="All" class="text-danger mb-2"></div>
+
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <button type="submit" class="btn btn-primary schedule-primary">
+                                    <i class="bi bi-save"></i>
+                                    Save schedule
+                                </button>
+
+                                <a asp-page="/Doctor/Index" class="btn btn-outline-secondary schedule-secondary">
+                                    <i class="bi bi-arrow-left"></i>
+                                    Back to dashboard
+                                </a>
+                            </div>
+
+                            <div class="schedule-note mt-3">
+                                <i class="bi bi-info-circle"></i>
+                                Saving will update the schedule panel on the right.
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5">
+                <div class="card schedule-card shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="schedule-card-header">
+                            <div class="schedule-card-title">
+                                <i class="bi bi-calendar-check"></i>
+                                <span>Current schedule</span>
+                            </div>
+
+                            <div class="schedule-chip">
+                                @((hasSchedule) ? "Live" : "Empty")
+                            </div>
+                        </div>
+
+                        @if (hasSchedule)
+                        {
+                            <div class="schedule-table-wrap mt-3">
+                                <table class="table table-sm align-middle mb-0 schedule-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 42%;">Day</th>
+                                            <th style="width: 29%;">From</th>
+                                            <th style="width: 29%;">To</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var d in Model.Days.Where(x => x.IsActive && x.StartTime.HasValue && x.EndTime.HasValue))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="day-cell">
+                                                        <span class="day-dot"></span>
+                                                        <span>@d.DayName</span>
+                                                    </div>
+                                                </td>
+                                                <td><span class="time-pill">@d.StartTime?.ToString(@"hh\:mm")</span></td>
+                                                <td><span class="time-pill">@d.EndTime?.ToString(@"hh\:mm")</span></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="schedule-footer mt-3">
+                                <i class="bi bi-shield-check"></i>
+                                Your availability helps patients book correct time slots.
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="schedule-empty mt-3">
+                                <div class="empty-icon"><i class="bi bi-calendar-x"></i></div>
+                                <div class="empty-title">No schedule defined yet</div>
+                                <div class="empty-subtitle">
+                                    Use the editor to add your weekly availability and press <strong>Save schedule</strong>.
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
-    <div asp-validation-summary="All" class="text-danger mb-2"></div>
-
-    <button type="submit" class="btn btn-primary">Save schedule</button>
-    <a asp-page="/Doctor/Index" class="btn btn-outline-secondary ms-2">Back to dashboard</a>
-</form>
-
-@if (Model.Days != null && Model.Days.Any(d => d.IsActive && d.StartTime.HasValue && d.EndTime.HasValue))
-{
-    <h4 class="mt-4 mb-3">Current schedule</h4>
-
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <table class="table table-sm align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th style="width: 25%;">Day</th>
-                        <th style="width: 25%;">From</th>
-                        <th style="width: 25%;">To</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var d in Model.Days.Where(x => x.IsActive && x.StartTime.HasValue && x.EndTime.HasValue))
-                    {
-                        <tr>
-                            <td>@d.DayName</td>
-                            <td>@d.StartTime?.ToString(@"hh\:mm")</td>
-                            <td>@d.EndTime?.ToString(@"hh\:mm")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-}
-else
-{
-    <h4 class="mt-4">Current schedule</h4>
-    <div class="alert alert-secondary">
-        No schedule defined yet. Use the text editor above and press <strong>Save schedule</strong>.
-    </div>
-}
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/ScheduleDR.js" asp-append-version="true"></script>
 }

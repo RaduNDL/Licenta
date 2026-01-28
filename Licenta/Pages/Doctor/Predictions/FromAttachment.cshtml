@@ -1,0 +1,84 @@
+﻿@page "{id:guid}"
+@model Licenta.Pages.Doctor.Predictions.FromAttachmentModel
+@{
+    ViewData["Title"] = "Process Attachment";
+}
+
+<div class="container py-4">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a asp-page="/Doctor/Attachments/Inbox" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+        <h2 class="mb-0">Process Attachment</h2>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger shadow-sm border-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>@Model.ErrorMessage</div>
+    }
+
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-header bg-light fw-bold">File Preview</div>
+                <div class="card-body text-center d-flex align-items-center justify-content-center bg-light">
+                    @if (Model.Attachment?.ContentType?.StartsWith("image/") == true)
+                    {
+                        <img src="@Model.Attachment.FilePath" class="img-fluid rounded shadow-sm" style="max-height: 350px; object-fit: contain;" />
+                    }
+                    else
+                    {
+                        <div class="py-5 text-muted">
+                            <i class="bi bi-file-earmark-medical display-1"></i>
+                            <p class="mt-2 mb-0">@Model.Attachment?.FileName</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white fw-bold">
+                    <i class="bi bi-sliders me-2"></i>Analysis Configuration
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        <div class="mb-4">
+                            <label class="form-label text-muted small text-uppercase fw-bold">Target Patient</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control bg-light border-start-0"
+                                       value="@(Model.Attachment?.Patient?.User?.FullName ?? "Unknown Patient")" readonly />
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">AI Model</label>
+                                <select name="modelId" class="form-select">
+                                    <option value="isic_2019_images:efficientnet">ISIC 2019 (EfficientNet)</option>
+                                </select>
+                                <div class="form-text small">Optimized for dermoscopy images.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Input Resolution</label>
+                                <select name="imageSize" class="form-select">
+                                    <option value="224">224 x 224 (Standard)</option>
+                                    <option value="300">300 x 300 (High Detail)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm">
+                            <i class="bi bi-cpu-fill me-2"></i>Start Analysis
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

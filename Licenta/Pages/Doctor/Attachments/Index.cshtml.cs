@@ -2,8 +2,13 @@ using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Doctor.Attachments
 {
@@ -19,39 +24,38 @@ namespace Licenta.Pages.Doctor.Attachments
             _userManager = userManager;
         }
 
-        public List<MedicalAttachment> Attachments { get; set; } = new();
         public Guid? PatientId { get; set; }
+        public List<MedicalAttachment> Attachments { get; set; } = new();
 
-        public async Task OnGetAsync(Guid? patientId)
+        public async Task<IActionResult> OnGetAsync(Guid? patientId = null)
         {
+            var doctorUser = await _userManager.GetUserAsync(User);
+            if (doctorUser == null) return Unauthorized();
+
+            var doctorProfile = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == doctorUser.Id);
+            if (doctorProfile == null) return Unauthorized();
+
             PatientId = patientId;
 
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                Attachments = new();
-                return;
-            }
-
-            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
-            if (doctor == null)
-            {
-                Attachments = new();
-                return;
-            }
-
-            var query = _db.MedicalAttachments
+            var q = _db.MedicalAttachments
                 .Include(a => a.Patient).ThenInclude(p => p.User)
-                .Where(a => a.DoctorId == doctor.Id);
+                .Where(a => a.DoctorId == doctorProfile.Id);
 
-            if (patientId.HasValue)
+            if (!string.IsNullOrWhiteSpace(doctorUser.ClinicId))
             {
-                query = query.Where(a => a.PatientId == patientId.Value);
+                q = q.Where(a => a.Patient != null && a.Patient.User != null && a.Patient.User.ClinicId == doctorUser.ClinicId);
             }
 
-            Attachments = await query
+            if (patientId.HasValue && patientId.Value != Guid.Empty)
+            {
+                q = q.Where(a => a.PatientId == patientId.Value);
+            }
+
+            Attachments = await q
                 .OrderByDescending(a => a.UploadedAt)
                 .ToListAsync();
+
+            return Page();
         }
     }
 }

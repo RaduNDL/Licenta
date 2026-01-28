@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
-using Licenta.Data;
 using Licenta.Models;
 using Licenta.Services.Ml;
 using Microsoft.AspNetCore.Authorization;
@@ -17,18 +17,18 @@ namespace Licenta.Pages.Doctor.LabResults
     [Authorize(Roles = "Doctor")]
     public class AnalyzeModel : PageModel
     {
-        private readonly AppDbContext _context;
+        private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IMlLabResultClient _mlClient;
         private readonly ILogger<AnalyzeModel> _logger;
 
         public AnalyzeModel(
-            AppDbContext context,
+            AppDbContext db,
             UserManager<ApplicationUser> userManager,
             IMlLabResultClient mlClient,
             ILogger<AnalyzeModel> logger)
         {
-            _context = context;
+            _db = db;
             _userManager = userManager;
             _mlClient = mlClient;
             _logger = logger;
@@ -39,51 +39,48 @@ namespace Licenta.Pages.Doctor.LabResults
         public string? PredictedLabel { get; private set; }
         public float? PredictedProbability { get; private set; }
         public string? Explanation { get; private set; }
-        public bool HasPrediction => PredictedLabel != null;
 
+        public bool HasPrediction => PredictedLabel != null;
         public string? ErrorMessage { get; private set; }
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Challenge();
+            if (user == null) return Challenge();
 
-            var doctor = await _context.Doctors
-                .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.UserId == user.Id);
-
+            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
             if (doctor == null)
             {
                 ErrorMessage = "Doctor profile not found.";
                 return Page();
             }
 
-            var lab = await _context.LabResults
+            LabResult = await _db.LabResults
+                .Include(l => l.Patient).ThenInclude(p => p.User)
+                .FirstOrDefaultAsync(l =>
+                    l.Id == id &&
+                    (string.IsNullOrWhiteSpace(user.ClinicId) ||
+                     l.Patient.User.ClinicId == user.ClinicId));
+
+            if (LabResult == null)
+                ErrorMessage = "Lab result not found.";
+
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostAnalyzeAsync(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
+            if (doctor == null) return Forbid();
+
+            var lab = await _db.LabResults
                 .Include(l => l.Patient).ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(l => l.Id == id);
 
-            if (lab == null)
-            {
-                ErrorMessage = "Lab result not found.";
-                return Page();
-            }
-
-            LabResult = lab;
-
-            if (string.IsNullOrWhiteSpace(lab.FilePath) ||
-                string.IsNullOrWhiteSpace(lab.FileName) ||
-                string.IsNullOrWhiteSpace(lab.ContentType))
-            {
-                ErrorMessage = "Lab result file information is incomplete.";
-                return Page();
-            }
-
-            if (!System.IO.File.Exists(lab.FilePath))
-            {
-                ErrorMessage = "File not found on server.";
-                return Page();
-            }
+            if (lab == null) return NotFound();
 
             try
             {
@@ -99,16 +96,35 @@ namespace Licenta.Pages.Doctor.LabResults
                 PredictedProbability = prediction.Probability;
                 Explanation = prediction.Explanation;
 
-                lab.Notes = $"ML: {prediction.Label} ({prediction.Probability:P0}) - {prediction.Explanation}";
-                await _context.SaveChangesAsync();
+                lab.Notes = $"ML: {prediction.Label} ({(prediction.Probability ?? 0f):P0}) - {prediction.Explanation}";
+                lab.Status = LabResultStatus.Validated;
+                lab.ValidatedByDoctorId = doctor.Id;
+                lab.ValidatedAtUtc = DateTime.UtcNow;
+
+                _db.Predictions.Add(new Prediction
+                {
+                    Id = Guid.NewGuid(),
+                    PatientId = lab.PatientId,
+                    DoctorId = doctor.Id,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    ModelName = "LabResultAI",
+                    InputSummary = $"LabResult #{lab.Id}",
+                    ResultLabel = prediction.Label,
+                    Probability = prediction.Probability,
+                    InputDataJson = JsonSerializer.Serialize(new { lab.Id, lab.FileName }),
+                    OutputDataJson = JsonSerializer.Serialize(prediction),
+                    Status = PredictionStatus.Draft
+                });
+
+                await _db.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while calling ML service for LabResult {LabResultId}", lab.Id);
-                ErrorMessage = "An error occurred while contacting the ML service.";
+                _logger.LogError(ex, "ML error");
+                ErrorMessage = "ML service error.";
             }
 
-            return Page();
+            return RedirectToPage(new { id });
         }
     }
 }

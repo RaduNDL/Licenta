@@ -1,430 +1,464 @@
 ﻿@using Licenta.Areas.Identity.Data
+@using Licenta.Models
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 @inject AppDbContext Db
+@inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
-
-@{
-    var settings = Db.SystemSettings
-        .OrderBy(s => s.Id)
-        .FirstOrDefault();
-    var logo = settings?.LogoPath ?? "/img/default-logo.png";
-
-    string currentUserId = "";
-    int unreadNotificationsCount = 0;
-
-    if (User?.Identity?.IsAuthenticated == true)
-    {
-        currentUserId = UserManager.GetUserId(User) ?? "";
-        if (!string.IsNullOrEmpty(currentUserId))
-        {
-            unreadNotificationsCount = Db.UserNotifications
-                .Count(n => n.UserId == currentUserId && !n.IsRead);
-        }
-    }
-
-    string unreadLabel = unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount.ToString();
-}
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Licenta</title>
+    <title>@ViewData["Title"] - MedFlow Clinic</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Licenta.styles.css" asp-append-version="true" />
 
-    @RenderSection("Styles", required: false)
+    @await RenderSectionAsync("Styles", required: false)
 </head>
-<body data-current-user-id="@currentUserId">
-    <header class="sticky-top">
-        <nav class="navbar navbar-expand-lg app-navbar">
-            <div class="container">
+
+<body class="bg-light">
+    @{
+        string SafeNotifHtml(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return "";
+
+            var enc = System.Net.WebUtility.HtmlEncode(input);
+
+            enc = enc.Replace("&lt;br&gt;", "<br>")
+            .Replace("&lt;br/&gt;", "<br>")
+            .Replace("&lt;br /&gt;", "<br>")
+            .Replace("&lt;br /&gt;", "<br>")
+            .Replace("&lt;br /&gt;", "<br>");
+
+            enc = enc.Replace("&lt;b&gt;", "<b>")
+            .Replace("&lt;/b&gt;", "</b>")
+            .Replace("&lt;strong&gt;", "<strong>")
+            .Replace("&lt;/strong&gt;", "</strong>")
+            .Replace("&lt;i&gt;", "<i>")
+            .Replace("&lt;/i&gt;", "</i>")
+            .Replace("&lt;em&gt;", "<em>")
+            .Replace("&lt;/em&gt;", "</em>");
+
+            return enc;
+        }
+
+        var settings = await Db.SystemSettings.AsNoTracking().FirstOrDefaultAsync();
+        var logoPath = settings?.LogoPath;
+        var clinicName = string.IsNullOrWhiteSpace(settings?.ClinicName) ? "MedFlow" : settings.ClinicName;
+
+        var isSignedIn = SignInManager.IsSignedIn(User);
+
+        ApplicationUser? currentUser = null;
+        string fullName = "Guest";
+        string? avatarUrl = null;
+
+        string notifPage = "/Patient/Notifications/Index";
+        string notifArea = "";
+
+        string profilePage = "/Patient/PatientProfile/Index";
+        string profileArea = "";
+
+        int unreadNotifCount = 0;
+        List<UserNotification> notifPreview = new();
+
+        if (isSignedIn)
+        {
+            if (User.IsInRole("Doctor"))
+            {
+                notifPage = "/Doctor/Notifications/Index";
+                profilePage = "/Doctor/DoctorProfile/Index";
+            }
+            else if (User.IsInRole("Assistant"))
+            {
+                notifPage = "/Assistant/Notifications/Index";
+                profilePage = "/Assistant/AssistantProfile/Index";
+            }
+            else if (User.IsInRole("Administrator"))
+            {
+                notifPage = "/Administrator/Notifications/Index";
+                profilePage = "/Administrator/AdminProfile/Index";
+            }
+            else
+            {
+                notifPage = "/Patient/Notifications/Index";
+                profilePage = "/Patient/PatientProfile/Index";
+            }
+
+            currentUser = await UserManager.GetUserAsync(User);
+            if (currentUser != null)
+            {
+                fullName = currentUser.FullName ?? currentUser.UserName ?? "User";
+
+                if (User.IsInRole("Doctor"))
+                {
+                    avatarUrl = await Db.Doctors.AsNoTracking()
+                    .Where(d => d.UserId == currentUser.Id)
+                    .Select(d => d.ProfileImagePath)
+                    .FirstOrDefaultAsync();
+                }
+                else if (User.IsInRole("Patient"))
+                {
+                    var patientId = await Db.Patients.AsNoTracking()
+                    .Where(p => p.UserId == currentUser.Id)
+                    .Select(p => p.Id)
+                    .FirstOrDefaultAsync();
+
+                    avatarUrl = await Db.MedicalAttachments.AsNoTracking()
+                    .Where(a => a.PatientId == patientId && a.Type == "ProfilePhoto")
+                    .OrderByDescending(a => a.UploadedAt)
+                    .Select(a => a.FilePath)
+                    .FirstOrDefaultAsync();
+                }
+
+                var sinceUtc = DateTime.UtcNow.AddDays(-30);
+
+                unreadNotifCount = await Db.UserNotifications.AsNoTracking()
+                .Where(n => n.UserId == currentUser.Id && !n.IsRead && n.CreatedAtUtc >= sinceUtc)
+                .CountAsync();
+
+                notifPreview = await Db.UserNotifications.AsNoTracking()
+                .Where(n => n.UserId == currentUser.Id && n.CreatedAtUtc >= sinceUtc)
+                .OrderByDescending(n => n.CreatedAtUtc)
+                .Take(5)
+                .ToListAsync();
+            }
+        }
+
+        string badgeText = unreadNotifCount > 9 ? "9+" : unreadNotifCount.ToString();
+    }
+
+    <header>
+        <nav class="navbar navbar-expand-lg fixed-top navbar-glass border-bottom">
+            <div class="container-fluid px-4">
+
                 <a class="navbar-brand d-flex align-items-center gap-2" asp-area="" asp-page="/Index">
-                    <div class="logo-circle">
-                        <img src="@logo" alt="Clinic Logo" class="logo-img" />
-                    </div>
-                    <div class="d-flex flex-column">
-                        <span class="fw-semibold">Licenta</span>
-                        <span class="text-muted brand-subtitle">Smart Medical Platform</span>
-                    </div>
+                    @if (!string.IsNullOrWhiteSpace(logoPath))
+                    {
+                        <img src="@logoPath" alt="Logo" class="navbar-logo" />
+                    }
+                    else
+                    {
+                        <div class="brand-icon-wrapper">
+                            <i class="bi bi-heart-pulse-fill"></i>
+                        </div>
+                    }
+                    <span class="brand-text">@clinicName</span>
                 </a>
 
-                <button class="navbar-toggler" type="button"
-                        data-bs-toggle="collapse" data-bs-target="#mainNavbar"
-                        aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div id="mainNavbar" class="collapse navbar-collapse">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-page="/Index">
-                                <i class="bi bi-house-door me-1"></i> Home
-                            </a>
-                        </li>
+                <div class="collapse navbar-collapse" id="navbarContent">
 
-                        @if (User.IsInRole("Administrator"))
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-1 nav-pills-custom">
+                        @if (isSignedIn)
                         {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark d-flex align-items-center gap-1"
-                                   href="#" id="adminDropdown" role="button"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                    <span class="role-badge">Admin</span>
-                                    <span>Panel</span>
+                            if (User.IsInRole("Doctor"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-page="/Doctor/Index" title="Dashboard">
+                                        <i class="bi bi-grid-fill"></i> <span class="d-lg-none d-xl-inline">Dashboard</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-calendar3"></i> Schedule
+                                    </a>
+                                    <ul class="dropdown-menu shadow-sm border-0">
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Doctor/Appointments/Index">My Calendar</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Doctor/Schedule/Index">Manage Slots</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Doctor/Appointments/Approvals">New Approvals</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Doctor/Appointments/RescheduleApprovals">Reschedule Requests</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-person-lines-fill"></i> Clinical
+                                    </a>
+                                    <ul class="dropdown-menu shadow-sm border-0">
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Doctor/Patients/Index">Patients</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Doctor/MedicalRecords/Index">Medical Records</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Doctor/LabResults/Index">Lab Results</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-folder2-open"></i> Docs
+                                    </a>
+                                    <ul class="dropdown-menu shadow-sm border-0">
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Doctor/Attachments/Inbox">Inbox (Validate)</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Doctor/Attachments/Upload">Upload</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Doctor/Predictions/Index"><i class="bi bi-stars text-primary"></i> AI Predictions</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-page="/Doctor/Messages/Inbox">
+                                        <i class="bi bi-chat-dots"></i>
+                                    </a>
+                                </li>
+                            }
+                            else if (User.IsInRole("Patient"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-page="/Index">
+                                        <i class="bi bi-house-door"></i> Home
+                                    </a>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-calendar-check"></i> Appointments
+                                    </a>
+                                    <ul class="dropdown-menu shadow-sm border-0">
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Patient/Appointments/Index">My Appointments</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Patient/Appointments/Request">New Request</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Patient/Visits/History">Visit History</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-journal-medical"></i> Records
+                                    </a>
+                                    <ul class="dropdown-menu shadow-sm border-0">
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Patient/MedicalRecords/Index">Consultations & Rx</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Patient/Attachments/Index">My Documents</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Patient/Attachments/Upload">Upload Document</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-page="/Patient/Predictions/Index">
+                                        <i class="bi bi-robot text-primary"></i> AI Analysis
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-page="/Patient/Messages/Inbox">
+                                        <i class="bi bi-envelope"></i> Messages
+                                    </a>
+                                </li>
+                            }
+                            else if (User.IsInRole("Assistant"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-page="/Assistant/AssistantPanel/Index">
+                                        <i class="bi bi-speedometer2"></i> Panel
+                                    </a>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-calendar-week"></i> Appointments
+                                    </a>
+                                    <ul class="dropdown-menu shadow-sm border-0">
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Assistant/Appointments/Index">All Appointments</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Assistant/Appointments/Requests">New Requests</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Assistant/Appointments/RescheduleRequests">Reschedule Requests</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Assistant/Schedule/Index">Clinic Schedule</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-page="/Assistant/Patients/Index">
+                                        <i class="bi bi-people"></i> Patients
+                                    </a>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-clipboard2-pulse"></i> Records
+                                    </a>
+                                    <ul class="dropdown-menu shadow-sm border-0">
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Assistant/MedicalRecords/Index">Medical Files</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-chat-text"></i> Communication
+                                    </a>
+                                    <ul class="dropdown-menu shadow-sm border-0">
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Assistant/Messages/Inbox">Inbox</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Assistant/Messages/Requests/Index">Message Requests</a></li>
+                                    </ul>
+                                </li>
+                            }
+                            else if (User.IsInRole("Administrator"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-page="/Administrator/Overview/Index">
+                                        <i class="bi bi-graph-up"></i> Overview
+                                    </a>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-people-fill"></i> Users
+                                    </a>
+                                    <ul class="dropdown-menu shadow-sm border-0">
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Administrator/Users/Index">User List</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-page="/Administrator/Users/Create">Create Account</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-page="/Administrator/Audit">
+                                        <i class="bi bi-shield-check"></i> Audit
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="" asp-page="/Administrator/Settings/Index">
+                                        <i class="bi bi-gear"></i> Settings
+                                    </a>
+                                </li>
+                            }
+                        }
+                    </ul>
+
+                    <ul class="navbar-nav align-items-center gap-2">
+                        @if (isSignedIn)
+                        {
+                            <li class="nav-item dropdown notif-dropdown">
+                                <a id="notifBell"
+                                   class="nav-link position-relative notification-bell dropdown-toggle"
+                                   asp-area="@notifArea"
+                                   asp-page="@notifPage"
+                                   data-bs-toggle="dropdown"
+                                   aria-expanded="false"
+                                   title="Notifications">
+                                    <i class="bi bi-bell"></i>
+                                    @if (unreadNotifCount > 0)
+                                    {
+                                        <span class="notif-badge">@badgeText</span>
+                                    }
                                 </a>
-                                <ul class="dropdown-menu shadow-sm border-0 rounded-3" aria-labelledby="adminDropdown">
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Administrator/AdminPanel/Index">
-                                            <i class="bi bi-grid-1x2 me-2"></i>Admin Panel
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Administrator/Overview/Index">
-                                            <i class="bi bi-speedometer2 me-2"></i>Overview (users &amp; roles)
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Administrator/Users/Index">
-                                            <i class="bi bi-people me-2"></i>Users &amp; Roles
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Administrator/Audit">
-                                            <i class="bi bi-clipboard-data me-2"></i>Audit Log
-                                        </a>
-                                    </li>
 
-                                    <li><hr class="dropdown-divider" /></li>
+                                <div class="dropdown-menu dropdown-menu-end notif-menu shadow border-0 mt-2 p-0" aria-labelledby="notifBell">
+                                    <div class="notif-menu-header">
+                                        <div class="fw-semibold">Notifications</div>
+                                        @if (unreadNotifCount > 0)
+                                        {
+                                            <div class="text-muted small">@unreadNotifCount unread</div>
+                                        }
+                                    </div>
 
-                                    <li>
-                                        <a class="dropdown-item fw-semibold" asp-page="/Administrator/Settings/Index">
-                                            <i class="bi bi-gear-wide-connected me-2"></i>System Settings
+                                    <div class="notif-menu-body">
+                                        @if (notifPreview.Count == 0)
+                                        {
+                                            <div class="notif-empty">
+                                                <i class="bi bi-bell-slash"></i>
+                                                <div class="fw-semibold mt-2">No notifications</div>
+                                                <div class="text-muted small">Nothing in the last 30 days.</div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var n in notifPreview)
+                                            {
+                                                var isUnread = !n.IsRead;
+                                                var whenLocal = n.CreatedAtUtc.ToLocalTime();
+                                                <a class="notif-item @(isUnread ? "unread" : "")"
+                                                   asp-area="@notifArea"
+                                                   asp-page="@notifPage">
+                                                    <div class="notif-item-top">
+                                                        <div class="notif-title">@((n.Title ?? "").Trim())</div>
+                                                        <div class="notif-time">@whenLocal.ToString("MMM dd, HH:mm")</div>
+                                                    </div>
+                                                    <div class="notif-message">@Html.Raw(SafeNotifHtml((n.Message ?? "").Trim()))</div>
+                                                </a>
+                                            }
+                                        }
+                                    </div>
+
+                                    <div class="notif-menu-footer">
+                                        <a class="btn btn-sm btn-outline-secondary w-100"
+                                           asp-area="@notifArea"
+                                           asp-page="@notifPage">
+                                            View all notifications
                                         </a>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle user-profile-link d-flex align-items-center gap-2" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <div class="user-info text-end d-none d-md-block">
+                                        <span class="d-block fw-semibold text-dark small lh-1">@fullName</span>
+                                        <span class="d-block text-muted x-small">
+                                            @if (User.IsInRole("Administrator"))
+                                            {
+                                                <text>Admin</text>
+                                            }
+                                            else if (User.IsInRole("Doctor"))
+                                            {
+                                                <text>Doctor</text>
+                                            }
+                                            else if (User.IsInRole("Assistant"))
+                                            {
+                                                <text>Assistant</text>
+                                            }
+                                            else
+                                            {
+                                                <text>Patient</text>
+                                            }
+                                        </span>
+                                    </div>
+                                    <div class="user-avatar-wrapper">
+                                        @if (!string.IsNullOrWhiteSpace(avatarUrl))
+                                        {
+                                            <img src="@avatarUrl" alt="Avatar" class="user-avatar-img" />
+                                        }
+                                        else
+                                        {
+                                            <div class="user-avatar-placeholder">
+                                                <span class="initials">@((string.IsNullOrWhiteSpace(fullName) ? "U" : fullName.Substring(0, 1)).ToUpper())</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-2" aria-labelledby="userDropdown">
+                                    <li>
+                                        <a class="dropdown-item rounded-2" asp-area="@profileArea" asp-page="@profilePage">
+                                            <i class="bi bi-person me-2"></i> My Profile
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider my-2" /></li>
+                                    <li>
+                                        <form class="d-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index", new { area = "" })">
+                                            <button type="submit" class="dropdown-item rounded-2 text-danger">
+                                                <i class="bi bi-box-arrow-right me-2"></i> Logout
+                                            </button>
+                                        </form>
                                     </li>
                                 </ul>
                             </li>
                         }
-
-                        @if (User.IsInRole("Doctor"))
+                        else
                         {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark d-flex align-items-center gap-1"
-                                   href="#" id="doctorDropdown" role="button"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                    <span class="role-badge">Doctor</span>
-                                    <span>Panel</span>
-                                </a>
-                                <ul class="dropdown-menu shadow-sm border-0 rounded-3" aria-labelledby="doctorDropdown">
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/Index">
-                                            <i class="bi bi-grid-1x2 me-2"></i>Dashboard
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/Patients/Index">
-                                            <i class="bi bi-person-hearts me-2"></i>Patients
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/Appointments/Index">
-                                            <i class="bi bi-calendar-event me-2"></i>Appointments
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Medical Records</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/MedicalRecords/Index">
-                                            <i class="bi bi-journal-medical me-2"></i>All Records
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/MedicalRecords/Create">
-                                            <i class="bi bi-file-earmark-plus me-2"></i>New Record
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Attachments &amp; Results</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/Attachments/Index">
-                                            <i class="bi bi-folder2-open me-2"></i>Attachments
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/Attachments/Upload">
-                                            <i class="bi bi-cloud-arrow-up me-2"></i>Upload
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/Attachments/Validate">
-                                            <i class="bi bi-check2-circle me-2"></i>Validate
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Analytics</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/Predictions/Index">
-                                            <i class="bi bi-activity me-2"></i>Predictions
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/Reports/Validate">
-                                            <i class="bi bi-file-earmark-text me-2"></i>Validate Reports
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/Messages/Inbox">
-                                            <i class="bi bi-chat-dots me-2"></i>Messages
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Doctor/LabResults/Index">
-                                            <i class="bi bi-droplet-half me-2"></i>Lab Results
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                        }
-
-                        @if (User.IsInRole("Assistant"))
-                        {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark d-flex align-items-center gap-1"
-                                   href="#" id="assistantDropdown" role="button"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                    <span class="role-badge">Assistant</span>
-                                    <span>Panel</span>
-                                </a>
-                                <ul class="dropdown-menu shadow-sm border-0 rounded-3" aria-labelledby="assistantDropdown">
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Assistant/AssistantPanel/Index">
-                                            <i class="bi bi-grid-1x2 me-2"></i>Dashboard
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Assistant/Patients/Index">
-                                            <i class="bi bi-people me-2"></i>Patients
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Attachments</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Assistant/Attachments/Index">
-                                            <i class="bi bi-folder2-open me-2"></i>All Attachments
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Assistant/Attachments/Upload">
-                                            <i class="bi bi-cloud-arrow-up me-2"></i>Upload
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Assistant/Attachments/Validate">
-                                            <i class="bi bi-check2-circle me-2"></i>Validate
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Appointments</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Assistant/Appointments/Requests">
-                                            <i class="bi bi-calendar-plus me-2"></i>Appointment requests
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Assistant/Appointments/Today">
-                                            <i class="bi bi-calendar-day me-2"></i>Today’s appointments
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Messages</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Assistant/Messages/Inbox">
-                                            <i class="bi bi-chat-dots me-2"></i>Messages
-                                        </a>
-                                    </li>
-                                </ul>
-                            </li>
-                        }
-
-                        @if (User.IsInRole("Patient"))
-                        {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark d-flex align-items-center gap-1"
-                                   href="#" id="patientDropdown" role="button"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                    <span class="role-badge">Patient</span>
-                                    <span>Panel</span>
-                                </a>
-                                <ul class="dropdown-menu shadow-sm border-0 rounded-3" aria-labelledby="patientDropdown">
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Index">
-                                            <i class="bi bi-grid-1x2 me-2"></i>Dashboard
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Appointments</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Appointments/Index">
-                                            <i class="bi bi-calendar-event me-2"></i>View Appointments
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Appointments/Request">
-                                            <i class="bi bi-calendar-plus me-2"></i>Request Appointment
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Documents &amp; Images</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Attachments/Validated">
-                                            <i class="bi bi-file-earmark-check me-2"></i>Validated Documents
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Attachments/Upload">
-                                            <i class="bi bi-image me-2"></i>Upload Medical Images
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Pre-consultation</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Forms/PreConsultation">
-                                            <i class="bi bi-journal-text me-2"></i>Pre-consultation Form
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Insights</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Predictions/Index">
-                                            <i class="bi bi-activity me-2"></i> Predictions
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Notifications/Index">
-                                            <i class="bi bi-bell me-2"></i>Notifications
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Visits/History">
-                                            <i class="bi bi-clock-history me-2"></i>Visits &amp; Recommendations
-                                        </a>
-                                    </li>
-
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li class="dropdown-header">Messages</li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Messages/Inbox">
-                                            <i class="bi bi-chat-dots me-2"></i>Messages
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-page="/Patient/Messages/RequestList">
-                                            <i class="bi bi-envelope-plus me-2"></i>Contact doctor (requests)
-                                        </a>
-                                    </li>
-                                </ul>
+                            <li class="nav-item">
+                                <a class="btn btn-primary rounded-pill btn-sm px-4 fw-medium shadow-sm" asp-area="Identity" asp-page="/Account/Login">Sign In</a>
                             </li>
                         }
                     </ul>
 
-                    <div class="d-flex align-items-center gap-2">
-                        @if (User.IsInRole("Patient"))
-                        {
-                            <a asp-page="/Patient/Messages/Inbox" class="btn btn-sm nav-icon-pill position-relative me-1">
-                                <i class="bi bi-chat-dots"></i>
-                                <span class="visually-hidden">Messages</span>
-                            </a>
-                            <a asp-page="/Patient/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1 notification-bell-btn">
-                                <i class="bi bi-bell"></i>
-                                @if (unreadNotificationsCount > 0)
-                                {
-                                    <span class="notification-badge">@unreadLabel</span>
-                                }
-                                <span class="visually-hidden">Notifications</span>
-                            </a>
-                        }
-                        else if (User.IsInRole("Doctor"))
-                        {
-                            <a asp-page="/Doctor/Messages/Inbox" class="btn btn-sm nav-icon-pill position-relative me-1">
-                                <i class="bi bi-chat-dots"></i>
-                                <span class="visually-hidden">Messages</span>
-                            </a>
-                            <a asp-page="/Doctor/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1 notification-bell-btn">
-                                <i class="bi bi-bell"></i>
-                                @if (unreadNotificationsCount > 0)
-                                {
-                                    <span class="notification-badge">@unreadLabel</span>
-                                }
-                                <span class="visually-hidden">Notifications</span>
-                            </a>
-                        }
-                        else if (User.IsInRole("Assistant"))
-                        {
-                            <a asp-page="/Assistant/Messages/Inbox" class="btn btn-sm nav-icon-pill position-relative me-1">
-                                <i class="bi bi-chat-dots"></i>
-                                <span class="visually-hidden">Messages</span>
-                            </a>
-                            <a asp-page="/Assistant/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1 notification-bell-btn">
-                                <i class="bi bi-bell"></i>
-                                @if (unreadNotificationsCount > 0)
-                                {
-                                    <span class="notification-badge">@unreadLabel</span>
-                                }
-                                <span class="visually-hidden">Notifications</span>
-                            </a>
-                        }
-                        else if (User.IsInRole("Administrator"))
-                        {
-                            <a asp-page="/Administrator/Notifications/Index" class="btn btn-sm nav-icon-pill position-relative me-1 notification-bell-btn">
-                                <i class="bi bi-bell"></i>
-                                @if (unreadNotificationsCount > 0)
-                                {
-                                    <span class="notification-badge">@unreadLabel</span>
-                                }
-                                <span class="visually-hidden">Notifications</span>
-                            </a>
-                        }
-
-                        <partial name="_LoginPartial" />
-                    </div>
                 </div>
             </div>
         </nav>
     </header>
 
-    <div class="app-shell">
-        <div class="container">
-            <main role="main" class="app-card">
-                @RenderBody()
-            </main>
-        </div>
+    <div class="main-content-wrapper">
+        <main role="main" class="container-fluid px-4 py-4">
+            @RenderBody()
+        </main>
     </div>
-
-    <div id="notification-toast-container" class="notification-toast-container"></div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/layout.js" asp-append-version="true"></script>
-
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -53,7 +53,6 @@ namespace Licenta.Areas.Identity.Data
 
             return dict;
         }
-
         public override int SaveChanges()
         {
             try { AuditBeforeSave(); } catch {  }
@@ -82,8 +81,6 @@ namespace Licenta.Areas.Identity.Data
                 if (IsIdentityEntity(e))
                     continue;
 
-               
-
                 var audit = new
                 {
                     AuditType = "EFChange",
@@ -93,7 +90,6 @@ namespace Licenta.Areas.Identity.Data
                     Changes = BuildChanges(e),
                     Timestamp = DateTimeOffset.UtcNow
                 };
-
                 Log.ForContext("AuditType", "EFChange")
                    .ForContext("Entity", audit.Entity)
                    .ForContext("State", audit.State)

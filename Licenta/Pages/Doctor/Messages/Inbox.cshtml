@@ -1,108 +1,184 @@
 ﻿@page
+@using System.Security.Claims
 @model Licenta.Pages.Doctor.Messages.InboxModel
+
 @{
-    ViewData["Title"] = "Messages";
+    ViewData["Title"] = "Doctor Inbox";
+    bool isChatOpen = !string.IsNullOrEmpty(Model.SelectedUserId);
+    var uid = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/doctor.css" />
-    <link rel="stylesheet" href="~/css/InboxDoctor.css" />
+    <link rel="stylesheet" href="~/css/messages.css" asp-append-version="true" />
 }
 
-<h2 class="mb-3">Messages</h2>
+<div class="page-container">
 
-@if (!Model.Conversations.Any())
-{
-    <div class="alert alert-info">
-        No conversations yet. Once patients or staff send you messages, they will appear here.
-    </div>
-}
-else
-{
-    <div class="chat-layout">
-        <div class="chat-conversations">
-            <div class="chat-conversations-header">
-                Conversations
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info border-0 shadow-sm mb-3">@status</div>
+    }
+
+    <div class="chat-layout @(isChatOpen ? "chat-active" : "")">
+
+        <div class="chat-sidebar">
+
+            <div class="sidebar-header">
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-people text-primary me-2"></i> Patients
+                </h5>
+
+                <a asp-page="/Doctor/Messages/Requests"
+                   class="btn btn-sm btn-outline-primary">
+                    Requests
+                </a>
             </div>
-            <div class="chat-conversations-list">
-                @foreach (var c in Model.Conversations)
+
+            <div class="conversation-list">
+
+                @if (!Model.Conversations.Any())
                 {
-                    var isActive = c.PartnerId == Model.SelectedUserId;
-                    <a asp-page="/Doctor/Messages/Inbox"
-                       asp-route-userId="@c.PartnerId"
-                       class="text-decoration-none text-reset">
-                        <div class="chat-conversation-item @(isActive ? "active" : "")">
-                            <div class="chat-conversation-name">
-                                @c.PartnerName
+                    <div class="text-center p-4 text-muted mt-4">
+                        <i class="bi bi-chat-square-dots opacity-25 fs-1"></i>
+                        <p class="small mt-2">No active chats.</p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var c in Model.Conversations)
+                    {
+                        var active = c.PartnerId == Model.SelectedUserId;
+
+                        <a asp-page="/Doctor/Messages/Inbox"
+                           asp-route-userId="@c.PartnerId"
+                           class="conversation-item @(active ? "active" : "")">
+
+                            <div class="avatar-circle">
+                                <i class="bi bi-person"></i>
                             </div>
-                            <div class="chat-conversation-last">
-                                @c.LastMessagePreview
+
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <span class="conversation-name">@c.PartnerName</span>
+                                    <span class="conversation-meta">
+                                        @c.LastMessageAt.ToLocalTime().ToString("HH:mm")
+                                    </span>
+                                </div>
+
+                                <div class="conversation-preview">
+                                    @(string.IsNullOrWhiteSpace(c.LastMessagePreview)
+                                                                ? "Chat started"
+                                                                : c.LastMessagePreview)
+                                </div>
                             </div>
-                        </div>
-                    </a>
+                        </a>
+                    }
                 }
             </div>
         </div>
 
-        <div class="chat-window">
-            @if (string.IsNullOrEmpty(Model.SelectedUserId))
+        <div class="chat-main">
+
+            @if (!isChatOpen)
             {
-                <div class="p-4 text-muted">
-                    Select a conversation from the left to start chatting.
+                <div class="empty-state">
+                    <i class="bi bi-shield-check text-primary"></i>
+                    <h4>Doctor Workspace</h4>
+                    <p>Select a patient to open the conversation.</p>
                 </div>
             }
             else
             {
-                <div class="chat-window-header">
-                    <div>
-                        <div class="fw-semibold">@Model.SelectedUserName</div>
-                        <div class="text-muted small">Doctor chat</div>
+                <div class="chat-header">
+
+                    <div class="chat-partner-info">
+                        <a asp-page="/Doctor/Messages/Inbox"
+                           class="d-md-none me-3 text-dark">
+                            <i class="bi bi-arrow-left fs-4"></i>
+                        </a>
+
+                        <div class="avatar-circle bg-primary text-white me-3">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+
+                        <div>
+                            <div class="fw-bold">@Model.SelectedUserName</div>
+                            <div class="small text-muted">
+                                <i class="bi bi-lock-fill me-1"></i> Secure channel
+                            </div>
+                        </div>
                     </div>
+
+                    @if (Model.CanClose)
+                    {
+                        <form method="post" asp-page-handler="Close">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="patientId" value="@Model.SelectedUserId" />
+                            <button type="submit"
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Close this conversation?');">
+                                End Chat
+                            </button>
+                        </form>
+                    }
                 </div>
 
-                <div class="chat-window-body">
-                    @if (!Model.Messages.Any())
+                <div class="messages-container" id="chatBody">
+                    @foreach (var m in Model.Messages)
                     {
-                        <div class="text-muted small">No messages yet. Start the conversation below.</div>
+                        <div class="message-row @(m.IsMine ? "mine" : "other")">
+                            <div class="message-bubble">
+                                @m.Body
+                                <span class="message-time">@m.SentAtLocal.ToString("HH:mm")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="chat-footer">
+
+                    @if (!Model.CanSend)
+                    {
+                        <div class="alert alert-warning mb-0 py-2 small text-center">
+                            Chat is closed.
+                        </div>
                     }
                     else
                     {
-                        @foreach (var m in Model.Messages)
-                        {
-                            var mine = m.IsMine;
-                            <div class="chat-message-row @(mine ? "me" : "other")">
-                                <div class="chat-bubble @(mine ? "me" : "other")">
-                                    <div>@m.Body</div>
-                                    <div class="chat-message-meta">
-                                        @m.SentAtLocal.ToString("g")
-                                        @(mine ? " • You" : "")
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    }
-                </div>
+                        <form method="post"
+                              data-chat-form="1"
+                              data-user-id="@uid"
+                              data-conversation-key="@Model.CurrentConversationKey">
 
-                <div class="chat-window-footer">
-                    <form method="post">
-                        <input type="hidden" asp-for="Input.RecipientId" value="@Model.SelectedUserId" />
-                        <div class="input-group">
-                            <textarea asp-for="Input.NewMessageBody"
-                                      class="form-control chat-input"
-                                      rows="2"
-                                      placeholder="Type a message..."></textarea>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-send"></i>
-                            </button>
-                        </div>
-                        <span asp-validation-for="Input.NewMessageBody" class="text-danger small"></span>
-                    </form>
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden" asp-for="Input.RequestId" />
+                            <input type="hidden" asp-for="Input.RecipientId" />
+
+                            <div class="chat-input-wrapper">
+                                <textarea asp-for="Input.NewMessageBody"
+                                          class="chat-input"
+                                          rows="1"
+                                          placeholder="Write a reply..."
+                                          required></textarea>
+
+                                <button type="submit" class="btn btn-primary btn-send">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </div>
+
+                            <span asp-validation-for="Input.NewMessageBody"
+                                  class="text-danger small ms-2"></span>
+                        </form>
+                    }
                 </div>
             }
         </div>
     </div>
-}
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js" asp-append-version="true"></script>
+    <script src="~/js/chat-inbox.js" asp-append-version="true"></script>
 }

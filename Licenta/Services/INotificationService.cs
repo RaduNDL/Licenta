@@ -1,26 +1,22 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Licenta.Areas.Identity.Data;
+﻿using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using System.Threading.Tasks;
 
 namespace Licenta.Services
 {
     public interface INotificationService
     {
         Task NotifyAsync(
-            ApplicationUser recipient,
+            ApplicationUser user,
             NotificationType type,
             string title,
-            string message,
+            string messageHtml,
             string? relatedEntity = null,
             string? relatedEntityId = null,
-            bool sendEmail = true,
-            CancellationToken ct = default);
+            bool sendEmail = false);
 
-        Task NotifyAsync(
-            ApplicationUser recipient,
-            string subject,
-            string htmlBody,
-            CancellationToken ct = default);
+        Task<int> GetUnreadCountAsync(string userId);
+
+        Task MarkAllReadAsync(string userId);
     }
 }

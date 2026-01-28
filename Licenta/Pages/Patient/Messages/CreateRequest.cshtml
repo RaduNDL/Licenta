@@ -1,45 +1,93 @@
 ﻿@page
 @model Licenta.Pages.Patient.Messages.CreateRequestModel
 @{
-    ViewData["Title"] = "Request to contact doctor";
+    ViewData["Title"] = "Request Assistance";
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/css/patient.css" />
+    <link rel="stylesheet" href="~/css/Createrequest.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 }
 
-<h2 class="mb-3">Request permission to contact a doctor</h2>
+<div class="request-page-wrapper">
+    <div class="request-card">
 
-<p class="text-muted">
-    Before you can send a direct message to a doctor, a medical assistant must review your request.
-    Please select the doctor and describe why you need to contact them.
-</p>
+        <div class="request-info-panel">
+            <div class="info-content">
+                <div class="icon-header">
+                    <i class="fa-solid fa-user-doctor"></i>
+                </div>
+                <h3>Medical Assistance</h3>
+                <p>Our team is ready to help. Describe your symptoms or concerns, and an assistant will review your case immediately.</p>
 
-<form method="post">
-    <div class="mb-3">
-        <label asp-for="Input.DoctorId" class="form-label">Doctor</label>
-        <select asp-for="Input.DoctorId" asp-items="Model.Doctors" class="form-select">
-            <option value="">-- Select doctor --</option>
-        </select>
-        <span asp-validation-for="Input.DoctorId" class="text-danger"></span>
+                <div class="process-steps">
+                    <div class="step active">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>Submit Request</span>
+                    </div>
+                    <div class="step">
+                        <i class="fa-solid fa-clock"></i>
+                        <span>Pending Review</span>
+                    </div>
+                    <div class="step">
+                        <i class="fa-solid fa-comments"></i>
+                        <span>Chat with Assistant</span>
+                    </div>
+                </div>
+            </div>
+            <div class="info-footer">
+                <small>MedFlow Clinic &copy; 2025</small>
+            </div>
+        </div>
+
+        <div class="request-form-panel">
+            <div class="form-header">
+                <h2>New Request</h2>
+                <span class="badge-status">Draft</span>
+            </div>
+
+            @if (TempData["StatusMessage"] is string status)
+            {
+                <div class="alert alert-custom-info">
+                    <i class="fa-solid fa-circle-info"></i> @status
+                </div>
+            }
+
+            <form method="post" id="requestForm">
+                <div class="form-group-modern">
+                    <label asp-for="Input.Subject" class="form-label">Subject</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-tag input-icon"></i>
+                        <input asp-for="Input.Subject" class="form-control-modern" placeholder="E.g., Severe headaches since Monday" />
+                    </div>
+                    <span asp-validation-for="Input.Subject" class="text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="Input.Body" class="form-label">Details</label>
+                    <div class="input-wrapper textarea-wrapper">
+                        <textarea asp-for="Input.Body" rows="6" class="form-control-modern" id="bodyText" placeholder="Please describe your symptoms in detail..."></textarea>
+                    </div>
+                    <div class="char-count text-end text-muted small mt-1">
+                        <span id="charCount">0</span> characters
+                    </div>
+                    <span asp-validation-for="Input.Body" class="text-danger"></span>
+                </div>
+
+                <div class="form-actions">
+                    <a asp-page="/Patient/Messages/RequestList" class="btn-modern btn-ghost">Cancel</a>
+                    <button type="submit" class="btn-modern btn-gradient" id="submitBtn">
+                        <span>Send Request</span>
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-
-    <div class="mb-3">
-        <label asp-for="Input.Subject" class="form-label">Subject</label>
-        <input asp-for="Input.Subject" class="form-control" />
-        <span asp-validation-for="Input.Subject" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Input.Body" class="form-label">Body</label>
-        <textarea asp-for="Input.Body" rows="6" class="form-control"></textarea>
-        <span asp-validation-for="Input.Body" class="text-danger"></span>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Send request</button>
-    <a asp-page="/Patient/Messages/RequestList" class="btn btn-secondary ms-2">Cancel</a>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/Createrequest.js"></script>
 }

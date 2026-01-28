@@ -16,90 +16,126 @@
     if (isAdmin)
     {
         primaryPage = "/Administrator/AdminPanel/Index";
-        primaryLabel = "Go to Admin Panel";
+        primaryLabel = "Admin Console";
     }
     else if (isDoctor)
     {
         primaryPage = "/Doctor/Index";
-        primaryLabel = "Go to Doctor Dashboard";
+        primaryLabel = "Doctor Workspace";
     }
     else if (isAssistant)
     {
         primaryPage = "/Assistant/AssistantPanel/Index";
-        primaryLabel = "Go to Assistant Panel";
+        primaryLabel = "Assistant Portal";
     }
     else if (isPatient)
     {
         primaryPage = "/Patient/Index";
-        primaryLabel = "Go to Patient Dashboard";
+        primaryLabel = "My Health Dashboard";
     }
 
     var hasAnyRole = isAdmin || isDoctor || isAssistant || isPatient;
 }
 
-<div class="text-center py-5">
-    <h1 class="display-4 fw-bold">Welcome to Licenta - Smart Medical Platform</h1>
+<link rel="stylesheet" href="~/css/Home.css" asp-append-version="true" />
 
-    <p class="lead mt-3">
-        A modern medical platform for Patients, Doctors and Assistants.
-    </p>
+<div class="hero-wrapper">
 
-    @if (!isAuthenticated)
-    {
-        <a class="btn btn-primary btn-lg mt-4" asp-area="Identity" asp-page="/Account/Login">
-            Login
-        </a>
-        <a class="btn btn-outline-secondary btn-lg mt-4 ms-3" asp-area="Identity" asp-page="/Account/Register">
-            Register
-        </a>
-    }
-    else
-    {
-        @if (hasAnyRole && primaryPage is not null)
-        {
-            <a class="btn btn-success btn-lg mt-4" asp-page="@primaryPage">
-                @primaryLabel
-            </a>
+    <div class="tech-grid"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
 
-            <div class="mt-4">
-                @if (isAdmin && primaryPage != "/Administrator/AdminPanel/Index")
+    <div class="floating-widgets-container">
+        <div class="ui-widget widget-heart float-slow">
+            <div class="widget-icon-box heart-bg"><i class="bi bi-heart-pulse-fill"></i></div>
+            <div class="widget-info">
+                <span class="widget-label">Vitals</span>
+                <span class="widget-value">72 BPM</span>
+            </div>
+            <div class="mini-chart"></div>
+        </div>
+
+        <div class="ui-widget widget-calendar float-medium">
+            <div class="widget-icon-box calendar-bg"><i class="bi bi-calendar-check-fill"></i></div>
+            <div class="widget-info">
+                <span class="widget-label">Next Visit</span>
+                <span class="widget-value">Tomorrow, 10:00</span>
+            </div>
+        </div>
+
+        <div class="ui-widget widget-security float-fast">
+            <div class="widget-icon-box security-bg"><i class="bi bi-shield-lock-fill"></i></div>
+            <div class="widget-info">
+                <span class="widget-label">Data Secure</span>
+                <span class="widget-value">Encrypted</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container hero-content">
+        <div class="content-box fade-in">
+            <div class="inline-badge">
+                <span class="badge-dot"></span> Smart Medical Platform v1.0
+            </div>
+
+            <h1 class="hero-title">
+                The Future of <br />
+                <span class="text-gradient">Healthcare Management</span>
+            </h1>
+
+            <p class="hero-description">
+                Experience a streamlined ecosystem connecting Patients, Doctors, and Assistants.
+                Secure, fast, and built for modern medicine.
+            </p>
+
+            <div class="hero-actions">
+                @if (!isAuthenticated)
                 {
-                    <a class="btn btn-outline-primary me-2 mb-2"
-                       asp-page="/Administrator/AdminPanel/Index">
-                        Admin Panel
+                    <a class="btn-main btn-glow" asp-area="Identity" asp-page="/Account/Login">
+                        Sign In <i class="bi bi-chevron-right"></i>
+                    </a>
+                    <a class="btn-secondary" asp-area="Identity" asp-page="/Account/Register">
+                        Create Account
                     </a>
                 }
-
-                @if (isDoctor && primaryPage != "/Doctor/Index")
+                else
                 {
-                    <a class="btn btn-outline-primary me-2 mb-2"
-                       asp-page="/Doctor/Index">
-                        Doctor Dashboard
-                    </a>
-                }
+                    @if (hasAnyRole && primaryPage is not null)
+                    {
+                        <div class="role-action-area">
+                            <a class="btn-main btn-glow btn-dashboard" asp-page="@primaryPage">
+                                @primaryLabel <i class="bi bi-arrow-right-circle-fill ms-2"></i>
+                            </a>
+                        </div>
 
-                @if (isAssistant && primaryPage != "/Assistant/AssistantPanel/Index")
-                {
-                    <a class="btn btn-outline-primary me-2 mb-2"
-                       asp-page="/Assistant/AssistantPanel/Index">
-                        Assistant Panel
-                    </a>
-                }
-
-                @if (isPatient && primaryPage != "/Patient/Index")
-                {
-                    <a class="btn btn-outline-primary me-2 mb-2"
-                       asp-page="/Patient/Index">
-                        Patient Dashboard
-                    </a>
+                        <div class="secondary-links-bar">
+                            @if (isAdmin && primaryPage != "/Administrator/AdminPanel/Index")
+                            {
+                                <a class="mini-link" asp-page="/Administrator/AdminPanel/Index">Admin</a>
+                            }
+                            @if (isDoctor && primaryPage != "/Doctor/Index")
+                            {
+                                <a class="mini-link" asp-page="/Doctor/Index">Doctor</a>
+                            }
+                            @if (isAssistant && primaryPage != "/Assistant/AssistantPanel/Index")
+                            {
+                                <a class="mini-link" asp-page="/Assistant/AssistantPanel/Index">Assistant</a>
+                            }
+                            @if (isPatient && primaryPage != "/Patient/Index")
+                            {
+                                <a class="mini-link" asp-page="/Patient/Index">Patient</a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert-box warning">
+                            <i class="bi bi-exclamation-circle"></i>
+                            <span>Account Pending Role Assignment</span>
+                        </div>
+                    }
                 }
             </div>
-        }
-        else
-        {
-            <p class="mt-4 text-warning">
-                Your account has no role assigned yet. Please contact an administrator.
-            </p>
-        }
-    }
+        </div>
+    </div>
 </div>

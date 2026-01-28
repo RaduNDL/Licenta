@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
-using Licenta.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -100,9 +99,7 @@ namespace Licenta.Pages.Administrator.Users
             var current = await _userManager.GetRolesAsync(targetUser);
 
             var isSelf = string.Equals(targetUser.Id, _userManager.GetUserId(User), StringComparison.Ordinal);
-            var removingAdminFromSelf = isSelf &&
-                current.Contains("Administrator") &&
-                !SelectedRoles.Contains("Administrator");
+            var removingAdminFromSelf = isSelf && current.Contains("Administrator") && !SelectedRoles.Contains("Administrator");
 
             if (removingAdminFromSelf)
             {
@@ -110,8 +107,7 @@ namespace Licenta.Pages.Administrator.Users
                 return await OnGet(UserId);
             }
 
-            var isRemovingAdmin = current.Contains("Administrator") &&
-                                 !SelectedRoles.Contains("Administrator");
+            var isRemovingAdmin = current.Contains("Administrator") && !SelectedRoles.Contains("Administrator");
             if (isRemovingAdmin)
             {
                 var admins = await _userManager.GetUsersInRoleAsync("Administrator");

@@ -4,57 +4,84 @@
     ViewData["Title"] = "Attachments & Results";
 }
 @section Styles {
-    <link rel="stylesheet" href="~/css/doctor.css" />
+    <link rel="stylesheet" href="~/css/doctor-attachments.css" />
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Patient attachments</h2>
+<div class="page-container">
+    <div class="page-header">
+        <h2 class="page-title">
+            <i class="bi bi-folder2-open text-primary"></i> Patient Attachments
+        </h2>
 
-    @if (Model.PatientId.HasValue)
+        @if (Model.PatientId.HasValue)
+        {
+            <a class="btn btn-primary"
+               asp-page="/Doctor/Attachments/Upload"
+               asp-route-patientId="@Model.PatientId">
+                <i class="bi bi-cloud-upload me-2"></i>Upload New
+            </a>
+        }
+        else
+        {
+            <button class="btn btn-secondary" disabled title="Select a patient first">
+                <i class="bi bi-cloud-upload me-2"></i>Select Patient to Upload
+            </button>
+        }
+    </div>
+
+    @if (!Model.Attachments.Any())
     {
-        <a class="btn btn-primary"
-           asp-page="/Doctor/Attachments/Upload"
-           asp-route-patientId="@Model.PatientId">
-            Upload document for this patient
-        </a>
+        <div class="empty-state">
+            <i class="bi bi-files"></i>
+            <h5>No documents found</h5>
+            <p class="mb-0">There are no attachments for the current filter.</p>
+        </div>
     }
     else
     {
-        <button class="btn btn-secondary" disabled>
-            Select a patient to upload a document
-        </button>
+        <div class="table-responsive">
+            <table class="table table-custom">
+                <thead>
+                    <tr>
+                        <th width="35%">File Name</th>
+                        <th width="25%">Patient</th>
+                        <th width="20%">Uploaded Date</th>
+                        <th width="10%">Type</th>
+                        <th width="10%">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.Attachments)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-page="/Files/Attachment" asp-route-id="@f.Id" class="file-name">
+                                    <i class="bi bi-file-earmark-medical"></i> @f.FileName
+                                </a>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-person-circle text-muted me-2"></i>
+                                    @(f.Patient?.User?.FullName ?? f.Patient?.User?.Email)
+                                </div>
+                            </td>
+                            <td>@f.UploadedAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</td>
+                            <td>@f.Type</td>
+                            <td>
+                                @{
+                                    var statusClass = f.Status.ToString().ToLower() switch
+                                    {
+                                        "validated" => "validated",
+                                        "rejected" => "rejected",
+                                        _ => "pending"
+                                    };
+                                }
+                                <span class="status-badge @statusClass">@f.Status</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
 </div>
-
-@if (!Model.Attachments.Any())
-{
-    <div class="alert alert-secondary">
-        No attachments found for the current filter.
-    </div>
-}
-else
-{
-    <table class="table table-striped align-middle">
-        <thead>
-            <tr>
-                <th>File</th>
-                <th>Patient</th>
-                <th>Uploaded</th>
-                <th>Type</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var f in Model.Attachments)
-            {
-                <tr>
-                    <td><a href="@f.FilePath" target="_blank">@f.FileName</a></td>
-                    <td>@(f.Patient?.User?.FullName ?? f.Patient?.User?.Email)</td>
-                    <td>@f.UploadedAt.ToLocalTime().ToString("g")</td>
-                    <td>@f.Type</td>
-                    <td>@f.Status</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
