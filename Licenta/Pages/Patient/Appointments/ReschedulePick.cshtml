@@ -1,0 +1,106 @@
+﻿@page "{requestId:int}"
+@model Licenta.Pages.Patient.Appointments.ReschedulePickModel
+@{
+    ViewData["Title"] = "Reschedule options";
+}
+
+<div class="container py-3">
+    <h3 class="fw-bold mb-3">Reschedule options</h3>
+
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info border-0 shadow-sm">@status</div>
+    }
+
+    @if (!Model.CanView)
+    {
+        <div class="alert alert-warning border-0 shadow-sm">
+            You cannot view this reschedule request.
+        </div>
+        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">Back</a>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <div class="mb-2"><strong>Status:</strong> @Model.Status</div>
+                <div class="mb-2"><strong>Doctor:</strong> @Model.DoctorName</div>
+                <div class="mb-0"><strong>Current time:</strong> @Model.OldTime</div>
+            </div>
+        </div>
+
+        @if (Model.Status == "Requested")
+        {
+            <div class="alert alert-secondary border-0 shadow-sm">
+                Waiting for the assistant to propose options.
+            </div>
+            <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">Back</a>
+        }
+        else if (Model.Status == "Proposed")
+        {
+            @if (!Model.Options.Any())
+            {
+                <div class="alert alert-secondary border-0 shadow-sm">No options available yet.</div>
+                <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">Back</a>
+            }
+            else
+            {
+                <form method="post" class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3 fw-semibold">Pick one option</div>
+
+                        <div class="list-group">
+                            @foreach (var opt in Model.Options)
+                            {
+                                <label class="list-group-item d-flex align-items-center gap-3">
+                                    <input class="form-check-input" type="radio" name="SelectedOptionId" value="@opt.Id" />
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold">@opt.Display</div>
+                                        <div class="text-muted small">Location: @opt.Location</div>
+                                    </div>
+                                </label>
+                            }
+                        </div>
+
+                        <span class="text-danger" asp-validation-for="SelectedOptionId"></span>
+
+                        <button type="submit" class="btn btn-primary mt-3">Submit selection</button>
+                        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary mt-3 ms-2">Back</a>
+                    </div>
+                </form>
+            }
+        }
+        else if (Model.Status == "PatientSelected")
+        {
+            <div class="alert alert-secondary border-0 shadow-sm">
+                You selected an option. Waiting for doctor approval.
+            </div>
+            <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">Back</a>
+        }
+        else if (Model.Status == "Approved")
+        {
+            <div class="alert alert-success border-0 shadow-sm">
+                Approved. Your appointment was rescheduled to: <strong>@Model.NewTime</strong>
+            </div>
+            <a asp-page="/Patient/Appointments/Index" class="btn btn-primary">Go to appointments</a>
+        }
+        else if (Model.Status == "Rejected")
+        {
+            <div class="alert alert-danger border-0 shadow-sm">
+                Rejected. @Model.DoctorDecisionNote
+            </div>
+            <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">Back</a>
+        }
+        else
+        {
+            <div class="alert alert-secondary border-0 shadow-sm">
+                This request is not active.
+            </div>
+            <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">Back</a>
+        }
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

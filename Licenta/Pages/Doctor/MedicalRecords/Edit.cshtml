@@ -1,0 +1,65 @@
+@page "{id:guid}"
+@model Licenta.Pages.Doctor.MedicalRecords.EditModel
+
+@{
+    ViewData["Title"] = "Edit Medical Record";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/medicalrecords.css" />
+}
+
+<div class="page-container" style="max-width: 800px; margin: 0 auto;">
+    <div class="page-header">
+        <h2 class="page-title">
+            <i class="bi bi-pencil-square text-primary"></i> Edit Medical Record
+        </h2>
+        <span class="status-badge draft">Draft Mode</span>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-warning border-0 shadow-sm mb-3">
+            <i class="bi bi-exclamation-triangle me-2"></i>Please fix the validation errors and try again.
+        </div>
+    }
+
+    <form method="post">
+        <input type="hidden" asp-for="Record.Id" />
+
+        <div class="form-section">
+            <label asp-for="Record.Diagnosis" class="form-label">Diagnosis</label>
+            <input asp-for="Record.Diagnosis" class="form-control form-control-lg" />
+            <span asp-validation-for="Record.Diagnosis" class="text-danger"></span>
+        </div>
+
+        <div class="form-section">
+            <label asp-for="Record.Symptoms" class="form-label">Symptoms</label>
+            <textarea asp-for="Record.Symptoms" rows="4" class="form-control"></textarea>
+            <span asp-validation-for="Record.Symptoms" class="text-danger"></span>
+        </div>
+
+        <div class="form-section">
+            <label asp-for="Record.Notes" class="form-label">Clinical Notes</label>
+            <textarea asp-for="Record.Notes" rows="5" class="form-control"></textarea>
+            <span asp-validation-for="Record.Notes" class="text-danger"></span>
+        </div>
+
+        <div class="form-section">
+            <label asp-for="Record.Treatment" class="form-label">Treatment / Recommendations</label>
+            <textarea asp-for="Record.Treatment" rows="4" class="form-control"></textarea>
+            <span asp-validation-for="Record.Treatment" class="text-danger"></span>
+        </div>
+
+        <div class="form-actions">
+            <a asp-page="/Doctor/MedicalRecords/Details" asp-route-id="@Model.Record.Id" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-check2 me-2"></i> Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

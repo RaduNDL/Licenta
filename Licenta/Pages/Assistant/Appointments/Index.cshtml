@@ -1,0 +1,190 @@
+﻿@page
+@model Licenta.Pages.Assistant.Appointments.IndexModel
+@{
+    ViewData["Title"] = "Appointments";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctorappointment.css" />
+}
+
+<div class="appointments-container">
+    <div class="calendar-header">
+        <div class="date-display">
+            <i class="bi bi-calendar-date text-primary"></i>
+            <span>@Model.SelectedDate.ToString("MMMM dd, yyyy")</span>
+            <span class="badge bg-light text-dark border ms-2">@Model.ViewMode.ToUpper()</span>
+            <span class="badge bg-light text-dark border ms-2">Assistant view</span>
+        </div>
+
+        <div class="d-flex gap-3">
+            <div class="btn-group nav-toolbar shadow-sm">
+                <a class="btn btn-outline-secondary"
+                   asp-route-view="@Model.ViewMode"
+                   asp-route-date="@Model.PrevDateIso">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+
+                <a class="btn btn-outline-secondary"
+                   asp-route-view="@Model.ViewMode"
+                   asp-route-date="@Model.TodayIso">
+                    Today
+                </a>
+
+                <a class="btn btn-outline-secondary"
+                   asp-route-view="@Model.ViewMode"
+                   asp-route-date="@Model.NextDateIso">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+
+            <div class="btn-group nav-toolbar shadow-sm">
+                <a class="btn @(Model.ViewMode == "day" ? "btn-primary" : "btn-outline-primary")"
+                   asp-route-view="day"
+                   asp-route-date="@Model.SelectedDate.ToString("yyyy-MM-dd")">
+                    Day
+                </a>
+                <a class="btn @(Model.ViewMode == "week" ? "btn-primary" : "btn-outline-primary")"
+                   asp-route-view="week"
+                   asp-route-date="@Model.SelectedDate.ToString("yyyy-MM-dd")">
+                    Week
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string status && !string.IsNullOrWhiteSpace(status))
+    {
+        <div class="alert alert-info border-0 shadow-sm">@status</div>
+    }
+
+    @if (Model.ViewMode == "day")
+    {
+        <div class="timeline-container">
+            @foreach (var slot in Model.HourSchedule)
+            {
+                <div class="time-slot">
+                    <div class="time-label">@slot.Start.ToString("HH:mm")</div>
+                    <div class="slot-content @(!slot.Appointments.Any() ? "free-slot" : "")">
+                        @if (slot.Appointments.Any())
+                        {
+                            foreach (var a in slot.Appointments)
+                            {
+                                <div class="appt-card">
+                                    <div class="appt-info">
+                                        <h5>@a.PatientName</h5>
+                                        <div class="appt-meta">
+                                            <span>@a.TimeLocal</span> • @a.Reason
+                                        </div>
+                                        <div class="small text-muted">With doctor: @a.DoctorName</div>
+                                        <div class="small mt-1">
+                                            <span class="badge bg-@a.StageCss">@a.StageLabel</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+                                        <span class="status-badge @a.Status.ToLower()">@a.Status</span>
+
+                                        @if (a.CanCheckIn)
+                                        {
+                                            <form method="post" asp-page-handler="CheckIn">
+                                                <input type="hidden" name="id" value="@a.Id" />
+                                                <input type="hidden" name="view" value="@Model.ViewMode" />
+                                                <input type="hidden" name="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+                                                <button class="btn btn-sm btn-outline-primary">Check-in</button>
+                                            </form>
+                                        }
+
+                                        @if (a.CanNoShow)
+                                        {
+                                            <form method="post" asp-page-handler="NoShow">
+                                                <input type="hidden" name="id" value="@a.Id" />
+                                                <input type="hidden" name="view" value="@Model.ViewMode" />
+                                                <input type="hidden" name="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+                                                <button class="btn btn-sm btn-outline-dark">No-show</button>
+                                            </form>
+                                        }
+
+                                        @if (a.CanCancel)
+                                        {
+                                            <a asp-page="/Assistant/Appointments/Cancel"
+                                               asp-route-id="@a.Id"
+                                               class="btn btn-sm btn-outline-danger">
+                                                Cancel
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted fst-italic">Available</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <table class="week-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Stage</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var g in Model.WeekAppointments.GroupBy(x => x.ScheduledAtUtc.ToLocalTime().Date))
+                {
+                    <tr class="date-group-header">
+                        <td colspan="6">@g.Key.ToString("dddd, MMMM dd")</td>
+                    </tr>
+                    foreach (var a in g)
+                    {
+                        <tr>
+                            <td>@a.TimeLocal</td>
+                            <td>@a.PatientName</td>
+                            <td>@a.DoctorName</td>
+                            <td><span class="badge bg-@a.StageCss">@a.StageLabel</span></td>
+                            <td>@a.Status</td>
+                            <td class="d-flex gap-2 justify-content-end flex-wrap">
+                                @if (a.CanCheckIn)
+                                {
+                                    <form method="post" asp-page-handler="CheckIn">
+                                        <input type="hidden" name="id" value="@a.Id" />
+                                        <input type="hidden" name="view" value="@Model.ViewMode" />
+                                        <input type="hidden" name="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+                                        <button class="btn btn-sm btn-outline-primary">Check-in</button>
+                                    </form>
+                                }
+                                @if (a.CanNoShow)
+                                {
+                                    <form method="post" asp-page-handler="NoShow">
+                                        <input type="hidden" name="id" value="@a.Id" />
+                                        <input type="hidden" name="view" value="@Model.ViewMode" />
+                                        <input type="hidden" name="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+                                        <button class="btn btn-sm btn-outline-dark">No-show</button>
+                                    </form>
+                                }
+                                @if (a.CanCancel)
+                                {
+                                    <a asp-page="/Assistant/Appointments/Cancel"
+                                       asp-route-id="@a.Id"
+                                       class="btn btn-sm btn-outline-danger">
+                                        Cancel
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
+</div>

@@ -1,0 +1,103 @@
+﻿@page
+@model Licenta.Pages.Assistant.Appointments.AppointmentRequestsPageModel
+
+@{
+    ViewData["Title"] = "Appointment Requests";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/assistant_appointment_requests.css" asp-append-version="true" />
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="bi bi-calendar-check text-primary me-2"></i>Appointment Requests
+            </h2>
+            <p class="text-muted mb-0">Process incoming appointment requests from patients.</p>
+        </div>
+        <div>
+            <span class="badge bg-white text-secondary shadow-sm px-3 py-2 border">
+                Pending: @Model.PendingRequests.Count()
+            </span>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-body p-0">
+            @if (!Model.PendingRequests.Any())
+            {
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-calendar2-check text-muted" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="fw-bold text-secondary">All caught up!</h5>
+                    <p class="text-muted">There are no pending appointment requests at this moment.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 custom-table">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4 text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Patient</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Uploaded At</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Requested Time</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Reason</th>
+                                <th class="text-end pe-4 text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.PendingRequests)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-initials bg-gradient-primary text-white me-3">
+                                                @r.PatientName.Substring(0, 1).ToUpper()
+                                            </div>
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-bold text-dark">@r.PatientName</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center text-muted">
+                                            <i class="bi bi-clock me-2"></i>
+                                            <span>@r.UploadedAt.ToLocalTime().ToString("g")</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-calendar-event me-1"></i>
+                                            @r.RequestedDisplay
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <p class="text-muted text-sm mb-0 text-truncate" style="max-width: 250px;" title="@r.Reason">
+                                            @r.Reason
+                                        </p>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <a class="btn btn-primary btn-sm btn-icon-text shadow-sm"
+                                           asp-page="/Assistant/Appointments/Process"
+                                           asp-route-attachmentId="@r.AttachmentId">
+                                            <i class="bi bi-gear-fill me-1"></i> Process
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/assistant_appointment_requests.js" asp-append-version="true"></script>
+}

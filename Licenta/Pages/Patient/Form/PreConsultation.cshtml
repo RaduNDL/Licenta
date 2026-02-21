@@ -1,0 +1,97 @@
+﻿@page "/Patient/Form/PreConsultation"
+@model Licenta.Pages.Patient.Form.PreConsultationModel
+@{
+    ViewData["Title"] = "Pre-consultation Form";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/patient.css" />
+    <link rel="stylesheet" href="~/css/Preconsultation.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+}
+
+<div class="pre-consultation-wrapper">
+    <div class="form-card">
+        <div class="form-header">
+            <div class="icon-bubble">
+                <i class="fa-solid fa-stethoscope"></i>
+            </div>
+            <h1>Symptom Check</h1>
+            <p>Help us understand your condition before you see the doctor.</p>
+        </div>
+
+        @if (TempData["StatusMessage"] is string msg)
+        {
+            <div class="alert-modern">
+                <i class="fa-solid fa-check-circle"></i> @msg
+            </div>
+        }
+
+        <form method="post" id="consultationForm">
+            <div class="form-section">
+                <h3><i class="fa-solid fa-heart-pulse"></i> Primary Symptoms</h3>
+
+                <div class="input-group-modern">
+                    <label asp-for="Input.MainComplaint">Main Complaint</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-circle-exclamation input-icon"></i>
+                        <input asp-for="Input.MainComplaint" class="form-control-modern" placeholder="e.g., Severe Migraine" />
+                    </div>
+                    <span asp-validation-for="Input.MainComplaint" class="text-danger"></span>
+                </div>
+
+                <div class="input-group-modern">
+                    <label asp-for="Input.Symptoms">Detailed Symptoms</label>
+                    <div class="input-wrapper textarea-wrapper">
+                        <textarea asp-for="Input.Symptoms" rows="4" class="form-control-modern auto-expand" placeholder="Describe how you feel, when it started, etc..."></textarea>
+                    </div>
+                    <span asp-validation-for="Input.Symptoms" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3><i class="fa-solid fa-notes-medical"></i> Medical Context</h3>
+
+                <div class="grid-row">
+                    <div class="input-group-modern">
+                        <label asp-for="Input.Allergies">Allergies (Optional)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-wheat-awn-circle-exclamation input-icon"></i>
+                            <input asp-for="Input.Allergies" class="form-control-modern" placeholder="e.g., Penicillin, Peanuts" />
+                        </div>
+                        <span asp-validation-for="Input.Allergies" class="text-danger"></span>
+                    </div>
+
+                    <div class="input-group-modern">
+                        <label asp-for="Input.Medications">Current Medications (Optional)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-pills input-icon"></i>
+                            <input asp-for="Input.Medications" class="form-control-modern" placeholder="e.g., Ibuprofen 400mg" />
+                        </div>
+                        <span asp-validation-for="Input.Medications" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="input-group-modern">
+                    <label asp-for="Input.Notes">Additional Notes (Optional)</label>
+                    <div class="input-wrapper textarea-wrapper">
+                        <textarea asp-for="Input.Notes" rows="2" class="form-control-modern auto-expand" placeholder="Anything else we should know?"></textarea>
+                    </div>
+                    <span asp-validation-for="Input.Notes" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-footer">
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span>Submit Evaluation</span>
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/Preconsultation.js"></script>
+}

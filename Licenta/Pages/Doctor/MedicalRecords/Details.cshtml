@@ -1,0 +1,108 @@
+@page "{id:guid}"
+@using Licenta.Models
+@model Licenta.Pages.Doctor.MedicalRecords.DetailsModel
+
+@{
+    ViewData["Title"] = "Medical Record Details";
+
+    var r = Model.Record;
+    if (r == null)
+    {
+        <div class="alert alert-warning">
+            Medical record not found.
+        </div>
+
+        <a asp-page="/Doctor/MedicalRecords/Index" class="btn btn-outline-secondary">Back</a>
+        return;
+    }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/medicalrecords.css" />
+}
+
+<div class="page-container" style="max-width: 900px; margin: 0 auto;">
+    <div class="page-header">
+        <h2 class="page-title">
+            <i class="bi bi-file-medical text-primary"></i> Medical Record Details
+        </h2>
+        <div class="d-flex gap-2">
+            @if (r.Status == RecordStatus.Draft)
+            {
+                <a class="btn btn-outline-primary"
+                   asp-page="/Doctor/MedicalRecords/Edit"
+                   asp-route-id="@r.Id">
+                    <i class="bi bi-pencil me-1"></i> Edit Draft
+                </a>
+            }
+            <a asp-page="/Doctor/MedicalRecords/Index" class="btn btn-outline-secondary">Back</a>
+        </div>
+    </div>
+
+    <div class="record-card">
+        <div class="record-header">
+            <div class="patient-info">
+                <h4>@(r.Patient?.User?.FullName ?? r.Patient?.User?.Email ?? "Patient")</h4>
+                <div class="visit-date">
+                    <i class="bi bi-calendar3 me-1"></i> @r.VisitDateUtc.ToLocalTime().ToString("f")
+                </div>
+            </div>
+
+            <div class="record-status text-end">
+                <span class="status-badge @(r.Status.ToString().ToLower()) mb-1 d-block">@r.Status</span>
+                @if (r.ValidatedAtUtc.HasValue)
+                {
+                    <small class="text-muted d-block" style="font-size: 0.75rem;">
+                        Validated: @r.ValidatedAtUtc.Value.ToLocalTime().ToString("g")
+                    </small>
+                }
+            </div>
+        </div>
+
+        <div class="record-body">
+            <div class="section-title">Diagnosis</div>
+            <div class="section-content fs-5 fw-medium text-dark mb-4">
+                @r.Diagnosis
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(r.Symptoms))
+            {
+                <div class="section-title">Symptoms</div>
+                <div class="text-box mb-4">@r.Symptoms</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(r.Notes))
+            {
+                <div class="section-title">Clinical Notes</div>
+                <div class="text-box mb-4">@r.Notes</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(r.Treatment))
+            {
+                <div class="section-title">Treatment & Recommendations</div>
+                <div class="text-box bg-light border-primary border-opacity-25 text-dark">@r.Treatment</div>
+            }
+        </div>
+    </div>
+
+    <div class="form-actions bg-light p-3 rounded border">
+        <div class="d-flex justify-content-between w-100 align-items-center">
+            <div>
+                <a class="btn btn-outline-dark btn-sm"
+                   asp-page="/Doctor/MedicalRecords/PrescriptionPdf"
+                   asp-route-id="@r.Id">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Download Prescription (PDF)
+                </a>
+            </div>
+
+            @if (r.Status == RecordStatus.Draft)
+            {
+                <form method="post" asp-page-handler="Validate" class="d-inline">
+                    <button class="btn btn-success px-4" type="submit">
+                        <i class="bi bi-check-circle me-2"></i>Validate & Finalize
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+</div>

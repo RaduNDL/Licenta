@@ -1,0 +1,149 @@
+﻿@page "{id:guid}"
+@model Licenta.Pages.Doctor.Predictions.RecordModel
+@{
+    ViewData["Title"] = "AI Analysis Result";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/drpredictions.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">
+                <i class="bi bi-robot text-primary"></i> AI Analysis Report
+            </h2>
+            <small class="text-muted">
+                @Model.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy • HH:mm")
+            </small>
+        </div>
+        <a asp-page="/Doctor/Predictions/Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger shadow-sm border-0">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @Model.ErrorMessage
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        <i class="bi bi-file-medical me-2"></i>Diagnosis Summary
+                    </div>
+                    <div class="card-body text-center p-4">
+                        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                        {
+                            <div class="mb-3 position-relative">
+                                <img src="@Model.ImageUrl"
+                                     class="img-fluid rounded shadow-sm"
+                                     style="max-height: 280px; object-fit: contain;" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-light border mb-3">
+                                No source image linked.
+                            </div>
+                        }
+
+                        <h3 class="fw-bold text-primary mb-1">@Model.ResultLabel</h3>
+                        <p class="text-muted small mb-3">AI Prediction</p>
+
+                        <div class="d-flex justify-content-center gap-4 mb-3">
+                            <div>
+                                <small class="text-uppercase text-muted fw-bold">Confidence</small>
+                                <div class="fs-4 fw-bold">@Model.Confidence</div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.DatasetLabel))
+                        {
+                            <div class="card bg-light border-0 mt-3">
+                                <div class="card-body py-2">
+                                    <h6 class="text-muted small text-uppercase fw-bold mb-2">Ground Truth Verification</h6>
+
+                                    <div class="d-flex justify-content-between align-items-center px-3">
+                                        <span>Dataset says:</span>
+                                        <span class="fw-bold">@Model.DatasetLabel</span>
+                                    </div>
+
+                                    <hr class="my-2" />
+
+                                    @if (Model.ValidationStatus == "CORRECT")
+                                    {
+                                        <div class="text-success fw-bold">
+                                            <i class="bi bi-check-circle-fill me-1"></i> AI Correct
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-danger fw-bold">
+                                            <i class="bi bi-x-circle-fill me-1"></i> AI Incorrect
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="form-text small mt-1">
+                                * Based on dataset mapping (name/path/hash if available).
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-light border mt-3 py-2 small">
+                                <i class="bi bi-info-circle me-1"></i>
+                                No dataset ground-truth available for this upload.
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white fw-bold">
+                        <i class="bi bi-bar-chart-line me-2"></i>Detailed Probabilities
+                    </div>
+                    <div class="card-body">
+                        @if (!Model.Probabilities.Any())
+                        {
+                            <div class="text-muted text-center py-4">
+                                No details available.
+                            </div>
+                        }
+                        else
+                        {
+                            <ul class="list-group list-group-flush">
+                                @foreach (var prob in Model.Probabilities.OrderByDescending(p => p.Value))
+                                {
+                                    var pct = (prob.Value * 100).ToString("0.0") + "%";
+                                    var width = $"{prob.Value * 100:0.#}%";
+                                    var colorClass = prob.Key == "MALIGNANT" ? "bg-danger" : "bg-success";
+
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span class="fw-semibold">@prob.Key</span>
+                                            <span class="fw-bold">@pct</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar @colorClass"
+                                                 style="width:@width">
+                                            </div>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

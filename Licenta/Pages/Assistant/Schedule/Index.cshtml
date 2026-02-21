@@ -1,0 +1,53 @@
+﻿@page
+@model Licenta.Pages.Assistant.Schedule.IndexModel
+
+@{
+    ViewData["Title"] = "Doctors Schedule";
+}
+
+<h2 class="mb-3">Doctors Schedule</h2>
+
+@if (!Model.Doctors.Any())
+{
+    <div class="alert alert-secondary">No schedules available.</div>
+}
+else
+{
+    @foreach (var d in Model.Doctors)
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-bold">
+                @d.DoctorName
+            </div>
+
+            <div class="card-body p-0">
+                @if (!d.Schedule.Any())
+                {
+                    <div class="p-3 text-muted">No schedule defined.</div>
+                }
+                else
+                {
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>From</th>
+                                <th>To</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in d.Schedule)
+                            {
+                                <tr>
+                                    <td>@s.DayOfWeek</td>
+                                    <td>@s.StartTime</td>
+                                    <td>@s.EndTime</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+}

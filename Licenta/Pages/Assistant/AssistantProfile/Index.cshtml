@@ -1,0 +1,135 @@
+﻿@page
+@model Licenta.Pages.Assistant.AssistantProfile.IndexModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/assistantprofile.css" asp-append-version="true" />
+}
+
+<div class="profile-page-wrapper">
+    <div class="container py-5">
+
+        <div class="d-flex align-items-center justify-content-between mb-5 fade-in-up">
+            <div>
+                <h1 class="display-6 fw-bold text-dark mb-1">My Profile</h1>
+                <p class="text-muted mb-0">Manage your assistant credentials and personal details.</p>
+            </div>
+            <div class="d-none d-md-block">
+                <span class="badge bg-white text-primary shadow-sm py-2 px-3 rounded-pill border">
+                    <i class="bi bi-shield-check me-2"></i>Secure Connection
+                </span>
+            </div>
+        </div>
+
+        @if (TempData["StatusMessage"] is string status)
+        {
+            <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center gap-3">
+                <i class="bi bi-check-circle-fill fs-4"></i>
+                <div>@status</div>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] is string err)
+        {
+            <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center gap-3">
+                <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                <div>@err</div>
+            </div>
+        }
+
+        <div class="row g-4">
+            <div class="col-lg-4 fade-in-up" style="animation-delay: 0.1s;">
+                <div class="card profile-card border-0 shadow-lg h-100">
+                    <div class="card-body text-center p-5 d-flex flex-column align-items-center justify-content-center">
+
+                        <div class="avatar-circle mb-4 shadow-sm">
+                            <span id="userInitials">DA</span>
+                        </div>
+
+                        <h3 class="fw-bold mb-1" id="profileNameDisplay">@Model.Input.FullName</h3>
+                        <p class="text-muted badge bg-light text-secondary rounded-pill px-3 py-2 mt-2">
+                            @Model.Input.ClinicId
+                        </p>
+
+                        <div class="divider my-4 w-100"></div>
+
+                        <div class="greeting-box w-100 p-3 rounded-4">
+                            <i class="bi bi-sun fs-4 mb-2 d-block text-warning" id="greetingIcon"></i>
+                            <span class="small fw-semibold text-secondary" id="greetingText">Welcome back</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8 fade-in-up" style="animation-delay: 0.2s;">
+                <div class="card form-card border-0 shadow-sm h-100">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4 px-md-5">
+                        <h5 class="fw-bold mb-0 text-primary">Account Details</h5>
+                    </div>
+                    <div class="card-body p-4 p-md-5">
+                        <form method="post" id="profileForm">
+                            @Html.AntiForgeryToken()
+
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input asp-for="Input.FullName" class="form-control" id="fullNameInput" placeholder="Full Name" />
+                                        <label asp-for="Input.FullName">Full Name</label>
+                                    </div>
+                                    <span asp-validation-for="Input.FullName" class="text-danger small ms-2"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input asp-for="Input.Email" class="form-control bg-light" placeholder="Email" readonly />
+                                        <label asp-for="Input.Email">Email Address</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input asp-for="Input.ClinicId" class="form-control" placeholder="Clinic ID" />
+                                        <label asp-for="Input.ClinicId">Clinic ID</label>
+                                    </div>
+                                    <span asp-validation-for="Input.ClinicId" class="text-danger small ms-2"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input class="form-control bg-light" value="Assistant" placeholder="Role" readonly />
+                                        <label>Current Role</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="security-alert mt-5 p-4 rounded-4 d-flex align-items-start gap-3">
+                                <div class="icon-box bg-white rounded-circle shadow-sm p-2 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-shield-lock text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Security & Password</h6>
+                                    <p class="mb-0 small text-muted">For your protection, password changes must be performed via the dedicated Identity Management portal.</p>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end align-items-center gap-3 mt-5">
+                                <a class="btn btn-link text-decoration-none text-muted" asp-page="/Assistant/AssistantPanel/Index">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 shadow-primary-sm hover-lift">
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/assistantprofile.js"></script>
+}

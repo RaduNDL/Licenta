@@ -1,0 +1,10 @@
+{
+  "labels": [
+    "BENIGN",
+    "MALIGNANT"
+  ],
+  "label_to_idx": {
+    "BENIGN": 0,
+    "MALIGNANT": 1
+  }
+}

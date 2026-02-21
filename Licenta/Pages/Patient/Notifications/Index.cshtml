@@ -1,0 +1,73 @@
+﻿@page
+@using Licenta.Models
+@model Licenta.Pages.Patient.Notifications.IndexModel
+
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/notifications.css" />
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <h2 class="page-title">
+            <i class="bi bi-heart-pulse text-success"></i> My Notifications
+        </h2>
+
+        @if (Model.Items.Any(n => !n.IsRead))
+        {
+            <form method="post" asp-page-handler="MarkAllRead">
+                <button type="submit" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-check2-all me-1"></i> Mark all as read
+                </button>
+            </form>
+        }
+    </div>
+
+    @if (!Model.Items.Any())
+    {
+        <div class="empty-state">
+            <i class="bi bi-bell-slash"></i>
+            <h5>No Notifications</h5>
+            <p>You have no notifications from the last 30 days.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-notifications">
+                <thead>
+                    <tr>
+                        <th width="15%">Date</th>
+                        <th width="10%">Type</th>
+                        <th width="25%">Title</th>
+                        <th width="50%">Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var n in Model.Items)
+                    {
+                        <tr class="notification-row @(!n.IsRead ? "unread" : "")">
+                            <td>
+                                <div class="notification-date">
+                                    <i class="bi bi-clock me-1"></i> @n.When.ToString("MMM dd, HH:mm")
+                                </div>
+                            </td>
+                            <td>
+                                <span class="notification-type-badge" style="background-color: #198754;">@n.Type</span>
+                            </td>
+                            <td>
+                                <div class="notification-title">@n.Title</div>
+                            </td>
+                            <td>
+                                <div class="notification-message">@Html.Raw(n.Message)</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

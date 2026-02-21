@@ -1,0 +1,125 @@
+﻿@page
+@model Licenta.Pages.Doctor.Predictions.IndexModel
+@{
+    ViewData["Title"] = "AI Predictions Dashboard";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/drpredictions.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <h2 class="page-title mb-0">
+            <i class="bi bi-robot text-primary"></i> AI Predictions Center
+        </h2>
+        <a asp-page="/Doctor/Attachments/Inbox" class="btn btn-outline-primary">
+            <i class="bi bi-inbox me-1"></i> Patient Uploads
+        </a>
+    </div>
+
+    @if (TempData["StatusMessage"] is string statusTop)
+    {
+        <div class="alert alert-info border-0 shadow-sm mb-3">@statusTop</div>
+    }
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-lg-4">
+            <div class="model-card p-3 border rounded bg-white shadow-sm">
+                <div class="model-icon mb-2 text-primary fs-3">
+                    <i class="bi bi-image"></i>
+                </div>
+                <h5 class="model-title">CBIS-DDSM</h5>
+                <p class="model-desc small text-muted">
+                    Breast cancer imaging classification (benign vs malignant).
+                </p>
+                <a class="btn btn-primary btn-sm w-100"
+                   asp-page="/Doctor/Predictions/CBISDDSM"
+                   asp-route-patientId="@Model.PatientId">
+                    <i class="bi bi-play-circle me-2"></i>Launch CBIS-DDSM
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-section">
+        <h4 class="mb-3 fw-bold text-dark border-bottom pb-2">Recent Predictions</h4>
+
+        @if (!Model.Items.Any())
+        {
+            <div class="empty-state text-center py-5">
+                <i class="bi bi-clipboard-data fs-1 text-muted"></i>
+                <h5>No Prediction History</h5>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table align-middle table-predictions">
+                    <thead>
+                        <tr>
+                            <th width="25%">Patient</th>
+                            <th width="15%">Model</th>
+                            <th width="15%">Result</th>
+                            <th width="20%">Confidence</th>
+                            <th width="15%">Date</th>
+                            <th width="10%" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.Items)
+                        {
+                            var isGood = p.Status == PredictionStatus.Validated; // FIX (nu folosim Accepted)
+                                                                                 <tr>
+                                                                                     <td>
+                                                                                         <div class="fw-medium">
+                                                                                             @(p.Patient?.User?.FullName ?? "Patient")
+                                                                                         </div>
+                                                                                     </td>
+                                                                                     <td>
+                                                                                         <span class="badge bg-light text-dark border">
+                                                                                             @p.ModelName
+                                                                                         </span>
+                                                                                     </td>
+                                                                                     <td>
+                                                                                         <span class="badge @(isGood ? "bg-success" : "bg-secondary")">
+                                                                                             @p.ResultLabel
+                                                                                         </span>
+                                                                                     </td>
+                                                                                     <td>
+                                    @if (p.Probability.HasValue)
+                                    {
+                                        var width = $"{p.Probability.Value * 100:0.#}%";  // FIX: fără "%"" lipit după expresie
+                                                                                          <div class="d-flex align-items-center">
+                                                                                              <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                                                                                  <div class="progress-bar"
+                                                                                                       role="progressbar"
+                                                                                                       style="width:@width">
+                                                                                                  </div>
+                                                                                              </div>
+                                                                                              <small class="fw-bold">
+                                                                                                  @p.Probability.Value.ToString("P0")
+                                                                                              </small>
+                                                                                          </div>
+                                    }
+                                </td>
+                                <td>
+                                    <small>
+                                        @p.CreatedAtUtc.ToLocalTime().ToString("MMM dd, HH:mm")
+                                    </small>
+                                </td>
+                                <td class="text-end">
+                                    <a asp-page="/Doctor/Predictions/Record"
+                                       asp-route-id="@p.Id"
+                                       class="btn btn-sm btn-outline-primary">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

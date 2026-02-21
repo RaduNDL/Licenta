@@ -1,0 +1,72 @@
+﻿@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Log in";
+}
+@section Styles{
+<link rel="stylesheet" href="~/css/Login.css" />
+}
+<div class="split-screen-container">
+    <div class="left-panel">
+        <div class="panel-content fade-in">
+            <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Home</a>
+
+            <div class="header-section">
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Please enter your details to sign in.</p>
+            </div>
+
+            <section>
+                <form id="account" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+                    <div class="input-group-modern mb-4">
+                        <label asp-for="Input.Email" class="input-label">Email</label>
+                        <input asp-for="Input.Email" class="input-field" autocomplete="username" aria-required="true" placeholder="Enter your email" />
+                        <span asp-validation-for="Input.Email" class="text-danger small-text"></span>
+                    </div>
+
+                    <div class="input-group-modern mb-4">
+                        <label asp-for="Input.Password" class="input-label">Password</label>
+                        <input asp-for="Input.Password" class="input-field" autocomplete="current-password" aria-required="true" placeholder="••••••••" />
+                        <span asp-validation-for="Input.Password" class="text-danger small-text"></span>
+                    </div>
+
+                    <div class="actions-row mb-4">
+                        <div class="checkbox-wrapper">
+                            <label asp-for="Input.RememberMe" class="remember-label">
+                                <input class="form-check-input custom-checkbox" asp-for="Input.RememberMe" />
+                                <span>Remember me</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button id="login-submit" type="submit" class="btn-submit">
+                        Sign In <i class="bi bi-chevron-right"></i>
+                    </button>
+
+                    <div class="footer-section">
+                        <p>Don't have an account? <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="register-link">Create free account</a></p>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="overlay-content">
+            <div class="glass-box">
+                <h3>Smart Medical Platform</h3>
+                <p>"Revolutionizing healthcare management with speed, security, and elegance."</p>
+                <div class="decorative-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        </div>
+        <div class="animated-bg"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

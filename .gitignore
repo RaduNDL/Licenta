@@ -1,0 +1,15 @@
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+**/.user
+**/Logs/
+
+# Python & ML
+**/__pycache__/
+**/.venv/
+**/dataset/
+**/artifacts/*.pt
+**/artifacts/*.json
+.vscode/
+*.pyc

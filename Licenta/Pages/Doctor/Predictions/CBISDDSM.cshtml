@@ -1,0 +1,175 @@
+﻿@page
+@model Licenta.Pages.Doctor.Predictions.CBISDDSMModel
+@{
+    ViewData["Title"] = "CBIS-DDSM Prediction";
+    bool hasResult = Model.Result != null && !string.IsNullOrWhiteSpace(Model.Result.Label);
+
+    float pBen = 0f;
+    float pMal = 0f;
+    if (hasResult && Model.Result!.Probabilities != null)
+    {
+        Model.Result.Probabilities.TryGetValue("BENIGN", out pBen);
+        Model.Result.Probabilities.TryGetValue("MALIGNANT", out pMal);
+    }
+
+    bool hasQuality = hasResult && Model.Result != null && (Model.Result.QualityOk.HasValue || (Model.Result.QualityIssues?.Count ?? 0) > 0);
+    bool qualityOk = hasResult && (Model.Result?.QualityOkSafe ?? true);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/drpredictions.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+
+    <div class="page-header mb-3">
+        <h2 class="page-title">
+            <i class="bi bi-image text-primary"></i> CBIS-DDSM Prediction
+        </h2>
+    </div>
+
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info border-0 shadow-sm">@status</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.TrainingBanner))
+    {
+        <div class="alert alert-warning border-0 shadow-sm">
+            <i class="bi bi-hourglass-split me-2"></i>@Model.TrainingBanner
+            @if (!string.IsNullOrWhiteSpace(Model.TrainingDetails))
+            {
+                <div class="mt-2 small text-muted">@Model.TrainingDetails</div>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger border-0 shadow-sm">@Model.ErrorMessage</div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Patient</label>
+                            <select asp-for="PatientId" asp-items="Model.Patients" class="form-select">
+                                <option value="">-- select patient --</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Image</label>
+                            <input asp-for="Upload" type="file" class="form-control" accept=".png,.jpg,.jpeg,.dcm,image/*" required />
+                            <div class="form-text">PNG/JPG recommended. DICOM (.dcm) works only if ML server supports it.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Model ID</label>
+                            <input asp-for="ModelId" class="form-control" />
+                            <div class="form-text">Default: mammogram_mastery_images:torch_cnn</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Image size</label>
+                            <input asp-for="ImageSize" class="form-control" />
+                            <div class="form-text">Default: 224</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-play-circle me-2"></i>Run prediction
+                        </button>
+
+                        <div class="mt-3 d-flex justify-content-between">
+                            <a asp-page="/Doctor/Predictions/Index" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </a>
+                            <a asp-page="/Doctor/Predictions/CBISDDSM" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh status
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Result</h5>
+
+                    @if (!hasResult)
+                    {
+                        <div class="text-muted">No result yet.</div>
+                    }
+                    else
+                    {
+                        @if (hasQuality && !qualityOk)
+                        {
+                            <div class="alert alert-warning border-0 shadow-sm">
+                                <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle me-2"></i>Image quality not OK</div>
+                                @if (Model.Result?.QualityScore != null)
+                                {
+                                    <div class="small text-muted">Quality score: @Model.Result.QualityScore.Value.ToString("P0")</div>
+                                }
+                                @if (Model.Result?.QualityIssues != null && Model.Result.QualityIssues.Count > 0)
+                                {
+                                    <div class="small mt-2">
+                                        Issues: @string.Join(", ", Model.Result.QualityIssues)
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <div class="fs-3 fw-bold">@((Model.Result?.Label) ?? "-")</div>
+                        <div class="text-muted">
+                            Confidence: @Model.Result!.EffectiveProbabilitySafe.ToString("P2")
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Result!.GroundTruth))
+                        {
+                            <div class="alert alert-light border mt-3">
+                                <strong>Dataset Ground Truth:</strong> @Model.Result.GroundTruth <br />
+                                <strong>Model Prediction:</strong> @Model.Result.Label <br />
+                                @if (Model.Result.MatchWithDataset == true)
+                                {
+                                    <span class="badge bg-success">✅ MATCH</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">❌ MISMATCH</span>
+                                }
+                            </div>
+                        }
+
+                        <hr />
+
+                        <div class="mt-3">
+                            <strong>Probabilities:</strong>
+                            <ul>
+                                <li>BENIGN: @pBen.ToString("P2")</li>
+                                <li>MALIGNANT: @pMal.ToString("P2")</li>
+                            </ul>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.SavedPredictionId))
+                        {
+                            <div class="mt-3">
+                                <a asp-page="/Doctor/Predictions/Record"
+                                   asp-route-id="@Model.SavedPredictionId"
+                                   class="btn btn-outline-primary">
+                                    View record
+                                </a>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

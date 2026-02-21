@@ -1,0 +1,78 @@
+﻿@page
+@model Licenta.Pages.Patient.Appointments.RequestModel
+@{
+    ViewData["Title"] = "Request Appointment";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/RequestAppointment.css" />
+}
+
+<div class="request-appointment-wrapper">
+    <div class="header-section row align-items-center">
+        <div class="col-md-8">
+            <h2 class="mb-1">Request Appointment</h2>
+            <p class="text-muted mb-0">Choose an available slot and describe the reason.</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">
+                My Appointments
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info">@status</div>
+    }
+
+    <div class="form-card">
+        <div class="card-body">
+            @if (Model.AvailableSlots == null || !Model.AvailableSlots.Any())
+            {
+                <div class="text-center py-5">
+                    <svg class="empty-state-icon" width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <h5 class="text-muted fw-bold">No Slots Available</h5>
+                    <p class="text-muted mb-0">There are no available appointment slots at this time.</p>
+                    <p class="small text-muted">Please try again later or contact the clinic directly.</p>
+                </div>
+            }
+            else
+            {
+                <form method="post">
+                    <div class="mb-4">
+                        <label class="form-label">Available slots</label>
+                        <select class="form-select" asp-for="Input.SelectedSlotKey" required>
+                            <option value="" selected disabled>Select a time slot...</option>
+                            @foreach (var s in Model.AvailableSlots)
+                            {
+                                <option value="@s.Key">@s.Display</option>
+                            }
+                        </select>
+                        <span class="text-danger" asp-validation-for="Input.SelectedSlotKey"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Reason for Visit</label>
+                        <textarea class="form-control" rows="4" asp-for="Input.Reason" placeholder="Please briefly explain your symptoms or reason for the appointment..."></textarea>
+                        <span class="text-danger" asp-validation-for="Input.Reason"></span>
+                    </div>
+
+                    <div class="d-flex gap-3 pt-2">
+                        <a asp-page="/Patient/Index" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            Submit Request
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/RequestAppointment.js"></script>
+}

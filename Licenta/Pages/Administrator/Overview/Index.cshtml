@@ -1,0 +1,123 @@
+﻿@page
+@model Licenta.Pages.Administrator.Overview.IndexModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/admin-overview.css" asp-append-version="true" />
+}
+
+<div class="dashboard-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark">Dashboard Overview</h2>
+            <p class="text-muted mb-0">Welcome back, Administrator.</p>
+        </div>
+        <div class="date-badge">
+            <i class="bi bi-calendar-event me-2"></i> @DateTime.Now.ToString("MMMM dd, yyyy")
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary-soft text-primary">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="stat-content">
+                    <h6 class="text-uppercase text-muted ls-1 mb-1">Total Users</h6>
+                    <h2 class="fw-bold mb-0">@Model.TotalUsers</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-success-soft text-success">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <div class="stat-content">
+                    <h6 class="text-uppercase text-muted ls-1 mb-1">Defined Roles</h6>
+                    <h2 class="fw-bold mb-0">@Model.TotalRoles</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="content-card h-100">
+                <div class="card-header-custom">
+                    <h5 class="fw-bold mb-0">User Distribution</h5>
+                </div>
+                <div class="card-body-custom">
+                    @if (Model.UsersPerRole?.Any() == true)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle custom-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">Role Name</th>
+                                        <th class="text-end pe-4">Account Count</th>
+                                        <th class="text-end pe-4">Percentage</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var kv in Model.UsersPerRole.OrderByDescending(k => k.Value))
+                                    {
+                                        var percentage = Model.TotalUsers > 0 ? (double)kv.Value / Model.TotalUsers * 100 : 0;
+                                        <tr>
+                                            <td class="ps-4 fw-semibold text-dark">
+                                                <span class="role-indicator"></span> @kv.Key
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <span class="badge bg-light text-dark border">@kv.Value users</span>
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <small class="text-muted">@percentage.ToString("F1")%</small>
+                                                <div class="progress" style="height: 4px; width: 60px; display: inline-flex; margin-left: 10px;">
+                                                    <div class="progress-bar" role="progressbar" style="width: @percentage%"></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox text-muted fs-1"></i>
+                            <p class="text-muted mt-2">No data available.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="content-card h-100">
+                <div class="card-header-custom border-0 pb-0">
+                    <h5 class="fw-bold mb-0">Role Composition</h5>
+                </div>
+                <div class="card-body-custom d-flex align-items-center justify-content-center position-relative">
+                    <canvas id="rolesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script id="rolesChartData" type="application/json">
+        @Json.Serialize(Model.UsersPerRole ?? new Dictionary<string, int>())
+    </script>
+
+    <script src="~/js/admin-overview.js" asp-append-version="true"></script>
+}
+

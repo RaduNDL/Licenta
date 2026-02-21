@@ -1,0 +1,133 @@
+﻿@page
+@model Licenta.Pages.IndexModel
+@{
+    ViewData["Title"] = "Home";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Home.css" asp-append-version="true" />
+}
+
+<div class="home">
+    <div class="home-shell">
+        <div class="home-hero">
+            <div class="home-left">
+                <div class="kicker">
+                    <span class="spark"></span>
+                    <span id="systemLine">System ready</span>
+                </div>
+
+                <h1 class="title">
+                    Welcome, <span class="shine" data-shine="@Model.DisplayName">@Model.DisplayName</span>
+                </h1>
+
+                <p class="subtitle">
+                    Your workspace is configured for <b>@Model.PrimaryRoleDisplay</b>.
+                    Use quick actions below to jump into today’s workflow.
+                </p>
+
+                <div class="cta-row">
+                    <a class="btn primary" href="@Model.PrimaryDestinationUrl">
+                        <span class="i">➜</span>
+                        <span>Go to Dashboard</span>
+                    </a>
+
+                    <button class="btn soft" type="button" id="btnQuick">
+                        <span class="i">⚡</span>
+                        <span>Quick Actions</span>
+                    </button>
+                </div>
+
+                <div class="meta">
+                    <div class="meta-card">
+                        <div class="meta-label">Local time</div>
+                        <div class="meta-value" id="localTime">--:--</div>
+                    </div>
+                    <div class="meta-card">
+                        <div class="meta-label">Today</div>
+                        <div class="meta-value" id="todayLabel">—</div>
+                    </div>
+                    <div class="meta-card">
+                        <div class="meta-label">Session</div>
+                        <div class="meta-value">
+                            <span class="status ok"></span>
+                            Active
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="home-right">
+                <div class="panel-card">
+                    <div class="panel-head">
+                        <div class="panel-title">Launchpad</div>
+                        <div class="panel-sub">Shortcuts tailored to your role</div>
+                    </div>
+
+                    <div class="cards">
+                        @foreach (var c in Model.LaunchCards)
+                        {
+                            <a class="card" href="@c.Url">
+                                <div class="card-ic">@c.Icon</div>
+                                <div class="card-body">
+                                    <div class="card-title">@c.Title</div>
+                                    <div class="card-sub">@c.Subtitle</div>
+                                </div>
+                                <div class="card-go">›</div>
+                            </a>
+                        }
+                    </div>
+
+                    <div class="hint">
+                        Tip: Press <kbd>Ctrl</kbd> + <kbd>K</kbd> for quick navigation.
+                    </div>
+                </div>
+
+                <div class="quick-panel" id="quickPanel" aria-hidden="true">
+                    <div class="quick-head">
+                        <div class="quick-title">Quick Actions</div>
+                        <button class="x" type="button" id="btnClose" aria-label="Close">×</button>
+                    </div>
+
+                    <div class="quick-body">
+                        <div class="search">
+                            <span class="sicon">⌕</span>
+                            <input id="quickSearch" type="text" placeholder="Search pages…" autocomplete="off" />
+                        </div>
+
+                        <div class="list" id="quickList">
+                            @foreach (var l in Model.QuickLinks)
+                            {
+                                <a class="li" href="@l.Url" data-title="@l.Title.ToLowerInvariant()">
+                                    <span class="li-ic">@l.Icon</span>
+                                    <span class="li-t">@l.Title</span>
+                                    <span class="li-k">@l.KeyHint</span>
+                                </a>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="quick-foot">
+                        <span class="muted">Esc to close</span>
+                        <span class="muted">Enter to open first</span>
+                    </div>
+                </div>
+
+                <div class="scrim" id="scrim" aria-hidden="true"></div>
+            </div>
+        </div>
+
+        <footer class="foot">
+            <div class="foot-left">© @DateTime.Now.Year MedFlow</div>
+            <div class="foot-right">
+                <span class="chip">Secure</span>
+                <span class="chip">Audit</span>
+                <span class="chip">Notifications</span>
+            </div>
+        </footer>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/Home.js" asp-append-version="true"></script>
+}

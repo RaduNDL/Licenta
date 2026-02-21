@@ -1,0 +1,88 @@
+﻿@page
+@model Licenta.Pages.Doctor.Appointments.IndexModel
+@{
+    ViewData["Title"] = "Schedule";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctorappointment.css" />
+}
+
+<div class="appointments-container">
+    <div class="calendar-header">
+        <div class="date-display">
+            <i class="bi bi-calendar-date text-primary"></i>
+            <span>@Model.SelectedDate.ToString("MMMM dd, yyyy")</span>
+            <span class="badge bg-light text-dark border ms-2">DOCTOR</span>
+        </div>
+
+        <div class="d-flex gap-3">
+            <div class="btn-group nav-toolbar shadow-sm">
+                <a class="btn btn-outline-secondary"
+                   asp-route-date="@Model.SelectedDate.AddDays(-1).ToString("yyyy-MM-dd")">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+
+                <a class="btn btn-outline-secondary"
+                   asp-route-date="@DateTime.Today.ToString("yyyy-MM-dd")">
+                    Today
+                </a>
+
+                <a class="btn btn-outline-secondary"
+                   asp-route-date="@Model.SelectedDate.AddDays(1).ToString("yyyy-MM-dd")">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string status && !string.IsNullOrWhiteSpace(status))
+    {
+        <div class="alert alert-info border-0 shadow-sm">@status</div>
+    }
+
+    @if (Model.Items == null || !Model.Items.Any())
+    {
+        <div class="alert alert-secondary border-0 shadow-sm">No appointments for this day.</div>
+    }
+    else
+    {
+        <div class="timeline-container">
+            @foreach (var a in Model.Items)
+            {
+                <div class="appt-card mb-3">
+                    <div class="appt-info">
+                        <h5 class="mb-1">@a.PatientName</h5>
+                        <div class="appt-meta">
+                            <span>@a.TimeLocal</span> • @a.Reason
+                        </div>
+                        <div class="small mt-2">
+                            <span class="badge bg-@a.StageCss">@a.StageLabel</span>
+                            <span class="ms-2 status-badge @a.Status.ToString().ToLower()">@a.Status</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 align-items-center justify-content-end flex-wrap">
+                        @if (a.CanStart)
+                        {
+                            <form method="post" asp-page-handler="Start">
+                                <input type="hidden" name="id" value="@a.Id" />
+                                <input type="hidden" name="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+                                <button class="btn btn-sm btn-outline-primary">Start consult</button>
+                            </form>
+                        }
+
+                        @if (a.CanFinish)
+                        {
+                            <form method="post" asp-page-handler="Finish">
+                                <input type="hidden" name="id" value="@a.Id" />
+                                <input type="hidden" name="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+                                <button class="btn btn-sm btn-outline-success">Finish</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

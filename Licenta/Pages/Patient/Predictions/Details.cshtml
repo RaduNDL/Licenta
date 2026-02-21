@@ -1,0 +1,105 @@
+﻿@page "{id:guid}"
+@model Licenta.Pages.Patient.Predictions.DetailsModel
+@{
+    ViewData["Title"] = "Prediction Details";
+
+    string resultLabel = Model.Item?.ResultLabel ?? "-";
+    string medicalType = Model.MedicalType;
+    string riskLevel = Model.RiskLevel;
+    string medicalNote = Model.MedicalNote;
+    string confidenceText = Model.Item?.Probability.HasValue == true ? Model.Item!.Probability!.Value.ToString("P2") : "-";
+
+    string riskClass = riskLevel.Equals("High", StringComparison.OrdinalIgnoreCase) ? "text-danger fw-bold"
+                     : riskLevel.Equals("Med", StringComparison.OrdinalIgnoreCase) ? "text-warning fw-bold"
+                     : riskLevel.Equals("Low", StringComparison.OrdinalIgnoreCase) ? "text-success fw-bold"
+                     : "text-muted";
+
+    string typeClass = medicalType.Equals("Malignant", StringComparison.OrdinalIgnoreCase) ? "badge bg-danger"
+                     : medicalType.Equals("Benign", StringComparison.OrdinalIgnoreCase) ? "badge bg-success"
+                     : "badge bg-secondary";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/PredictionDetails.css" asp-append-version="true" />
+}
+
+<div class="details-container">
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="p-4">
+            <div class="alert alert-info m-0">@status</div>
+        </div>
+    }
+
+    @if (Model.Item == null)
+    {
+        <div class="p-4"><div class="alert alert-danger m-0">Prediction not found.</div></div>
+        <div class="action-bar">
+            <a class="btn btn-secondary" asp-page="/Patient/Predictions/Index">Back</a>
+        </div>
+    }
+    else
+    {
+        <div class="details-header">
+            <div class="header-content">
+                <h2>Analysis Report</h2>
+                <div class="timestamp">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    @Model.Item.CreatedAtUtc.ToLocalTime().ToString("f")
+                </div>
+            </div>
+            <div class="model-badge">
+                Validated by Doctor
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="result-section" style="display:block;">
+                <div class="row align-items-center mb-4">
+                    <div class="col-md-8">
+                        <div class="stat-label mb-1">Diagnosis</div>
+                        <div class="display-6 fw-bold text-dark">@resultLabel</div>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <span class="@typeClass fs-5 px-3 py-2">@medicalType</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <span class="stat-label">Risk Assessment</span>
+                        <div class="@riskClass fs-5 mt-1">@riskLevel Risk</div>
+                    </div>
+                    <div class="col-6 text-end">
+                        <span class="stat-label">System Confidence</span>
+                        <div class="fw-bold fs-5 mt-1">@confidenceText</div>
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(medicalNote))
+            {
+                <div class="notes-section">
+                    <span class="stat-label" style="margin-bottom: 12px; display:block;">Doctor's Interpretation</span>
+                    <div class="notes-content">
+                        @medicalNote
+                    </div>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.Item.AttachmentPath))
+            {
+                <div class="image-preview-area">
+                    <a class="btn-image" href="@Model.Item.AttachmentPath" target="_blank" rel="noopener noreferrer">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        View Source Image
+                    </a>
+                </div>
+            }
+        </div>
+
+        <div class="action-bar">
+            <a class="btn btn-secondary" asp-page="/Patient/Predictions/Index">Back to List</a>
+        </div>
+    }
+</div>

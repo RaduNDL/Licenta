@@ -1,0 +1,67 @@
+﻿@page
+@model Licenta.Pages.Assistant.Appointments.RescheduleRequestsModel
+@{
+    ViewData["Title"] = "Reschedule requests";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/RescheduleRequest.css" />
+}
+
+<div class="reschedule-container">
+    <div class="page-header">
+        <h3 class="page-title">Reschedule Requests</h3>
+    </div>
+
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info">@status</div>
+    }
+
+    @if (!Model.Items.Any())
+    {
+        <div class="empty-state">
+            <p>No active reschedule requests found.</p>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Created</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var it in Model.Items)
+                        {
+                            <tr>
+                                <td>@it.Created</td>
+                                <td>@it.Patient</td>
+                                <td>@it.Doctor</td>
+                                <td><span class="badge">@it.Status</span></td>
+                                <td class="text-end">
+                                    <a class="btn btn-primary"
+                                       asp-page="/Assistant/Appointments/RescheduleDetails"
+                                       asp-route-requestId="@it.Id">
+                                        Review
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/RescheduleRequest.js"></script>
+}

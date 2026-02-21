@@ -1,0 +1,60 @@
+﻿@page "{requestId:int}"
+@model Licenta.Pages.Doctor.Appointments.RescheduleReviewModel
+@{
+    ViewData["Title"] = "Reschedule review";
+}
+
+<div class="container py-3">
+    <h3 class="fw-bold mb-3">Reschedule review</h3>
+
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info border-0 shadow-sm">@status</div>
+    }
+
+    @if (!Model.CanView)
+    {
+        <div class="alert alert-warning border-0 shadow-sm">You cannot view this request.</div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <div class="mb-2"><strong>Patient:</strong> @Model.PatientName</div>
+                <div class="mb-2"><strong>Old time:</strong> @Model.OldTime</div>
+                <div class="mb-2"><strong>Selected:</strong> @Model.SelectedTime</div>
+                <div class="mb-2"><strong>Location:</strong> @Model.Location</div>
+                <div class="mb-0"><strong>Reason:</strong> @Model.Reason</div>
+            </div>
+        </div>
+
+        <form method="post" asp-page-handler="Approve" class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">Approve</h6>
+                <div class="mb-3">
+                    <label class="form-label">Decision note (optional)</label>
+                    <input class="form-control" asp-for="DecisionNote" />
+                    <span class="text-danger" asp-validation-for="DecisionNote"></span>
+                </div>
+                <button class="btn btn-success" type="submit">Approve</button>
+                <a asp-page="/Doctor/Appointments/RescheduleApprovals" class="btn btn-outline-secondary ms-2">Back</a>
+            </div>
+        </form>
+
+        <form method="post" asp-page-handler="Reject" class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">Reject</h6>
+                <div class="mb-3">
+                    <label class="form-label">Rejection reason</label>
+                    <input class="form-control" asp-for="DecisionNote" />
+                    <span class="text-danger" asp-validation-for="DecisionNote"></span>
+                </div>
+                <button class="btn btn-danger" type="submit">Reject</button>
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

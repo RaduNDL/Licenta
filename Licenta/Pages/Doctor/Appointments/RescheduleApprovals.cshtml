@@ -1,0 +1,53 @@
+﻿@page
+@model Licenta.Pages.Doctor.Appointments.RescheduleApprovalsModel
+@{
+    ViewData["Title"] = "Reschedule approvals";
+}
+
+<div class="container py-3">
+    <h3 class="fw-bold mb-3">Reschedule approvals</h3>
+
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info border-0 shadow-sm">@status</div>
+    }
+
+    @if (!Model.Items.Any())
+    {
+        <div class="alert alert-secondary border-0 shadow-sm">No pending approvals.</div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Created</th>
+                            <th>Patient</th>
+                            <th>Old time</th>
+                            <th>Selected</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var it in Model.Items)
+                        {
+                            <tr>
+                                <td>@it.Created</td>
+                                <td>@it.Patient</td>
+                                <td>@it.OldTime</td>
+                                <td>@it.NewTime</td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-primary" asp-page="/Doctor/Appointments/RescheduleReview" asp-route-requestId="@it.Id">
+                                        Review
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

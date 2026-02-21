@@ -1,0 +1,139 @@
+﻿@page
+@model Licenta.Pages.Assistant.Appointments.ProcessModel
+@{
+    ViewData["Title"] = "Process Request";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/assistant_process.css" asp-append-version="true" />
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex align-items-center mb-4">
+        <a asp-page="/Assistant/Appointments/Requests" class="btn btn-outline-secondary btn-sm me-3 shadow-sm">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="fw-bold text-dark mb-0">Process Appointment</h2>
+            <p class="text-muted mb-0 small">Review details and schedule or escalate.</p>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i> @status
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold text-primary">
+                        <i class="bi bi-person-vcard me-2"></i>Request Details
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <label class="text-xs text-uppercase text-muted fw-bold mb-1">Patient</label>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-circle me-2">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <span class="fw-bold text-dark">@Model.PatientName</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-xs text-uppercase text-muted fw-bold mb-1">Requested Slot</label>
+                        <div class="d-flex align-items-center text-dark">
+                            <i class="bi bi-calendar-event me-2 text-secondary"></i>
+                            <span class="fw-semibold">@Model.PreferredDisplay</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="text-xs text-uppercase text-muted fw-bold mb-1">Reason</label>
+                        <div class="p-3 bg-light rounded-3 border">
+                            <p class="mb-0 text-sm">@Model.Reason</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold text-dark">
+                        <i class="bi bi-gear-fill me-2"></i>Action Required
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="processForm">
+                        <input type="hidden" asp-for="AttachmentId" />
+                        <div asp-validation-summary="All" class="alert alert-danger mb-4" role="alert" style="display:none;"></div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="SelectedDoctorId" class="form-label fw-bold small text-uppercase text-muted">Assign Doctor</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-heart-pulse text-muted"></i></span>
+                                    <select asp-for="SelectedDoctorId" asp-items="Model.Doctors" class="form-select border-start-0 ps-0">
+                                    </select>
+                                </div>
+                                <span asp-validation-for="SelectedDoctorId" class="text-danger text-xs"></span>
+                            </div>
+
+                            <div class="col-md-6 mt-3 mt-md-0">
+                                <label asp-for="SelectedLocalIso" class="form-label fw-bold small text-uppercase text-muted">Select Time Slot</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-clock text-muted"></i></span>
+                                    <select asp-for="SelectedLocalIso" class="form-select border-start-0 ps-0" required>
+                                        @foreach (var s in Model.AvailableSlots)
+                                        {
+                                            <option value="@s.LocalIso">@s.Display</option>
+                                        }
+                                    </select>
+                                </div>
+                                <span asp-validation-for="SelectedLocalIso" class="text-danger text-xs"></span>
+
+                                @if (!Model.AvailableSlots.Any())
+                                {
+                                    <div class="alert alert-warning d-flex align-items-center mt-2 py-2 px-3 mb-0">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        <small>No slots available for this doctor.</small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex pt-3 border-top">
+                            <button type="submit"
+                                    asp-page-handler="ScheduleNow"
+                                    disabled="@(!Model.AvailableSlots.Any())"
+                                    class="btn btn-success px-4 shadow-sm flex-fill">
+                                <i class="bi bi-check-circle-fill me-2"></i>Confirm & Schedule
+                            </button>
+
+                            <button type="submit"
+                                    asp-page-handler="SendToDoctor"
+                                    disabled="@(!Model.AvailableSlots.Any())"
+                                    class="btn btn-warning text-white px-4 shadow-sm flex-fill">
+                                <i class="bi bi-send-fill me-2"></i>Escalate for Approval
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/assistant_process.js" asp-append-version="true"></script>
+}
