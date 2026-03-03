@@ -17,14 +17,14 @@ namespace Licenta.Models
     {
         public Guid Id { get; set; }
 
-        public string? PatientId { get; set; }
-        public ApplicationUser? Patient { get; set; }
+        public Guid PatientId { get; set; }
+        public PatientProfile Patient { get; set; } = null!;
 
         public string? AssistantId { get; set; }
         public ApplicationUser? Assistant { get; set; }
 
-        public string? DoctorId { get; set; }
-        public ApplicationUser? Doctor { get; set; }
+        public Guid DoctorProfileId { get; set; }
+        public DoctorProfile DoctorProfile { get; set; } = null!;
 
         public string Subject { get; set; } = string.Empty;
         public string Body { get; set; } = string.Empty;

@@ -208,3 +208,39 @@ hr {
     border-radius: var(--radius-md);
     font-weight: 500;
 }
+@media (max-width: 992px) {
+    .request-card {
+        flex-direction: column;
+    }
+
+    .request-info-panel {
+        padding: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .request-page-wrapper {
+        padding: 1rem;
+    }
+
+    .request-form-panel {
+        padding: 1.5rem;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .btn-modern {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .icon-header {
+        font-size: 2.5rem;
+    }
+
+    .form-header h2 {
+        font-size: 1.5rem;
+    }
+}

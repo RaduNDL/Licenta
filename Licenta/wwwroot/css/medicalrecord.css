@@ -371,3 +371,92 @@
     width: 100%;
     border-radius: 12px;
 }
+@media (max-width: 768px) {
+    .mr-shell {
+        padding: 12px 10px;
+    }
+
+    .mr-topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .mr-title {
+        font-size: 1.5rem;
+    }
+
+    .mr-actions {
+        width: 100%;
+    }
+
+    .mr-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .mr-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .mr-card-sticky {
+        position: static;
+    }
+
+    .mr-kpis {
+        grid-template-columns: 1fr;
+    }
+
+    .mr-meta-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        padding: 10px 0;
+    }
+
+    .mr-meta-label {
+        font-size: 0.8rem;
+    }
+
+    .mr-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .mr-accept-modal {
+        width: calc(100% - 20px);
+        padding: 14px;
+    }
+
+    .mr-accept-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .mr-accept-icon {
+        margin-right: 0;
+        margin-bottom: 12px;
+    }
+
+    .mr-qa-item {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .mr-qa-ico {
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .mr-orb {
+        width: 280px;
+        height: 280px;
+    }
+
+    .mr-title-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

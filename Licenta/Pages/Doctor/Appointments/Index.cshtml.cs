@@ -145,7 +145,9 @@ namespace Licenta.Pages.Doctor.Appointments
                     patientUser,
                     NotificationType.Appointment,
                     "Consultation started",
-                    $"Your consultation started at <b>{appt.ScheduledAt.ToLocalTime():HH:mm}</b>.",
+                    $"Your consultation with Dr. {user.FullName} has started.",
+                    actionUrl: "/Patient/Appointments/Index",
+                    actionText: "View Appointments",
                     relatedEntity: "Appointment",
                     relatedEntityId: appt.Id.ToString(),
                     sendEmail: false
@@ -198,7 +200,9 @@ namespace Licenta.Pages.Doctor.Appointments
                     patientUser,
                     NotificationType.Appointment,
                     "Appointment completed",
-                    "Your appointment was marked as completed.",
+                    $"Your appointment with Dr. {user.FullName} was marked as completed.",
+                    actionUrl: "/Patient/Visits/History",
+                    actionText: "View History",
                     relatedEntity: "Appointment",
                     relatedEntityId: appt.Id.ToString(),
                     sendEmail: false

@@ -2,6 +2,7 @@
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -13,10 +14,16 @@ using System.Threading.Tasks;
 namespace Licenta.Pages.Patient.Appointments
 {
     [Authorize(Roles = "Patient")]
-    public class IndexModel(AppDbContext db, UserManager<ApplicationUser> userManager) : PageModel
+    public class IndexModel : PageModel
     {
-        private readonly AppDbContext _db = db;
-        private readonly UserManager<ApplicationUser> _userManager = userManager;
+        private readonly AppDbContext _db;
+        private readonly UserManager<ApplicationUser> _userManager;
+
+        public IndexModel(AppDbContext db, UserManager<ApplicationUser> userManager)
+        {
+            _db = db;
+            _userManager = userManager;
+        }
 
         public class RequestRowVm
         {
@@ -25,9 +32,8 @@ namespace Licenta.Pages.Patient.Appointments
             public AttachmentStatus Status { get; set; }
             public DateTime? ValidatedAtUtc { get; set; }
 
-            public string DoctorName { get; set; } = "Pending assignment";
+            public string DoctorName { get; set; } = "-";
             public string RequestedSlotDisplay { get; set; } = "-";
-            public string SuggestedSlotDisplay { get; set; } = "-";
             public string ScheduledSlotDisplay { get; set; } = "-";
             public string NotesDisplay { get; set; } = "-";
             public string Reason { get; set; } = "-";
@@ -58,13 +64,13 @@ namespace Licenta.Pages.Patient.Appointments
             public Dictionary<string, string> Parts { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         }
 
-        public List<RequestRowVm> Requests { get; set; } = [];
-        public List<AppointmentRowVm> Appointments { get; set; } = [];
+        public List<RequestRowVm> Requests { get; set; } = new();
+        public List<AppointmentRowVm> Appointments { get; set; } = new();
 
         public async Task OnGetAsync()
         {
-            Requests = [];
-            Appointments = [];
+            Requests = new List<RequestRowVm>();
+            Appointments = new List<AppointmentRowVm>();
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -88,22 +94,18 @@ namespace Licenta.Pages.Patient.Appointments
 
             foreach (var a in reqs)
             {
-                var doctorName = a.Doctor?.User?.FullName ?? a.Doctor?.User?.Email ?? "Pending assignment";
+                var doctorName = a.Doctor?.User?.FullName ?? a.Doctor?.User?.Email ?? "-";
 
                 var parsed = ParseValidationNotes(a.ValidationNotes);
 
                 var requestedIso = ExtractRequestedIso(parsed, a.ValidationNotes);
-                var suggestedIso = ExtractSuggestedIso(parsed, a.ValidationNotes);
                 var scheduledIso = ExtractScheduledIso(parsed, a.ValidationNotes);
 
                 var requestedDisplay = !string.IsNullOrWhiteSpace(requestedIso) ? FormatLocalIsoForDisplay(requestedIso) : "-";
-                var suggestedDisplay = !string.IsNullOrWhiteSpace(suggestedIso) ? FormatLocalIsoForDisplay(suggestedIso) : "-";
                 var scheduledDisplay = !string.IsNullOrWhiteSpace(scheduledIso) ? FormatLocalIsoForDisplay(scheduledIso) : "-";
 
-                var awaitingDoctor = IsAwaitingDoctorApproval(parsed, a.ValidationNotes);
-
-                var (label, css, icon) = MapRequestState(a.Status, awaitingDoctor, parsed, a.ValidationNotes);
-                var notes = BuildNotesDisplay(a.Status, awaitingDoctor, parsed, a.ValidationNotes, scheduledDisplay);
+                var (label, css, icon) = MapRequestState(a.Status, parsed, a.ValidationNotes);
+                var notes = BuildNotesDisplay(a.Status, parsed, a.ValidationNotes, scheduledDisplay);
 
                 Requests.Add(new RequestRowVm
                 {
@@ -113,7 +115,6 @@ namespace Licenta.Pages.Patient.Appointments
                     ValidatedAtUtc = a.ValidatedAtUtc,
                     DoctorName = doctorName,
                     RequestedSlotDisplay = requestedDisplay,
-                    SuggestedSlotDisplay = suggestedDisplay,
                     ScheduledSlotDisplay = scheduledDisplay,
                     NotesDisplay = notes,
                     Reason = string.IsNullOrWhiteSpace(a.PatientNotes) ? "-" : a.PatientNotes,
@@ -175,45 +176,29 @@ namespace Licenta.Pages.Patient.Appointments
             };
         }
 
-        private static (string label, string css, string icon) MapRequestState(AttachmentStatus status, bool awaitingDoctor, ParsedNotes parsed, string? rawNotes)
+        private static (string label, string css, string icon) MapRequestState(AttachmentStatus status, ParsedNotes parsed, string? rawNotes)
         {
             if (status == AttachmentStatus.Rejected)
                 return ("Rejected", "status-rejected", "fa-circle-xmark");
 
             if (status == AttachmentStatus.Validated)
             {
-                if (HasMarker(parsed, rawNotes, "SCHEDULED_BY_ASSISTANT"))
-                    return ("Scheduled", "status-accepted", "fa-circle-check");
-
                 if (HasMarker(parsed, rawNotes, "APPROVED_BY_DOCTOR"))
                     return ("Approved", "status-accepted", "fa-circle-check");
 
                 if (HasMarker(parsed, rawNotes, "REJECTED_BY_DOCTOR"))
                     return ("Rejected", "status-rejected", "fa-circle-xmark");
 
-                if (HasMarker(parsed, rawNotes, "REJECTED_BY_ASSISTANT"))
-                    return ("Rejected", "status-rejected", "fa-circle-xmark");
-
-                return ("Processed", "status-accepted", "fa-circle-check");
+                return ("Approved", "status-accepted", "fa-circle-check");
             }
 
-            if (awaitingDoctor)
-                return ("Awaiting doctor approval", "status-pending", "fa-user-doctor");
-
-            return ("Pending review", "status-pending", "fa-clock");
+            return ("Pending doctor review", "status-pending", "fa-user-doctor");
         }
 
-        private static string BuildNotesDisplay(AttachmentStatus status, bool awaitingDoctor, ParsedNotes parsed, string? rawNotes, string scheduledDisplay)
+        private static string BuildNotesDisplay(AttachmentStatus status, ParsedNotes parsed, string? rawNotes, string scheduledDisplay)
         {
             if (status == AttachmentStatus.Validated)
             {
-                if (HasMarker(parsed, rawNotes, "SCHEDULED_BY_ASSISTANT"))
-                {
-                    if (!string.IsNullOrWhiteSpace(scheduledDisplay) && scheduledDisplay != "-")
-                        return $"Scheduled by clinic staff for {scheduledDisplay}.";
-                    return "Scheduled by clinic staff.";
-                }
-
                 if (HasMarker(parsed, rawNotes, "APPROVED_BY_DOCTOR"))
                 {
                     if (!string.IsNullOrWhiteSpace(scheduledDisplay) && scheduledDisplay != "-")
@@ -224,10 +209,7 @@ namespace Licenta.Pages.Patient.Appointments
                 if (HasMarker(parsed, rawNotes, "REJECTED_BY_DOCTOR"))
                     return "Rejected by doctor.";
 
-                if (HasMarker(parsed, rawNotes, "REJECTED_BY_ASSISTANT"))
-                    return "Rejected by clinic.";
-
-                return "Processed by clinic.";
+                return "Approved.";
             }
 
             if (status == AttachmentStatus.Rejected)
@@ -235,21 +217,10 @@ namespace Licenta.Pages.Patient.Appointments
                 if (HasMarker(parsed, rawNotes, "REJECTED_BY_DOCTOR"))
                     return "Rejected by doctor.";
 
-                if (HasMarker(parsed, rawNotes, "REJECTED_BY_ASSISTANT"))
-                    return "Rejected by clinic.";
-
                 return "Rejected.";
             }
 
-            if (awaitingDoctor)
-                return "Forwarded to doctor for approval.";
-
-            return "Your request is waiting for clinic review.";
-        }
-
-        private static bool IsAwaitingDoctorApproval(ParsedNotes parsed, string? rawNotes)
-        {
-            return HasMarker(parsed, rawNotes, "AWAITING_DOCTOR_APPROVAL");
+            return "Your request is waiting for the doctor's review.";
         }
 
         private static bool HasMarker(ParsedNotes parsed, string? rawNotes, string marker)
@@ -275,24 +246,6 @@ namespace Licenta.Pages.Patient.Appointments
             if (idx < 0) return null;
 
             var v = rawNotes[(idx + "Selected:".Length)..].Trim();
-            if (v.Contains('|'))
-                v = v.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
-
-            return string.IsNullOrWhiteSpace(v) ? null : v;
-        }
-
-        private static string? ExtractSuggestedIso(ParsedNotes parsed, string? rawNotes)
-        {
-            if (parsed.Parts.TryGetValue("Suggested", out var v1) && !string.IsNullOrWhiteSpace(v1))
-                return v1.Trim();
-
-            if (string.IsNullOrWhiteSpace(rawNotes))
-                return null;
-
-            var idx = rawNotes.IndexOf("Suggested:", StringComparison.OrdinalIgnoreCase);
-            if (idx < 0) return null;
-
-            var v = rawNotes[(idx + "Suggested:".Length)..].Trim();
             if (v.Contains('|'))
                 v = v.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
 

@@ -300,3 +300,98 @@ body {
     text-decoration: none;
     margin: 0 2rem 2rem;
 }
+@media (max-width: 768px) {
+    .details-container {
+        margin: 1rem;
+        border-radius: 12px;
+    }
+
+    .details-header {
+        flex-direction: column;
+        padding: 1.5rem;
+        gap: 1.25rem;
+        text-align: center;
+    }
+
+    .header-content h2 {
+        font-size: 1.4rem;
+    }
+
+    .timestamp {
+        justify-content: center;
+    }
+
+    .model-badge {
+        width: fit-content;
+        margin: 0 auto;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .result-section {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .stat-card {
+        padding: 1.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .context-box {
+        padding: 15px;
+        font-size: 0.9rem;
+    }
+
+    .btn-image {
+        display: flex;
+        justify-content: center;
+        margin: 0 1rem 1.5rem;
+        font-size: 0.9rem;
+    }
+
+    .notes-section {
+        padding: 1.5rem;
+    }
+
+    .notes-content {
+        font-size: 0.85rem;
+        overflow-x: auto;
+    }
+
+    .action-bar {
+        padding: 1rem 1.5rem;
+        justify-content: center;
+    }
+
+    .btn-secondary {
+        width: 100%;
+        text-align: center;
+    }
+
+    .gauge-container {
+        width: 100px;
+        height: 50px;
+    }
+
+    .gauge-arc {
+        width: 100px;
+        height: 100px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content h2 {
+        font-size: 1.2rem;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+    }
+}

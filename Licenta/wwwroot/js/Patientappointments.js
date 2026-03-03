@@ -1,6 +1,4 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
-
-
     const searchInput = document.getElementById('appointmentSearch');
     const cards = document.querySelectorAll('.appt-card');
 
@@ -20,7 +18,6 @@
         });
     }
 
-
     const noteElements = document.querySelectorAll('.raw-notes');
 
     noteElements.forEach(el => {
@@ -38,7 +35,6 @@
                                 <span>Suggested Date: <strong>${datePart}</strong></span>
                              </div>`;
                 } else {
-                    
                     const cleanText = part.replace(/_/g, ' ');
                     html += `<div class="note-text">${cleanText}</div>`;
                 }

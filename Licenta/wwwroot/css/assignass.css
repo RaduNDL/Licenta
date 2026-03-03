@@ -1,0 +1,237 @@
+﻿:root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --bg-main: #f9fafb;
+    --card-bg: #ffffff;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --danger: #ef4444;
+    --success-bg: #f0fdf4;
+    --success-text: #166534;
+}
+
+.assignments-wrapper {
+    background-color: var(--bg-main);
+    padding: 2rem 1rem;
+    min-height: 100vh;
+}
+
+.page-header-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2.5rem;
+    gap: 1rem;
+}
+
+.alert-modern {
+    background: var(--success-bg);
+    color: var(--success-text);
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+}
+
+.assignments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.doctor-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+    .doctor-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+
+.card-top {
+    padding: 1.5rem;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+}
+
+.doctor-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar-box {
+    width: 48px;
+    height: 48px;
+    background: #eef2ff;
+    color: var(--primary);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.doctor-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.specialty-badge {
+    font-size: 0.75rem;
+    color: var(--primary);
+    background: #eef2ff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.card-content {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.section-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.assistant-list {
+    margin-bottom: 1.5rem;
+    min-height: 50px;
+}
+
+.assistant-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+    background: #fbfbfc;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+}
+
+.ast-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.btn-remove {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    transition: 0.2s;
+    padding: 0.2rem 0.4rem;
+}
+
+    .btn-remove:hover {
+        color: var(--danger);
+        transform: scale(1.1);
+    }
+
+.empty-assistants {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 1rem;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+}
+
+.assign-action {
+    margin-top: auto;
+    padding-top: 1rem;
+}
+
+.assign-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.form-select-modern {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    outline: none;
+    transition: 0.2s;
+}
+
+    .form-select-modern:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+    }
+
+.btn-assign {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+    .btn-assign:hover {
+        background: var(--primary-hover);
+    }
+
+@media (max-width: 768px) {
+    .assignments-wrapper {
+        padding: 1rem 0.5rem;
+    }
+
+    .page-header-modern {
+        flex-direction: column;
+        align-items: stretch;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .assignments-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .doctor-card {
+        margin-bottom: 0.5rem;
+    }
+
+    .card-top, .card-content {
+        padding: 1rem;
+    }
+
+    .assign-group {
+        flex-direction: row;
+    }
+
+    .btn-assign {
+        height: 42px; 
+    }
+
+    .form-select-modern {
+        height: 42px;
+    }
+}

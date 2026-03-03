@@ -1,5 +1,6 @@
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,11 +17,13 @@ namespace Licenta.Pages.Doctor.Attachments
     {
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly INotificationService _notifier;
 
-        public ValidateModel(AppDbContext db, UserManager<ApplicationUser> userManager)
+        public ValidateModel(AppDbContext db, UserManager<ApplicationUser> userManager, INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
+            _notifier = notifier;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -56,6 +59,22 @@ namespace Licenta.Pages.Doctor.Attachments
                 att.Status = AttachmentStatus.Validated;
                 att.ValidatedAtUtc = DateTime.UtcNow;
                 await _db.SaveChangesAsync(ct);
+
+                var patientUser = att.Patient?.User;
+                if (patientUser != null)
+                {
+                    await _notifier.NotifyAsync(
+                        patientUser,
+                        NotificationType.Document,
+                        "Document Validated",
+                        $"Dr. {user.FullName} has validated your uploaded document.",
+                        actionUrl: $"/Patient/Attachments/Details?id={att.Id}",
+                        actionText: "View Details",
+                        relatedEntity: "MedicalAttachment",
+                        relatedEntityId: att.Id.ToString(),
+                        sendEmail: false
+                    );
+                }
             }
 
             return RedirectToPage("/Doctor/Predictions/FromAttachment", new { id = att.Id });
@@ -77,7 +96,6 @@ namespace Licenta.Pages.Doctor.Attachments
             if (att.DoctorId == null || att.DoctorId == Guid.Empty)
             {
                 att.DoctorId = doctorId;
-                att.AssignedAtUtc = DateTime.UtcNow;
                 await _db.SaveChangesAsync(ct);
             }
 

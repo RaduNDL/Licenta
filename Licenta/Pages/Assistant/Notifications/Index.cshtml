@@ -41,7 +41,8 @@
                         <th width="15%">Date</th>
                         <th width="10%">Type</th>
                         <th width="25%">Title</th>
-                        <th width="50%">Message</th>
+                        <th width="40%">Message</th>
+                        <th width="10%">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -61,6 +62,14 @@
                             </td>
                             <td>
                                 <div class="notification-message">@Html.Raw(n.Message)</div>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(n.ActionUrl))
+                                {
+                                    <a class="btn btn-sm btn-outline-info" href="@n.ActionUrl">
+                                        @(string.IsNullOrWhiteSpace(n.ActionText) ? "Open" : n.ActionText)
+                                    </a>
+                                }
                             </td>
                         </tr>
                     }

@@ -1,0 +1,117 @@
+﻿:root {
+    --primary-color: #3b82f6; 
+    --primary-hover: #2563eb;
+    --bg-gradient: linear-gradient(135deg, #f0f2f5 0%, #eef2f6 100%);
+    --card-bg: #ffffff;
+    --input-bg: #f8fafc;
+    --transition-speed: 0.3s;
+}
+
+body {
+    background: #f3f4f6; 
+}
+
+.profile-page-wrapper {
+    background: var(--bg-gradient);
+    min-height: 90vh;
+}
+
+.profile-card, .form-card {
+    background: var(--card-bg);
+    border-radius: 1.5rem; 
+    overflow: hidden;
+}
+
+.profile-card {
+    background: linear-gradient(to bottom right, #ffffff, #f8fbff);
+}
+
+.avatar-circle {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, var(--primary-color), #60a5fa);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 700;
+    border: 5px solid white;
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+}
+
+.divider {
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.greeting-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: transform var(--transition-speed);
+}
+
+    .greeting-box:hover {
+        transform: translateY(-3px);
+    }
+
+.form-floating > .form-control {
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    background-color: var(--input-bg);
+    padding-top: 1.625rem;
+    padding-bottom: 0.625rem;
+    height: calc(3.5rem + 2px);
+    line-height: 1.25;
+}
+
+    .form-floating > .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        background-color: #fff;
+    }
+
+.form-floating > label {
+    padding: 1rem 0.75rem;
+}
+
+.security-alert {
+    background: #f0f9ff;
+    border: 1px dashed #bae6fd;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all var(--transition-speed);
+}
+
+    .btn-primary:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
+    }
+
+.hover-lift {
+    transition: transform 0.2s ease;
+}
+
+    .hover-lift:active {
+        transform: scale(0.98);
+    }
+
+.fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

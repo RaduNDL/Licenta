@@ -95,7 +95,6 @@ namespace Licenta.Pages
                     new() { Title = "Admin Panel", Subtitle = "System overview", Url = "/Administrator/AdminPanel/Index", Icon = "🛡️" },
                     new() { Title = "Users", Subtitle = "Accounts & roles", Url = "/Administrator/Users/Index", Icon = "👤" },
                     new() { Title = "Settings", Subtitle = "Clinic configuration", Url = "/Administrator/Settings/Index", Icon = "⚙️" },
-                    // Corectat din /Administrator/Audit/Index în /Administrator/Audit
                     new() { Title = "Audit Logs", Subtitle = "Security trail", Url = "/Administrator/Audit", Icon = "🧾" }
                 ],
                 "Patient" =>
@@ -103,7 +102,7 @@ namespace Licenta.Pages
                     new() { Title = "My Appointments", Subtitle = "Schedule & history", Url = "/Patient/Appointments/Index", Icon = "📅" },
                     new() { Title = "My Documents", Subtitle = "Attachments & results", Url = "/Patient/Attachments/Index", Icon = "📄" },
                     new() { Title = "Medical Records", Subtitle = "Visit details", Url = "/Patient/MedicalRecords/Index", Icon = "🩻" },
-                    new() { Title = "Messages", Subtitle = "Clinic communication", Url = "/Patient/Messages/Index", Icon = "💬" }
+                    new() { Title = "Messages", Subtitle = "Clinic communication", Url = "/Patient/Messages/Inbox", Icon = "💬" }
                 ],
                 _ =>
                 [

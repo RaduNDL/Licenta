@@ -89,12 +89,12 @@ namespace Licenta.Pages.Patient
                 .CountAsync();
 
             ActiveRequestsCount = await _context.PatientMessageRequests
-                .AsNoTracking()
-                .Where(r =>
-                    r.PatientId == user.Id &&
-                    r.Status != PatientMessageRequestStatus.Closed &&
-                    r.Status != PatientMessageRequestStatus.RejectedByDoctor)
-                .CountAsync();
+                    .AsNoTracking()
+                    .Where(r =>
+                        r.PatientId == patientProfile.Id &&
+                        r.Status != PatientMessageRequestStatus.Closed &&
+                        r.Status != PatientMessageRequestStatus.RejectedByDoctor)
+                    .CountAsync();
 
             ActiveRescheduleRequestsCount = await _context.Set<AppointmentRescheduleRequest>()
                 .AsNoTracking()

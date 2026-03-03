@@ -3,7 +3,7 @@
 :root {
     --primary: #0d6efd;
     --primary-dark: #0056b3;
-    --accent: #198754; /* Green accent for register */
+    --accent: #198754;
     --text-main: #1e293b;
     --text-muted: #64748b;
     --input-bg: #f8fafc;
@@ -15,7 +15,7 @@ body {
     margin: 0;
     padding: 0;
     font-family: 'Plus Jakarta Sans', sans-serif;
-    overflow: hidden;
+    overflow-x: hidden;
     background: #fff;
 }
 
@@ -25,7 +25,6 @@ body {
     width: 100vw;
 }
 
-/* Left Panel */
 .left-panel {
     flex: 1;
     display: flex;
@@ -70,10 +69,10 @@ body {
     color: var(--text-muted);
 }
 
-/* Inputs */
 .input-group-modern {
     display: flex;
     flex-direction: column;
+    margin-bottom: 1.25rem;
 }
 
 .input-label {
@@ -105,11 +104,10 @@ body {
     display: block;
 }
 
-/* Button */
 .btn-submit {
     width: 100%;
     padding: 16px;
-    background: var(--text-main); /* Dark button for register */
+    background: var(--text-main);
     color: white;
     border: none;
     border-radius: 12px;
@@ -146,7 +144,6 @@ body {
         text-decoration: underline;
     }
 
-/* Right Panel */
 .right-panel {
     flex: 1.2;
     background: #0f172a;
@@ -163,7 +160,6 @@ body {
     height: 200%;
     top: -50%;
     left: -50%;
-    /* Distinct Green/Teal Gradient for Register */
     background: radial-gradient(circle at 20% 50%, #15803d, #0f172a 60%), radial-gradient(circle at 80% 80%, #06b6d4, transparent 40%);
     filter: blur(70px);
     animation: gradientMove 15s infinite alternate ease-in-out;
@@ -223,4 +219,50 @@ body {
     border-radius: 2px;
 }
 
+@media (max-width: 1024px) {
+    .right-panel {
+        display: none;
+    }
 
+    .left-panel {
+        max-width: 100%;
+        padding: 0 10%;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto;
+    }
+
+    .split-screen-container {
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .left-panel {
+        padding: 60px 5%;
+    }
+
+    .auth-title {
+        font-size: 2rem;
+    }
+
+    .back-link {
+        top: 20px;
+    }
+
+    .btn-submit {
+        padding: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-title {
+        font-size: 1.75rem;
+    }
+
+    .auth-subtitle {
+        font-size: 1rem;
+    }
+}

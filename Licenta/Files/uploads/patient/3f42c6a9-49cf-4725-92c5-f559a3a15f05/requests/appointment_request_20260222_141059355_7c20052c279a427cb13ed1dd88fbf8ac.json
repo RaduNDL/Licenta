@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-02-22T14:10:59.3538487Z",
+  "ClinicId": "CL-97A6F9AC",
+  "PatientUserId": "ef38dea5-ef63-4402-844d-a9aa5a2ccb19",
+  "PatientProfileId": "3f42c6a9-49cf-4725-92c5-f559a3a15f05",
+  "SelectedDoctorId": "bedcea82-a0bb-43bc-b210-73378b698a87",
+  "SelectedLocalIso": "2026-02-23T09:30",
+  "SelectedScheduledUtc": "2026-02-23T07:30:00Z",
+  "Reason": "Ma doare gatul"
+}

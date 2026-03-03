@@ -9,462 +9,434 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Licenta.Pages.Patient.Messages
+namespace Licenta.Pages.Patient.Messages;
+
+[Authorize(Roles = "Patient")]
+public class InboxModel : PageModel
 {
-    [Authorize(Roles = "Patient")]
-    public class InboxModel : PageModel
+    private readonly AppDbContext _db;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IHubContext<NotificationHub> _hub;
+    private readonly INotificationService _notifications;
+
+    public InboxModel(
+        AppDbContext db,
+        UserManager<ApplicationUser> userManager,
+        IHubContext<NotificationHub> hub,
+        INotificationService notifications)
     {
-        private readonly AppDbContext _db;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IHubContext<NotificationHub> _hub;
-        private readonly INotificationService _notifications;
+        _db = db;
+        _userManager = userManager;
+        _hub = hub;
+        _notifications = notifications;
+    }
 
-        public InboxModel(
-            AppDbContext db,
-            UserManager<ApplicationUser> userManager,
-            IHubContext<NotificationHub> hub,
-            INotificationService notifications)
+    [BindProperty(SupportsGet = true)]
+    public Guid requestId { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? kind { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public string? partnerId { get; set; }
+
+    public Guid SelectedRequestId { get; set; }
+    public string SelectedKind { get; set; } = "";
+    public string? SelectedPartnerId { get; set; }
+    public string SelectedUserName { get; set; } = "";
+    public bool CanSend { get; set; }
+
+    public List<ConversationVm> Conversations { get; set; } = new();
+    public List<MessageVm> Messages { get; set; } = new();
+    public string SelectedSubtitle { get; set; } = "";
+    public string CurrentConversationKey { get; set; } = "";
+
+    public class ConversationVm
+    {
+        public Guid RequestId { get; set; }
+        public string Kind { get; set; } = "";
+        public string? PartnerId { get; set; }
+        public string PartnerName { get; set; } = "";
+        public string LastMessagePreview { get; set; } = "";
+    }
+
+    public class MessageVm
+    {
+        public Guid Id { get; set; }
+        public bool IsMine { get; set; }
+        public string Body { get; set; } = "";
+        public DateTime SentAtUtc { get; set; }
+        public DateTime SentAtLocal { get; set; }
+    }
+
+    public class InputModel
+    {
+        public Guid RequestId { get; set; }
+        public string Kind { get; set; } = "";
+        public string? PartnerId { get; set; }
+        public string NewMessageBody { get; set; } = "";
+    }
+
+    [BindProperty]
+    public InputModel Input { get; set; } = new();
+
+    private static string ThreadKey(Guid id) => $"REQ:{id}";
+
+    private async Task<ApplicationUser?> CurrentUserAsync() => await _userManager.GetUserAsync(User);
+
+    private static string NormalizeKind(string? k)
+        => (k ?? "Assistant").ToLower() switch
         {
-            _db = db;
-            _userManager = userManager;
-            _hub = hub;
-            _notifications = notifications;
-        }
+            "doctor" => "Doctor",
+            _ => "Assistant"
+        };
 
-        [BindProperty(SupportsGet = true)]
-        public Guid requestId { get; set; }
+    private static string ConversationKey(Guid reqId, string kindNorm, string? partnerId)
+        => $"patient:{reqId}:{kindNorm.ToLower()}:{partnerId ?? ""}";
 
-        [BindProperty(SupportsGet = true)]
-        public string? kind { get; set; }
+    private async Task<Guid?> GetPatientProfileIdAsync(string patientUserId)
+        => await _db.Patients
+            .Where(p => p.UserId == patientUserId)
+            .Select(p => (Guid?)p.Id)
+            .FirstOrDefaultAsync();
 
-        public Guid SelectedRequestId { get; set; } = Guid.Empty;
-        public string SelectedKind { get; set; } = "";
-        public string SelectedUserName { get; set; } = "";
-        public string SelectedSubtitle { get; set; } = "";
-        public bool CanSend { get; set; }
-        public string CurrentConversationKey { get; set; } = "";
+    private async Task<string?> ResolveDoctorUserIdAsync(Guid doctorProfileId)
+        => await _db.Doctors
+            .Where(d => d.Id == doctorProfileId)
+            .Select(d => d.UserId)
+            .FirstOrDefaultAsync();
 
-        public List<ConversationVm> Conversations { get; set; } = new();
-        public List<MessageVm> Messages { get; set; } = new();
+    private async Task LoadConversationsAsync(ApplicationUser patient, Guid patientProfileId)
+    {
+        var requests = await _db.PatientMessageRequests
+            .AsNoTracking()
+            .Where(r => r.PatientId == patientProfileId &&
+                        (r.Status == PatientMessageRequestStatus.ActiveDoctorChat ||
+                         r.Status == PatientMessageRequestStatus.AssistantChat ||
+                         r.Status == PatientMessageRequestStatus.Closed))
+            .OrderByDescending(r => r.UpdatedAt ?? r.CreatedAt)
+            .ToListAsync();
 
-        public class ConversationVm
+        foreach (var r in requests)
         {
-            public Guid RequestId { get; set; }
-            public string Kind { get; set; } = "";
-            public string PartnerName { get; set; } = "";
-            public string LastMessagePreview { get; set; } = "";
-        }
-
-        public class MessageVm
-        {
-            public bool IsMine { get; set; }
-            public string Body { get; set; } = "";
-            public DateTime SentAtLocal { get; set; }
-        }
-
-        public class InputModel
-        {
-            [Required]
-            public Guid RequestId { get; set; }
-
-            [Required, MaxLength(50)]
-            public string Kind { get; set; } = "";
-
-            [Required, MaxLength(2000)]
-            public string NewMessageBody { get; set; } = "";
-        }
-
-        [BindProperty]
-        public InputModel Input { get; set; } = new();
-
-        private static string ThreadKey(Guid requestId) => $"REQ:{requestId}";
-
-        private bool IsAjax()
-        {
-            var xrw = Request.Headers["X-Requested-With"].ToString();
-            if (string.Equals(xrw, "XMLHttpRequest", StringComparison.OrdinalIgnoreCase)) return true;
-
-            var accept = Request.Headers["Accept"].ToString();
-            if (accept.Contains("application/json", StringComparison.OrdinalIgnoreCase)) return true;
-
-            return false;
-        }
-
-        private static string NormalizeKind(string? k)
-        {
-            if (string.IsNullOrWhiteSpace(k)) return "Assistant";
-            if (k.Equals("assistant", StringComparison.OrdinalIgnoreCase)) return "Assistant";
-            if (k.Equals("doctor", StringComparison.OrdinalIgnoreCase)) return "Doctor";
-            return k.Trim();
-        }
-
-        private static bool CanPatientSendForKind(PatientMessageRequestStatus status, string kind)
-        {
-            if (status == PatientMessageRequestStatus.Closed) return false;
-
-            if (kind == "Assistant")
-                return status == PatientMessageRequestStatus.AssistantChat;
-
-            if (kind == "Doctor")
-                return status == PatientMessageRequestStatus.WaitingDoctorApproval
-                    || status == PatientMessageRequestStatus.ActiveDoctorChat;
-
-            return false;
-        }
-
-        private async Task<ApplicationUser?> CurrentUserAsync()
-        {
-            return await _userManager.GetUserAsync(User);
-        }
-
-        private async Task LoadConversationsAsync(ApplicationUser patient)
-        {
-            var reqs = await _db.PatientMessageRequests
-                .AsNoTracking()
-                .Where(r => r.PatientId == patient.Id)
-                .OrderByDescending(r => r.UpdatedAt ?? r.CreatedAt)
-                .ToListAsync();
-
-            var partnerIds = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var r in reqs)
+            if (r.Status == PatientMessageRequestStatus.ActiveDoctorChat || r.Status == PatientMessageRequestStatus.Closed)
             {
-                if (!string.IsNullOrWhiteSpace(r.AssistantId)) partnerIds.Add(r.AssistantId);
-                if (!string.IsNullOrWhiteSpace(r.DoctorId)) partnerIds.Add(r.DoctorId);
+                var doctorUserId = await ResolveDoctorUserIdAsync(r.DoctorProfileId);
+                if (!string.IsNullOrEmpty(doctorUserId))
+                    Conversations.Add(await BuildConversation(patient, r, "Doctor", doctorUserId));
             }
 
-            var partners = await _db.Users
-                .AsNoTracking()
-                .Where(u => partnerIds.Contains(u.Id))
-                .Select(u => new { u.Id, u.FullName, u.Email, u.UserName })
-                .ToListAsync();
-
-            var partnerMap = partners.ToDictionary(
-                x => x.Id,
-                x => string.IsNullOrWhiteSpace(x.FullName) ? (x.Email ?? x.UserName ?? "User") : x.FullName);
-
-            var convs = new List<ConversationVm>();
-
-            foreach (var r in reqs)
+            if (r.Status == PatientMessageRequestStatus.AssistantChat || r.Status == PatientMessageRequestStatus.Closed)
             {
-                var thread = ThreadKey(r.Id);
-
-                if (!string.IsNullOrWhiteSpace(r.AssistantId))
-                {
-                    var last = await _db.InternalMessages
-                        .AsNoTracking()
-                        .Where(m => m.Subject == thread &&
-                                    ((m.SenderId == patient.Id && m.RecipientId == r.AssistantId) ||
-                                     (m.SenderId == r.AssistantId && m.RecipientId == patient.Id)))
-                        .OrderByDescending(m => m.SentAt)
-                        .FirstOrDefaultAsync();
-
-                    var preview = last?.Body ?? r.Subject ?? "";
-                    if (preview.Length > 40) preview = preview[..40] + "...";
-
-                    convs.Add(new ConversationVm
-                    {
-                        RequestId = r.Id,
-                        Kind = "Assistant",
-                        PartnerName = partnerMap.TryGetValue(r.AssistantId, out var n) ? n : "Assistant",
-                        LastMessagePreview = preview
-                    });
-                }
-
-                if (!string.IsNullOrWhiteSpace(r.DoctorId))
-                {
-                    var last = await _db.InternalMessages
-                        .AsNoTracking()
-                        .Where(m => m.Subject == thread &&
-                                    ((m.SenderId == patient.Id && m.RecipientId == r.DoctorId) ||
-                                     (m.SenderId == r.DoctorId && m.RecipientId == patient.Id)))
-                        .OrderByDescending(m => m.SentAt)
-                        .FirstOrDefaultAsync();
-
-                    var preview = last?.Body ?? r.Subject ?? "";
-                    if (preview.Length > 40) preview = preview[..40] + "...";
-
-                    convs.Add(new ConversationVm
-                    {
-                        RequestId = r.Id,
-                        Kind = "Doctor",
-                        PartnerName = partnerMap.TryGetValue(r.DoctorId, out var n) ? n : "Doctor",
-                        LastMessagePreview = preview
-                    });
-                }
+                if (!string.IsNullOrEmpty(r.AssistantId))
+                    Conversations.Add(await BuildConversation(patient, r, "Assistant", r.AssistantId));
             }
-
-            Conversations = convs;
         }
+    }
 
-        private async Task<(PatientMessageRequest? req, string partnerId, ApplicationUser? partner)> LoadRequestAndPartnerAsync(ApplicationUser patient, Guid reqId, string k)
+    private async Task<ConversationVm> BuildConversation(
+        ApplicationUser patient,
+        PatientMessageRequest req,
+        string kind,
+        string partnerIdResolved)
+    {
+        var partner = await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == partnerIdResolved);
+
+        var thread = ThreadKey(req.Id);
+
+        var lastMessage = await _db.InternalMessages
+            .AsNoTracking()
+            .Where(m =>
+                m.Subject == thread &&
+                (
+                    (m.SenderId == patient.Id && m.RecipientId == partnerIdResolved) ||
+                    (m.SenderId == partnerIdResolved && m.RecipientId == patient.Id)
+                ))
+            .OrderByDescending(m => m.SentAt)
+            .FirstOrDefaultAsync();
+
+        var preview = lastMessage?.Body ?? req.Subject ?? "";
+        if (preview.Length > 40)
+            preview = preview[..40] + "...";
+
+        return new ConversationVm
         {
-            var req = await _db.PatientMessageRequests
-                .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Id == reqId && r.PatientId == patient.Id);
+            RequestId = req.Id,
+            Kind = kind,
+            PartnerId = partnerIdResolved,
+            PartnerName =
+                partner?.FullName ??
+                partner?.Email ??
+                partner?.UserName ??
+                (kind == "Doctor" ? "Doctor" : "Assistant"),
+            LastMessagePreview = preview
+        };
+    }
 
-            if (req == null) return (null, "", null);
-
-            var partnerId = k == "Doctor" ? (req.DoctorId ?? "") : (req.AssistantId ?? "");
-            if (string.IsNullOrWhiteSpace(partnerId)) return (req, "", null);
-
-            var partner = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == partnerId);
-            return (req, partnerId, partner);
-        }
-
-        private async Task LoadMessagesAsync(ApplicationUser patient, Guid reqId, string partnerId)
-        {
-            var thread = ThreadKey(reqId);
-
-            Messages = await _db.InternalMessages
-                .AsNoTracking()
-                .Where(m => m.Subject == thread &&
-                            ((m.SenderId == patient.Id && m.RecipientId == partnerId) ||
-                             (m.SenderId == partnerId && m.RecipientId == patient.Id)))
-                .OrderBy(m => m.SentAt)
-                .Select(m => new MessageVm
-                {
-                    IsMine = m.SenderId == patient.Id,
-                    Body = m.Body,
-                    SentAtLocal = m.SentAt.ToLocalTime()
-                })
-                .ToListAsync();
-
-            var unread = await _db.InternalMessages
-                .Where(m => m.Subject == thread &&
-                            m.SenderId == partnerId &&
-                            m.RecipientId == patient.Id &&
-                            !m.IsRead)
-                .ToListAsync();
-
-            if (unread.Count > 0)
+    private async Task LoadMessagesAsync(ApplicationUser patient, Guid reqId, string partnerIdResolved)
+    {
+        Messages = await _db.InternalMessages
+            .AsNoTracking()
+            .Where(m => m.Subject == ThreadKey(reqId) &&
+                       ((m.SenderId == patient.Id && m.RecipientId == partnerIdResolved) ||
+                        (m.SenderId == partnerIdResolved && m.RecipientId == patient.Id)))
+            .OrderBy(m => m.SentAt)
+            .Select(m => new MessageVm
             {
-                foreach (var m in unread) m.IsRead = true;
-                await _db.SaveChangesAsync();
+                Id = m.Id,
+                IsMine = m.SenderId == patient.Id,
+                Body = m.Body,
+                SentAtUtc = m.SentAt,
+                SentAtLocal = m.SentAt.ToLocalTime()
+            })
+            .ToListAsync();
+
+        var unread = await _db.InternalMessages
+            .Where(m => m.Subject == ThreadKey(reqId) && m.RecipientId == patient.Id && !m.IsRead)
+            .ToListAsync();
+
+        if (unread.Any())
+        {
+            foreach (var m in unread) m.IsRead = true;
+            await _db.SaveChangesAsync();
+        }
+    }
+
+    public async Task<IActionResult> OnGetAsync()
+    {
+        var patient = await CurrentUserAsync();
+        if (patient == null) return Unauthorized();
+
+        var patientProfileId = await GetPatientProfileIdAsync(patient.Id);
+        if (patientProfileId == null) return Page();
+
+        await LoadConversationsAsync(patient, patientProfileId.Value);
+
+        if (requestId == Guid.Empty) return Page();
+
+        SelectedRequestId = requestId;
+        SelectedKind = NormalizeKind(kind);
+
+        var req = await _db.PatientMessageRequests
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == requestId && r.PatientId == patientProfileId.Value);
+
+        if (req == null) return NotFound();
+
+        if (SelectedKind == "Doctor" && (req.Status == PatientMessageRequestStatus.AssistantChat || req.Status == PatientMessageRequestStatus.Pending))
+        {
+            TempData["StatusMessage"] = "This chat has been delegated to an assistant.";
+            return RedirectToPage(new { requestId = req.Id, kind = "Assistant" });
+        }
+
+        string? resolvedPartnerId = null;
+
+        if (SelectedKind == "Doctor")
+        {
+            resolvedPartnerId = await ResolveDoctorUserIdAsync(req.DoctorProfileId);
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(req.AssistantId))
+            {
+                resolvedPartnerId = req.AssistantId;
             }
         }
 
-        private async Task<(Guid reqId, string kind, string body)> ReadPostPayloadAsync()
+        if (string.IsNullOrWhiteSpace(resolvedPartnerId))
         {
-            Guid reqId = Input?.RequestId ?? Guid.Empty;
-            var k = Input?.Kind;
-            var body = Input?.NewMessageBody;
-
-            if (Request.HasFormContentType)
-            {
-                var f = Request.Form;
-
-                if (reqId == Guid.Empty)
-                {
-                    var s = (string?)f["requestId"];
-                    if (Guid.TryParse(s, out var g)) reqId = g;
-
-                    s = (string?)f["Input.RequestId"];
-                    if (reqId == Guid.Empty && Guid.TryParse(s, out g)) reqId = g;
-
-                    s = (string?)f["RequestId"];
-                    if (reqId == Guid.Empty && Guid.TryParse(s, out g)) reqId = g;
-                }
-
-                if (string.IsNullOrWhiteSpace(k))
-                {
-                    k = (string?)f["kind"];
-                    if (string.IsNullOrWhiteSpace(k)) k = (string?)f["Input.Kind"];
-                    if (string.IsNullOrWhiteSpace(k)) k = (string?)f["Kind"];
-                }
-
-                if (string.IsNullOrWhiteSpace(body))
-                {
-                    body = (string?)f["newMessageBody"];
-                    if (string.IsNullOrWhiteSpace(body)) body = (string?)f["body"];
-                    if (string.IsNullOrWhiteSpace(body)) body = (string?)f["message"];
-                    if (string.IsNullOrWhiteSpace(body)) body = (string?)f["Input.NewMessageBody"];
-                    if (string.IsNullOrWhiteSpace(body)) body = (string?)f["NewMessageBody"];
-                }
-
-                return (reqId, NormalizeKind(k), body ?? "");
-            }
-
-            var ct = Request.ContentType ?? "";
-            if (ct.Contains("application/json", StringComparison.OrdinalIgnoreCase))
-            {
-                using var reader = new StreamReader(Request.Body);
-                var json = await reader.ReadToEndAsync();
-                if (!string.IsNullOrWhiteSpace(json))
-                {
-                    using var doc = JsonDocument.Parse(json);
-                    var root = doc.RootElement;
-
-                    if (reqId == Guid.Empty)
-                    {
-                        if (root.TryGetProperty("requestId", out var p) && Guid.TryParse(p.ToString(), out var g)) reqId = g;
-                        if (reqId == Guid.Empty && root.TryGetProperty("RequestId", out p) && Guid.TryParse(p.ToString(), out g)) reqId = g;
-                        if (reqId == Guid.Empty && root.TryGetProperty("conversationId", out p) && Guid.TryParse(p.ToString(), out g)) reqId = g;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(k))
-                    {
-                        if (root.TryGetProperty("kind", out var p)) k = p.ToString();
-                        if (string.IsNullOrWhiteSpace(k) && root.TryGetProperty("Kind", out p)) k = p.ToString();
-                    }
-
-                    if (string.IsNullOrWhiteSpace(body))
-                    {
-                        if (root.TryGetProperty("newMessageBody", out var p)) body = p.ToString();
-                        if (string.IsNullOrWhiteSpace(body) && root.TryGetProperty("body", out p)) body = p.ToString();
-                        if (string.IsNullOrWhiteSpace(body) && root.TryGetProperty("message", out p)) body = p.ToString();
-                        if (string.IsNullOrWhiteSpace(body) && root.TryGetProperty("text", out p)) body = p.ToString();
-                    }
-                }
-
-                return (reqId, NormalizeKind(k), body ?? "");
-            }
-
-            return (reqId, NormalizeKind(k), body ?? "");
-        }
-
-        public async Task<IActionResult> OnGetAsync()
-        {
-            var patient = await CurrentUserAsync();
-            if (patient == null) return Unauthorized();
-
-            await LoadConversationsAsync(patient);
-
-            if (requestId == Guid.Empty)
-            {
-                SelectedRequestId = Guid.Empty;
-                SelectedKind = "";
-                CanSend = false;
-                CurrentConversationKey = "";
-                Messages = new();
-                return Page();
-            }
-
-            SelectedRequestId = requestId;
-            SelectedKind = NormalizeKind(kind);
-
-            var (req, partnerId, partner) = await LoadRequestAndPartnerAsync(patient, SelectedRequestId, SelectedKind);
-            if (req == null) return NotFound();
-
-            CanSend = !string.IsNullOrWhiteSpace(partnerId) && CanPatientSendForKind(req.Status, SelectedKind);
-            CurrentConversationKey = $"patient:{SelectedRequestId}:{SelectedKind.ToLowerInvariant()}";
-            SelectedUserName = partner?.FullName ?? partner?.Email ?? partner?.UserName ?? (SelectedKind == "Doctor" ? "Doctor" : "Assistant");
-            SelectedSubtitle = SelectedKind;
-
-            if (string.IsNullOrWhiteSpace(partnerId))
-            {
-                Messages = new();
-                CanSend = false;
-                return Page();
-            }
-
-            await LoadMessagesAsync(patient, SelectedRequestId, partnerId);
-
-            Input.RequestId = SelectedRequestId;
-            Input.Kind = SelectedKind;
-
+            CanSend = false;
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        SelectedPartnerId = resolvedPartnerId;
+
+        var partner = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == resolvedPartnerId);
+        SelectedUserName = partner?.FullName ?? partner?.Email ?? SelectedKind;
+        SelectedSubtitle = SelectedKind;
+
+        CurrentConversationKey = ConversationKey(requestId, SelectedKind, resolvedPartnerId);
+
+        CanSend = false;
+        if (SelectedKind == "Doctor" && req.Status == PatientMessageRequestStatus.ActiveDoctorChat)
         {
-            var patient = await CurrentUserAsync();
-            if (patient == null) return Unauthorized();
-
-            var (reqId, k, bodyRaw) = await ReadPostPayloadAsync();
-            var body = (bodyRaw ?? "").Trim();
-
-            if (reqId == Guid.Empty)
-                ModelState.AddModelError(string.Empty, "No conversation selected.");
-
-            if (string.IsNullOrWhiteSpace(body))
-                ModelState.AddModelError(nameof(Input.NewMessageBody), "Message cannot be empty.");
-
-            var (req, partnerId, partner) = await LoadRequestAndPartnerAsync(patient, reqId, k);
-            if (req == null)
-                ModelState.AddModelError(string.Empty, "Request not found.");
-
-            if (req != null && !CanPatientSendForKind(req.Status, k))
-                ModelState.AddModelError(string.Empty, "Conversation is closed.");
-
-            if (req != null && string.IsNullOrWhiteSpace(partnerId))
-                ModelState.AddModelError(string.Empty, "Conversation partner not available.");
-
-            if (!ModelState.IsValid)
-            {
-                if (IsAjax())
-                {
-                    var errors = ModelState
-                        .Where(x => x.Value != null && x.Value.Errors.Count > 0)
-                        .ToDictionary(
-                            x => x.Key,
-                            x => x.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
-                        );
-
-                    return new JsonResult(new { ok = false, errors }) { StatusCode = 400 };
-                }
-
-                return RedirectToPage("/Patient/Messages/Inbox", new { requestId = reqId, kind = k });
-            }
-
-            var msg = new InternalMessage
-            {
-                Id = Guid.NewGuid(),
-                SenderId = patient.Id,
-                RecipientId = partnerId,
-                Subject = ThreadKey(req!.Id),
-                Body = body,
-                SentAt = DateTime.UtcNow,
-                IsRead = false
-            };
-
-            _db.InternalMessages.Add(msg);
-            await _db.SaveChangesAsync();
-
-            var senderName = string.IsNullOrWhiteSpace(patient.FullName)
-                ? (patient.Email ?? patient.UserName ?? "Patient")
-                : patient.FullName;
-
-            if (partner != null)
-            {
-                await _notifications.NotifyAsync(
-                    partner,
-                    NotificationType.Message,
-                    "New message",
-                    $"New message from patient <b>{senderName}</b>",
-                    "Message",
-                    req.Id.ToString()
-                );
-            }
-
-            var payload = new
-            {
-                conversationKey = $"patient:{req.Id}:{k.ToLowerInvariant()}",
-                messageId = msg.Id,
-                senderId = msg.SenderId,
-                body = msg.Body,
-                sentAtUtc = msg.SentAt
-            };
-
-            await _hub.Clients.Group($"USER_{partnerId}").SendAsync("message:new", payload);
-            await _hub.Clients.Group($"USER_{patient.Id}").SendAsync("message:new", payload);
-
-            if (IsAjax())
-            {
-                return new JsonResult(new
-                {
-                    ok = true,
-                    messageId = msg.Id,
-                    sentAtUtc = msg.SentAt
-                });
-            }
-
-            return RedirectToPage("/Patient/Messages/Inbox", new { requestId = req.Id, kind = k });
+            CanSend = true;
         }
+        else if (SelectedKind == "Assistant" && req.Status == PatientMessageRequestStatus.AssistantChat)
+        {
+            CanSend = true;
+        }
+
+        await LoadMessagesAsync(patient, requestId, resolvedPartnerId);
+
+        Input.RequestId = requestId;
+        Input.Kind = SelectedKind;
+        Input.PartnerId = resolvedPartnerId;
+
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostAsync()
+    {
+        var patient = await CurrentUserAsync();
+        if (patient == null || string.IsNullOrWhiteSpace(Input.NewMessageBody))
+            return new JsonResult(new { ok = false });
+
+        var patientProfileId = await GetPatientProfileIdAsync(patient.Id);
+        if (patientProfileId == null)
+            return new JsonResult(new { ok = false });
+
+        var req = await _db.PatientMessageRequests
+            .FirstOrDefaultAsync(r => r.Id == Input.RequestId && r.PatientId == patientProfileId.Value);
+
+        if (req == null || (req.Status != PatientMessageRequestStatus.ActiveDoctorChat && req.Status != PatientMessageRequestStatus.AssistantChat))
+            return new JsonResult(new { ok = false });
+
+        var kindNorm = NormalizeKind(Input.Kind);
+
+        string? resolvedPartnerId = null;
+
+        if (kindNorm == "Doctor")
+        {
+            resolvedPartnerId = await ResolveDoctorUserIdAsync(req.DoctorProfileId);
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(req.AssistantId))
+            {
+                resolvedPartnerId = req.AssistantId;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(resolvedPartnerId))
+            return new JsonResult(new { ok = false });
+
+        var message = new InternalMessage
+        {
+            Id = Guid.NewGuid(),
+            SenderId = patient.Id,
+            RecipientId = resolvedPartnerId,
+            Subject = ThreadKey(req.Id),
+            Body = Input.NewMessageBody.Trim(),
+            SentAt = DateTime.UtcNow,
+            IsRead = false
+        };
+
+        _db.InternalMessages.Add(message);
+        req.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        var partnerUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == resolvedPartnerId);
+        if (partnerUser != null)
+        {
+            var role = kindNorm == "Doctor" ? "Doctor" : "Assistant";
+            await _notifications.NotifyAsync(
+                partnerUser,
+                NotificationType.Message,
+                "New Message",
+                $"You received a new message from {patient.FullName ?? patient.Email}.",
+                actionUrl: $"/{role}/Messages/Inbox?requestId={req.Id}",
+                actionText: "Reply",
+                relatedEntity: "InternalMessage",
+                relatedEntityId: message.Id.ToString()
+            );
+        }
+
+        var payload = new
+        {
+            conversationKey = ConversationKey(req.Id, kindNorm, resolvedPartnerId),
+            messageId = message.Id,
+            senderId = message.SenderId,
+            requestId = req.Id,
+            kind = kindNorm,
+            body = message.Body,
+            sentAtUtc = message.SentAt
+        };
+
+        await _hub.Clients.Users(new[] { patient.Id, resolvedPartnerId }).SendAsync("message:new", payload);
+
+        return new JsonResult(new { ok = true, messageId = message.Id, sentAtUtc = message.SentAt });
+    }
+
+    public async Task<IActionResult> OnGetSync(string conversationKey, string? after)
+    {
+        var patient = await CurrentUserAsync();
+        if (patient == null)
+            return new JsonResult(new { messages = Array.Empty<object>() });
+
+        if (string.IsNullOrWhiteSpace(conversationKey))
+            return new JsonResult(new { messages = Array.Empty<object>() });
+
+        var parts = conversationKey.Split(':', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 4)
+            return new JsonResult(new { messages = Array.Empty<object>() });
+
+        if (!Guid.TryParse(parts[1], out var reqId))
+            return new JsonResult(new { messages = Array.Empty<object>() });
+
+        var kindPart = parts[2].ToLowerInvariant();
+
+        var patientProfileId = await GetPatientProfileIdAsync(patient.Id);
+        if (patientProfileId == null)
+            return new JsonResult(new { messages = Array.Empty<object>() });
+
+        var req = await _db.PatientMessageRequests
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == reqId && r.PatientId == patientProfileId.Value);
+
+        if (req == null)
+            return new JsonResult(new { messages = Array.Empty<object>() });
+
+        string? resolvedPartnerId = null;
+
+        if (kindPart == "doctor")
+        {
+            resolvedPartnerId = await ResolveDoctorUserIdAsync(req.DoctorProfileId);
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(req.AssistantId))
+            {
+                resolvedPartnerId = req.AssistantId;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(resolvedPartnerId))
+            return new JsonResult(new { messages = Array.Empty<object>() });
+
+        DateTime? afterUtc = null;
+        if (!string.IsNullOrWhiteSpace(after) &&
+            DateTimeOffset.TryParse(after, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dto))
+        {
+            afterUtc = dto.UtcDateTime;
+        }
+
+        var thread = ThreadKey(reqId);
+
+        var messages = await _db.InternalMessages
+            .AsNoTracking()
+            .Where(m =>
+                m.Subject == thread &&
+                (afterUtc == null || m.SentAt > afterUtc.Value) &&
+                (
+                    (m.SenderId == patient.Id && m.RecipientId == resolvedPartnerId) ||
+                    (m.SenderId == resolvedPartnerId && m.RecipientId == patient.Id)
+                ))
+            .OrderBy(m => m.SentAt)
+            .Select(m => new
+            {
+                messageId = m.Id,
+                body = m.Body,
+                sentAtUtc = m.SentAt,
+                senderId = m.SenderId
+            })
+            .ToListAsync();
+
+        return new JsonResult(new { messages });
     }
 }

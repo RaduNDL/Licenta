@@ -26,12 +26,14 @@ namespace Licenta.Pages.Assistant.Notifications
 
         public class NotificationVm
         {
-            public long Id { get; set; }
+            public Guid Id { get; set; }
             public NotificationType Type { get; set; }
             public string Title { get; set; } = string.Empty;
             public string Message { get; set; } = string.Empty;
             public bool IsRead { get; set; }
             public DateTime When { get; set; }
+            public string? ActionUrl { get; set; }
+            public string? ActionText { get; set; }
             public string? RelatedEntity { get; set; }
             public string? RelatedEntityId { get; set; }
         }
@@ -46,6 +48,7 @@ namespace Licenta.Pages.Assistant.Notifications
             var fromUtc = DateTime.UtcNow.AddDays(-30);
 
             Items = await _db.UserNotifications
+                .AsNoTracking()
                 .Where(n => n.UserId == user.Id && n.CreatedAtUtc >= fromUtc)
                 .OrderByDescending(n => n.CreatedAtUtc)
                 .Select(n => new NotificationVm
@@ -56,10 +59,25 @@ namespace Licenta.Pages.Assistant.Notifications
                     Message = n.Message,
                     IsRead = n.IsRead,
                     When = n.CreatedAtUtc,
+                    ActionUrl = n.ActionUrl,
+                    ActionText = n.ActionText,
                     RelatedEntity = n.RelatedEntity,
                     RelatedEntityId = n.RelatedEntityId
                 })
                 .ToListAsync();
+
+            var unreadNotifs = await _db.UserNotifications
+                .Where(n => n.UserId == user.Id && !n.IsRead)
+                .ToListAsync();
+
+            if (unreadNotifs.Any())
+            {
+                foreach (var notif in unreadNotifs)
+                {
+                    notif.IsRead = true;
+                }
+                await _db.SaveChangesAsync();
+            }
 
             return Page();
         }

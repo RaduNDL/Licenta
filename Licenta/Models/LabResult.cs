@@ -1,4 +1,5 @@
 ﻿using System;
+using Licenta.Areas.Identity.Data;
 
 namespace Licenta.Models
 {
@@ -17,8 +18,6 @@ namespace Licenta.Models
         public string? Notes { get; set; }
 
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
-        public string? UploadedByAssistantId { get; set; }
-        public ApplicationUser? UploadedByAssistant { get; set; }
 
         public Guid? ValidatedByDoctorId { get; set; }
         public DoctorProfile? ValidatedByDoctor { get; set; }

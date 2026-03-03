@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,11 +17,13 @@ namespace Licenta.Pages.Doctor.Appointments
     {
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly INotificationService _notifier;
 
-        public RescheduleReviewModel(AppDbContext db, UserManager<ApplicationUser> userManager)
+        public RescheduleReviewModel(AppDbContext db, UserManager<ApplicationUser> userManager, INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
+            _notifier = notifier;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -50,6 +53,7 @@ namespace Licenta.Pages.Doctor.Appointments
             if (user == null) return Challenge();
 
             var doctor = await _db.Set<Licenta.Models.DoctorProfile>()
+                .Include(d => d.User)
                 .FirstOrDefaultAsync(d => d.UserId == user.Id);
 
             if (doctor == null) return Forbid();
@@ -57,6 +61,7 @@ namespace Licenta.Pages.Doctor.Appointments
             var req = await _db.Set<AppointmentRescheduleRequest>()
                 .Include(r => r.Appointment)
                 .Include(r => r.SelectedOption)
+                .Include(r => r.Patient).ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(r => r.Id == RequestId && r.DoctorId == doctor.Id);
 
             if (req == null) return NotFound();
@@ -101,6 +106,22 @@ namespace Licenta.Pages.Doctor.Appointments
 
             await _db.SaveChangesAsync();
 
+            var patientUser = req.Patient?.User;
+            if (patientUser != null)
+            {
+                await _notifier.NotifyAsync(
+                    patientUser,
+                    NotificationType.Appointment,
+                    "Reschedule Approved",
+                    $"Your request to reschedule with Dr. {doctor.User?.FullName} was approved. New time: <b>{opt.ProposedStartUtc.ToLocalTime():ddd dd MMM HH:mm}</b>.",
+                    actionUrl: "/Patient/Appointments/Index",
+                    actionText: "View Appointments",
+                    relatedEntity: "Appointment",
+                    relatedEntityId: appt.Id.ToString(),
+                    sendEmail: false
+                );
+            }
+
             TempData["StatusMessage"] = "Approved. Appointment rescheduled.";
             return RedirectToPage("/Doctor/Appointments/RescheduleApprovals");
         }
@@ -111,11 +132,13 @@ namespace Licenta.Pages.Doctor.Appointments
             if (user == null) return Challenge();
 
             var doctor = await _db.Set<Licenta.Models.DoctorProfile>()
+                .Include(d => d.User)
                 .FirstOrDefaultAsync(d => d.UserId == user.Id);
 
             if (doctor == null) return Forbid();
 
             var req = await _db.Set<AppointmentRescheduleRequest>()
+                .Include(r => r.Patient).ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(r => r.Id == RequestId && r.DoctorId == doctor.Id);
 
             if (req == null) return NotFound();
@@ -132,6 +155,22 @@ namespace Licenta.Pages.Doctor.Appointments
             req.UpdatedAtUtc = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
+
+            var patientUser = req.Patient?.User;
+            if (patientUser != null)
+            {
+                await _notifier.NotifyAsync(
+                    patientUser,
+                    NotificationType.Appointment,
+                    "Reschedule Rejected",
+                    $"Your reschedule request with Dr. {doctor.User?.FullName} was rejected. Your appointment remains at the original time.",
+                    actionUrl: "/Patient/Appointments/Index",
+                    actionText: "View Appointments",
+                    relatedEntity: "AppointmentRescheduleRequest",
+                    relatedEntityId: req.Id.ToString(),
+                    sendEmail: false
+                );
+            }
 
             TempData["StatusMessage"] = "Rejected.";
             return RedirectToPage("/Doctor/Appointments/RescheduleApprovals");

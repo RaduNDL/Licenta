@@ -162,12 +162,11 @@
                                     {
                                         <span class="text-muted small">Other</span>
                                     }
-
-                                    @if (r.Doctor != null)
+                                    @if (r.DoctorProfile != null)
                                     {
                                         <div class="text-muted small mt-1">
                                             <i class="bi bi-heart-pulse me-1"></i>
-                                            Dr. @(r.Doctor.FullName ?? "Unknown")
+                                            Dr. @(r.DoctorProfile.User?.FullName ?? r.DoctorProfile.User?.Email ?? "Unknown")
                                         </div>
                                     }
                                 </td>

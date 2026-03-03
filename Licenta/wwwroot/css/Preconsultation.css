@@ -180,12 +180,56 @@
 }
 
 @media (max-width: 768px) {
+    .pre-consultation-wrapper {
+        padding: 1rem;
+    }
+
     .form-card {
         padding: 1.5rem;
+        border-radius: 16px;
+    }
+
+    .form-header {
+        margin-bottom: 2rem;
+    }
+
+    .icon-bubble {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+
+    .form-header h1 {
+        font-size: 1.5rem;
     }
 
     .grid-row {
         grid-template-columns: 1fr;
         gap: 0;
+    }
+
+    .form-control-modern {
+        padding: 0.8rem 0.8rem 0.8rem 2.8rem;
+    }
+
+    .btn-submit {
+        width: 100%;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .form-section h3 {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .alert-modern {
+        font-size: 0.85rem;
+        padding: 0.75rem;
     }
 }

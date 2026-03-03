@@ -1,4 +1,5 @@
 ﻿using Licenta.Models;
+using Licenta.Models.Licenta.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
@@ -15,9 +16,7 @@ namespace Licenta.Areas.Identity.Data
                     ClinicName = "LicentaMed Clinic",
                     MaxUploadMb = 20,
 
-                    SmtpServer = "smtp.example.com",
-                    SmtpPort = 587,
-                    SmtpUseSSL = true,
+                   
 
                     PasswordMinLength = 6,
                     RequireDigit = true,

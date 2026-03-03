@@ -6,6 +6,7 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 }
 
 <div class="container-fluid dashboard-container py-4">
@@ -133,7 +134,7 @@
                     }
                     else
                     {
-                        <div class="empty-state-panel">
+                        <div class="empty-state-panel text-center p-5">
                             <i class="bi bi-shield-check text-muted opacity-25" style="font-size: 2.5rem;"></i>
                             <p class="text-muted mt-2">No recent security events logged.</p>
                         </div>
@@ -145,7 +146,7 @@
                 <div class="panel-header">
                     <div>
                         <h5 class="mb-0 fw-bold"><i class="bi bi-people me-2 text-primary"></i>Newest Users</h5>
-                        <small class="text-muted">Based on tracked create events (audit)</small>
+                        <small class="text-muted">Based on tracked create events</small>
                     </div>
                     <a asp-page="/Administrator/Users/Index" class="btn btn-sm btn-light">Manage All</a>
                 </div>
@@ -157,22 +158,14 @@
                             {
                                 <div class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
                                     <div class="d-flex align-items-center">
-                                        <div class="icon-box-sm bg-primary bg-opacity-10 text-primary rounded me-3">
+                                        <div class="icon-box-sm bg-primary bg-opacity-10 text-primary rounded me-3 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
                                             <i class="bi bi-person-plus"></i>
                                         </div>
                                         <div>
                                             <h6 class="mb-0 fw-semibold text-dark">@user.Email</h6>
                                             <small class="text-muted">
-                                                Joined:
-                                                @if (user.CreatedDateUtc.HasValue)
-                                                {
-                                                    @user.CreatedDateUtc.Value.ToLocalTime().ToString("MMM dd")
-                                                }
-                                                else
-                                                {
-                                                    <span>N/A</span>
-                                                }
-                                                &bull; Role: @user.Role
+                                                Role: @user.Role &bull;
+                                                @(user.CreatedDateUtc.HasValue? user.CreatedDateUtc.Value.ToLocalTime().ToString("MMM dd") : "N/A")
                                             </small>
                                         </div>
                                     </div>
@@ -180,10 +173,6 @@
                                 </div>
                             }
                         </div>
-                    }
-                    else
-                    {
-                        <div class="p-4 text-center text-muted">No tracked new users yet.</div>
                     }
                 </div>
             </div>
@@ -206,6 +195,18 @@
                             <a asp-page="/Administrator/Users/Index" class="quick-action-btn">
                                 <i class="bi bi-people-fill text-primary"></i>
                                 <span>User List</span>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a asp-page="/Administrator/Staff/Assignments" class="quick-action-btn">
+                                <i class="bi bi-person-vcard-fill text-info"></i>
+                                <span>Assignments</span>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a asp-page="/Administrator/Notifications/Index" class="quick-action-btn">
+                                <i class="bi bi-bell-fill text-warning"></i>
+                                <span>Alerts</span>
                             </a>
                         </div>
                         <div class="col-6">
@@ -261,3 +262,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

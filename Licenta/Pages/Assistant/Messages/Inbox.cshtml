@@ -131,7 +131,7 @@
                 <div class="messages-container" id="chatBody">
                     @foreach (var m in Model.Messages)
                     {
-                        <div class="message-row @(m.IsMine ? "mine" : "other")">
+                        <div class="message-row @(m.IsMine ? "mine" : "other")" data-id="@m.Id" data-utc="@m.SentAtUtc.ToString("O")">
                             <div class="message-bubble">
                                 <span class="message-text">@m.Body</span>
                                 <span class="message-time">@m.SentAtLocal.ToString("HH:mm")</span>
@@ -141,6 +141,7 @@
                 </div>
 
                 <div class="chat-footer">
+                    <div class="chat-send-error d-none"></div>
 
                     @if (!Model.CanSend)
                     {

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -17,11 +18,13 @@ namespace Licenta.Pages.Administrator.Users
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly AppDbContext _db;
 
-        public CreateModel(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+        public CreateModel(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, AppDbContext db)
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _db = db;
         }
 
         public List<string> Roles { get; set; } = new();
@@ -116,6 +119,29 @@ namespace Licenta.Pages.Administrator.Users
                 foreach (var e in addRole.Errors)
                     ModelState.AddModelError(string.Empty, e.Description);
                 return Page();
+            }
+
+            if (Input.Role == "Doctor")
+            {
+                var doctorProfile = new DoctorProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    Specialty = "General Practice",
+                    ProfileImagePath = "/images/default.jpg"
+                };
+                _db.Doctors.Add(doctorProfile);
+                await _db.SaveChangesAsync();
+            }
+            else if (Input.Role == "Patient")
+            {
+                var patientProfile = new Licenta.Models.PatientProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id
+                };
+                _db.Patients.Add(patientProfile);
+                await _db.SaveChangesAsync();
             }
 
             TempData["StatusMessage"] = $"User {Input.Email} created with role '{Input.Role}'.";

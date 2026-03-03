@@ -1,0 +1,96 @@
+﻿@page
+@model Licenta.Areas.Admin.Pages.Staff.AssignmentsModel
+@{
+    ViewData["Title"] = "Staff Assignments";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/assignass.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+}
+
+<div class="assignments-wrapper">
+    <div class="container-fluid">
+        <div class="page-header-modern">
+            <div>
+                <h1 class="h3 fw-bold mb-1">Medical Staff Assignments</h1>
+                <p class="text-muted">Link assistants to their respective doctors for triage routing.</p>
+            </div>
+            @if (TempData["StatusMessage"] is string status)
+            {
+                <div class="alert alert-modern fade show" id="statusAlert">
+                    <i class="bi bi-check2-circle me-2"></i> @status
+                </div>
+            }
+        </div>
+
+        <div class="assignments-grid">
+            @foreach (var doc in Model.DoctorAssignments)
+            {
+                <div class="doctor-card">
+                    <div class="card-top">
+                        <div class="doctor-info">
+                            <div class="avatar-box">
+                                <i class="bi bi-person-vcard-fill"></i>
+                            </div>
+                            <div>
+                                <h5 class="doctor-name">Dr. @doc.DoctorName</h5>
+                                <span class="specialty-badge">@doc.Specialty</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-content">
+                        <label class="section-label">Assigned Assistants</label>
+                        <div class="assistant-list">
+                            @if (!doc.AssignedAssistants.Any())
+                            {
+                                <div class="empty-assistants">
+                                    <i class="bi bi-info-circle"></i>
+                                    <span>No assistants linked</span>
+                                </div>
+                            }
+                            else
+                            {
+                                @foreach (var ast in doc.AssignedAssistants)
+                                {
+                                    <div class="assistant-item">
+                                        <div class="ast-meta">
+                                            <i class="bi bi-headset me-2"></i>
+                                            <span class="ast-name">@ast.Name</span>
+                                        </div>
+                                        <form method="post" asp-page-handler="Remove">
+                                            <input type="hidden" name="assistantId" value="@ast.Id" />
+                                            <button type="submit" class="btn-remove" title="Unassign Assistant">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <div class="assign-action">
+                            <form method="post" asp-page-handler="Assign">
+                                <input type="hidden" name="doctorId" value="@doc.DoctorId" />
+                                <div class="assign-group">
+                                    <select name="assistantId" asp-items="Model.AvailableAssistants" class="form-select-modern" required>
+                                        <option value="">+ Add Assistant</option>
+                                    </select>
+                                    <button class="btn-assign" type="submit">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/assignass.js" asp-append-version="true"></script>
+}

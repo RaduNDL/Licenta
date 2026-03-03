@@ -5,74 +5,94 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/RequestAppointment.css" />
+    <link rel="stylesheet" href="~/css/RequestAppointment.css" asp-append-version="true" />
 }
 
-<div class="request-appointment-wrapper">
-    <div class="header-section row align-items-center">
-        <div class="col-md-8">
-            <h2 class="mb-1">Request Appointment</h2>
-            <p class="text-muted mb-0">Choose an available slot and describe the reason.</p>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold" style="color: var(--text-main);">Online Appointment</h2>
+            <p class="text-muted mb-0">Book quickly and simply in 3 steps.</p>
         </div>
-        <div class="col-md-4 text-md-end mt-3 mt-md-0">
-            <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">
-                My Appointments
-            </a>
-        </div>
+        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">
+            My Appointments
+        </a>
     </div>
 
     @if (TempData["StatusMessage"] is string status)
     {
-        <div class="alert alert-info">@status</div>
+        <div class="alert alert-info border-0 shadow-sm">@status</div>
     }
 
-    <div class="form-card">
-        <div class="card-body">
-            @if (Model.AvailableSlots == null || !Model.AvailableSlots.Any())
-            {
-                <div class="text-center py-5">
-                    <svg class="empty-state-icon" width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    <h5 class="text-muted fw-bold">No Slots Available</h5>
-                    <p class="text-muted mb-0">There are no available appointment slots at this time.</p>
-                    <p class="small text-muted">Please try again later or contact the clinic directly.</p>
+    <form method="post" id="bookingForm">
+        <input type="hidden" asp-for="Input.SelectedSlotKey" id="hiddenSlotKey" />
+
+        <div class="row g-4">
+
+            <div class="col-lg-4">
+                <div class="wizard-step">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <h5 class="mb-0">Choose Doctor</h5>
+                    </div>
+                    <div id="doctorsContainer">
+                    </div>
                 </div>
-            }
-            else
-            {
-                <form method="post">
-                    <div class="mb-4">
-                        <label class="form-label">Available slots</label>
-                        <select class="form-select" asp-for="Input.SelectedSlotKey" required>
-                            <option value="" selected disabled>Select a time slot...</option>
-                            @foreach (var s in Model.AvailableSlots)
-                            {
-                                <option value="@s.Key">@s.Display</option>
-                            }
-                        </select>
-                        <span class="text-danger" asp-validation-for="Input.SelectedSlotKey"></span>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="wizard-step disabled-step" id="step2">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <h5 class="mb-0">Choose Date and Time</h5>
+                    </div>
+
+                    <div class="mb-3 fw-bold" id="selectedDoctorName"></div>
+
+                    <div id="datesContainer" class="d-flex flex-wrap mb-3">
+                    </div>
+
+                    <div id="timesContainer" class="d-flex flex-wrap">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="wizard-step disabled-step" id="step3">
+                    <div class="step-header">
+                        <div class="step-number">3</div>
+                        <h5 class="mb-0">Visit Details</h5>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">Reason for Visit</label>
-                        <textarea class="form-control" rows="4" asp-for="Input.Reason" placeholder="Please briefly explain your symptoms or reason for the appointment..."></textarea>
+                        <div class="alert alert-info border-0 mb-0">
+                            <i class="bi bi-calendar-check me-2"></i>
+                            <span id="finalSelectionText">No time selected</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Reason for Visit <span class="text-danger">*</span></label>
+                        <textarea class="form-control" asp-for="Input.Reason" placeholder="Briefly describe your symptoms or reason for the appointment..."></textarea>
                         <span class="text-danger" asp-validation-for="Input.Reason"></span>
                     </div>
 
-                    <div class="d-flex gap-3 pt-2">
-                        <a asp-page="/Patient/Index" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary flex-grow-1">
-                            Submit Request
-                        </button>
-                    </div>
-                </form>
-            }
+                    <button type="submit" class="btn btn-primary w-100 fs-6">
+                        Confirm Appointment
+                    </button>
+                </div>
+            </div>
+
         </div>
-    </div>
+    </form>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/RequestAppointment.js"></script>
+
+    <script>
+        const doctorsData = @Html.Raw(Model.DoctorsJson);
+    </script>
+
+    <script src="~/js/RequestAppointment.js" asp-append-version="true"></script>
 }

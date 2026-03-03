@@ -33,7 +33,6 @@ body {
         box-shadow: 0 0.125rem 0.25rem 0 rgba(78, 115, 223, 0.4);
     }
 
-
 .table thead th {
     border-bottom: 1px solid #e3e6f0;
     font-size: 0.75rem;
@@ -54,7 +53,6 @@ body {
 .text-xs {
     font-size: 0.75rem;
 }
-
 
 .avatar-initials {
     width: 35px;
@@ -77,6 +75,7 @@ body {
     font-weight: 600;
     font-size: 0.75rem;
     letter-spacing: 0.3px;
+    display: inline-block;
 }
 
 .status-pending {
@@ -158,3 +157,73 @@ body {
         background-color: #36b9cc;
         color: white;
     }
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 1rem;
+    }
+
+    .nav-pills {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+
+        .nav-pills .nav-link {
+            white-space: nowrap;
+        }
+
+    .table thead {
+        display: none;
+    }
+
+    .custom-table, .custom-table tbody, .custom-table tr, .custom-table td {
+        display: block;
+        width: 100%;
+    }
+
+        .custom-table tr {
+            margin-bottom: 1rem;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.05);
+        }
+
+            .custom-table tr td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.6rem 0;
+                border: none;
+                text-align: right;
+            }
+
+                .custom-table tr td::before {
+                    content: attr(data-label);
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    font-size: 0.7rem;
+                    color: var(--secondary-color);
+                    text-align: left;
+                }
+
+                .custom-table tr td:last-child {
+                    justify-content: center;
+                    margin-top: 0.5rem;
+                    padding-top: 1rem;
+                    border-top: 1px solid #f0f2f5;
+                }
+
+    .avatar-initials {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+    }
+}

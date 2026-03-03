@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Licenta.Areas.Identity.Data;
 
 namespace Licenta.Models
 {
@@ -27,9 +28,6 @@ namespace Licenta.Models
 
         [ForeignKey(nameof(DoctorId))]
         public DoctorProfile? Doctor { get; set; }
-
-        public string? RequestedByAssistantId { get; set; }
-        public ApplicationUser? RequestedByAssistant { get; set; }
 
         [Required]
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;

@@ -1,0 +1,107 @@
+﻿.page-container {
+    padding: 2rem 0;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.page-title {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #343a40;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px dashed #dee2e6;
+    color: #6c757d;
+}
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+        opacity: 0.5;
+    }
+
+.table-notifications {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+    .table-notifications th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        color: #495057;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        padding: 1rem;
+    }
+
+.notification-row td {
+    padding: 1rem;
+    vertical-align: top;
+    border-bottom: 1px solid #e9ecef;
+    background-color: #ffffff;
+    transition: background-color 0.2s ease;
+}
+
+.notification-row:hover td {
+    background-color: #f8f9fa;
+}
+
+.notification-row.unread td {
+    background-color: #f0f7ff;
+    font-weight: 500;
+}
+
+    .notification-row.unread td:first-child {
+        border-left: 4px solid #0d6efd;
+    }
+
+.notification-date {
+    font-size: 0.9rem;
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+.notification-type-badge {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    background-color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.notification-title {
+    color: #212529;
+    font-weight: 600;
+}
+
+.notification-message {
+    color: #495057;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}

@@ -15,7 +15,6 @@ body {
     padding: 2rem;
 }
 
-
 .dashboard-header {
     background: var(--primary-gradient);
     border-radius: 20px;
@@ -72,7 +71,6 @@ body {
         background: rgba(255, 255, 255, 0.3);
         color: white;
     }
-
 
 .toolbar {
     display: flex;
@@ -149,7 +147,6 @@ body {
     gap: 5px;
 }
 
-
 .status-badge {
     font-size: 0.75rem;
     padding: 0.25rem 0.75rem;
@@ -197,11 +194,10 @@ body {
     margin-bottom: 1rem;
 }
 
-
 .card-people {
     display: flex;
     justify-content: space-between;
-    margin-top: auto; 
+    margin-top: auto;
 }
 
 .person {
@@ -247,7 +243,6 @@ body {
         color: #374151;
     }
 
-
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;
@@ -267,7 +262,6 @@ body {
     margin-top: 1rem;
 }
 
-
 .alert-floating {
     background: #10b981;
     color: white;
@@ -280,7 +274,6 @@ body {
     gap: 10px;
     animation: slideDown 0.5s ease;
 }
-
 
 @keyframes fadeUp {
     from {
@@ -306,4 +299,56 @@ body {
     }
 }
 
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
 
+    .dashboard-header {
+        flex-direction: column;
+        padding: 1.5rem;
+        text-align: center;
+        gap: 1.5rem;
+    }
+
+        .dashboard-header h1 {
+            font-size: 1.5rem;
+        }
+
+    .header-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .btn-modern {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .toolbar {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .search-wrapper {
+        width: 100% !important;
+    }
+
+    .request-count {
+        text-align: center;
+    }
+
+    .requests-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .request-card {
+        padding: 1.25rem;
+    }
+
+    .card-people {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}

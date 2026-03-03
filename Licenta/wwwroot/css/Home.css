@@ -487,3 +487,108 @@ kbd {
     border: 1px solid var(--home-stroke);
     background: rgba(255,255,255,.75);
 }
+@media (max-width: 768px) {
+    .home-hero {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .home-shell {
+        padding: 12px 10px 14px;
+    }
+
+    .home-left {
+        padding: 20px;
+        text-align: center;
+    }
+
+    .kicker {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .title {
+        font-size: 2.2rem;
+        text-align: center;
+    }
+
+    .subtitle {
+        font-size: 0.95rem;
+        text-align: center;
+        margin: 0 auto;
+    }
+
+    .cta-row {
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+    }
+
+    .meta {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .meta-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+    }
+
+    .meta-value {
+        margin-top: 0;
+    }
+
+    .panel-card {
+        padding: 14px;
+    }
+
+    .quick-panel {
+        width: 100%;
+        border-radius: 0;
+        height: 100%;
+        position: fixed;
+    }
+
+    .foot {
+        flex-direction: column;
+        text-align: center;
+        gap: 14px;
+    }
+
+    .foot-right {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .scrim {
+        inset: 0;
+        position: fixed;
+    }
+}
+
+@media (max-width: 480px) {
+    .title {
+        font-size: 1.8rem;
+    }
+
+    .card {
+        padding: 10px;
+    }
+
+    .card-ic {
+        width: 36px;
+        height: 36px;
+    }
+
+    .li-k {
+        display: none;
+    }
+}

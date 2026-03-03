@@ -1,0 +1,132 @@
+﻿:root {
+    --primary-color: #4e73df;
+    --success-color: #1cc88a;
+    --warning-color: #f6c23e;
+    --info-color: #36b9cc;
+    --secondary-color: #858796;
+    --bg-light: #f8f9fc;
+}
+
+body {
+    background-color: var(--bg-light);
+    font-family: 'Nunito', sans-serif;
+}
+
+.text-xs {
+    font-size: 0.75rem;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+}
+
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    background-color: #eaecf4;
+    color: var(--secondary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bg-warning-soft {
+    background-color: #fff3cd;
+}
+
+.text-warning-dark {
+    color: #856404;
+}
+
+.bg-info-soft {
+    background-color: #cff4fc;
+}
+
+.text-info-dark {
+    color: #055160;
+}
+
+.badge-status {
+    padding: 0.5em 1em;
+    border-radius: 0.35rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+.status-assistantchat {
+    background-color: #cff4fc;
+    color: #055160;
+    border: 1px solid #b6effb;
+}
+
+.status-waitingdoctorapproval {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d6d8db;
+}
+
+.status-activedoctorchat {
+    background-color: #d1e7dd;
+    color: #0f5132;
+    border: 1px solid #badbcc;
+}
+
+.status-rejectedbydoctor {
+    background-color: #f8d7da;
+    color: #842029;
+    border: 1px solid #f5c2c7;
+}
+
+.status-closed {
+    background-color: #e9ecef;
+    color: #495057;
+    border: 1px solid #ced4da;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #bac8f3;
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+    .btn-success:hover {
+        background-color: #169b6b;
+        border-color: #169b6b;
+    }
+
+.btn-warning {
+    background-color: var(--warning-color);
+    border-color: var(--warning-color);
+}
+
+    .btn-warning:hover {
+        background-color: #dda20a;
+        border-color: #dda20a;
+    }
+
+.btn-info {
+    background-color: var(--info-color);
+    border-color: var(--info-color);
+}
+
+    .btn-info:hover {
+        background-color: #2c9faf;
+        border-color: #2c9faf;
+    }
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}

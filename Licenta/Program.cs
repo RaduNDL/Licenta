@@ -1,7 +1,6 @@
 ﻿using Infrastructure.Audit;
 using Licenta.Areas.Identity.Data;
 using Licenta.Data;
-using Licenta.Models;
 using Licenta.Services;
 using Licenta.Services.Ml;
 using Licenta.Services.Prediction;
@@ -9,14 +8,15 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QuestPDF.Infrastructure;
 using Serilog;
 using Serilog.Formatting.Compact;
-using System.Security.Claims;
 using System;
 using System.IO;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Licenta
@@ -53,11 +53,19 @@ namespace Licenta
                 {
                     options.SignIn.RequireConfirmedAccount = false;
                     options.User.RequireUniqueEmail = true;
-                    options.Password.RequiredLength = 6;
-                    options.Password.RequireDigit = true;
+
+                    options.Password.RequiredLength = 1;
+                    options.Password.RequireDigit = false;
+                    options.Password.RequireUppercase = false;
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequireLowercase = false;
+                    options.Password.RequiredUniqueChars = 1;
                 })
                 .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<AppDbContext>();
+
+            builder.Services.RemoveAll<IPasswordValidator<ApplicationUser>>();
+            builder.Services.AddScoped<IPasswordValidator<ApplicationUser>, DynamicPasswordValidator>();
 
             builder.Services.AddRazorPages();
             builder.Services.AddSignalR();
@@ -90,10 +98,8 @@ namespace Licenta
 
             builder.Services.AddSingleton<IPredictionTargetRegistry, PredictionTargetRegistry>();
 
-            // Citim sectiunea "MlServiceOptions" asa cum am denumit-o in appsettings.json
             builder.Services.Configure<MlServiceOptions>(builder.Configuration.GetSection("MlServiceOptions"));
 
-            // INREGISTRAM SERVICIUL NOU CARE PORNESTE PYTHON-UL
             builder.Services.AddHostedService<PythonServerHostedService>();
 
             builder.Services.AddHttpClient<IMlImagingClient, MlImagingClient>((sp, client) =>
@@ -139,7 +145,7 @@ namespace Licenta
             app.UseAuditMiddleware();
 
             app.MapRazorPages();
-            app.MapHub<NotificationHub>("/notificationHub");
+            app.MapHub<NotificationHub>("/hubs/notifications");
 
             if (app.Environment.IsDevelopment())
             {

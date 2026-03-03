@@ -20,16 +20,15 @@
     }
 
     <div class="chat-layout @(isChatOpen ? "chat-active" : "")">
-
         <div class="chat-sidebar">
             <div class="sidebar-header">
                 <h5 class="mb-0 fw-bold"><i class="bi bi-chat-heart text-primary me-2"></i>Messages</h5>
-                <div class="d-flex gap-2">
-                    <a asp-page="/Patient/Messages/CreateRequest" class="btn btn-sm btn-primary rounded-circle" title="New Request" style="width: 32px; height: 32px; padding: 0; display:flex; align-items:center; justify-content:center;">
-                        <i class="bi bi-plus-lg"></i>
+                <div class="sidebar-actions">
+                    <a asp-page="/Patient/Messages/CreateRequest" class="btn-action-circle bg-primary" title="New Request">
+                        <i class="bi bi-plus-lg text-white"></i>
                     </a>
-                    <a asp-page="/Patient/Messages/RequestList" class="btn btn-sm btn-outline-secondary rounded-circle" title="History" style="width: 32px; height: 32px; padding: 0; display:flex; align-items:center; justify-content:center;">
-                        <i class="bi bi-list"></i>
+                    <a asp-page="/Patient/Messages/RequestList" class="btn-action-circle border-secondary" title="History">
+                        <i class="bi bi-list text-secondary"></i>
                     </a>
                 </div>
             </div>
@@ -37,19 +36,20 @@
             <div class="conversation-list">
                 @if (!Model.Conversations.Any())
                 {
-                    <div class="text-center p-4 text-muted mt-4">
-                        <i class="bi bi-chat-square opacity-25 fs-1"></i>
-                        <p class="small mt-2">No conversations yet.</p>
+                    <div class="empty-conversation">
+                        <i class="bi bi-chat-square"></i>
+                        <p>No conversations yet.</p>
                     </div>
                 }
                 else
                 {
                     @foreach (var c in Model.Conversations)
                     {
-                        var isActive = c.RequestId == Model.SelectedRequestId && c.Kind == Model.SelectedKind;
+                        var isActive = c.RequestId == Model.SelectedRequestId && c.Kind == Model.SelectedKind && (c.PartnerId ?? "") == (Model.SelectedPartnerId ?? "");
                         <a asp-page="/Patient/Messages/Inbox"
                            asp-route-requestId="@c.RequestId"
                            asp-route-kind="@c.Kind"
+                           asp-route-partnerId="@c.PartnerId"
                            class="conversation-item @(isActive ? "active" : "")">
                             <div class="avatar-circle">
                                 <i class="bi bi-person-fill"></i>
@@ -75,17 +75,17 @@
                 <div class="empty-state">
                     <i class="bi bi-chat-left-text"></i>
                     <h4>Welcome to Messages</h4>
-                    <p>Select a conversation to start communicating with your medical team.</p>
+                    <p>Select a conversation to start communicating.</p>
                 </div>
             }
             else
             {
                 <div class="chat-header">
                     <div class="chat-partner-info">
-                        <a asp-page="/Patient/Messages/Inbox" class="d-md-none me-3 text-dark">
+                        <a asp-page="/Patient/Messages/Inbox" class="mobile-back-btn">
                             <i class="bi bi-arrow-left fs-4"></i>
                         </a>
-                        <div class="avatar-circle bg-primary text-white me-3" style="font-size: 1rem;">
+                        <div class="avatar-header">
                             <i class="bi bi-hospital"></i>
                         </div>
                         <div>
@@ -96,44 +96,33 @@
                 </div>
 
                 <div class="messages-container" id="chatBody">
-                    @if (!Model.Messages.Any())
+                    @foreach (var m in Model.Messages)
                     {
-                        <div class="text-center text-muted my-5">
-                            <small>This is the start of your conversation.</small>
-                        </div>
-                    }
-                    else
-                    {
-                        @foreach (var m in Model.Messages)
-                        {
-                            <div class="message-row @(m.IsMine ? "mine" : "other")">
-                                <div class="message-bubble">
-                                    <span class="message-text">@m.Body</span>
-                                    <span class="message-time">
-                                        @m.SentAtLocal.ToString("HH:mm")
-                                    </span>
-                                </div>
+                        <div class="message-row @(m.IsMine ? "mine" : "other")" data-id="@m.Id" data-utc="@m.SentAtUtc.ToString("O")">
+                            <div class="message-bubble">
+                                <span class="message-text">@m.Body</span>
+                                <span class="message-time">@m.SentAtLocal.ToString("HH:mm")</span>
                             </div>
-                        }
+                        </div>
                     }
                 </div>
 
                 <div class="chat-footer">
+                    <div class="chat-send-error d-none"></div>
+
                     @if (!Model.CanSend)
                     {
-                        <div class="alert alert-secondary mb-0 py-2 small text-center">
+                        <div class="alert-closed">
                             <i class="bi bi-lock"></i> Conversation is closed.
                         </div>
                     }
                     else
                     {
-                        <form method="post"
-                              data-chat-form="1"
-                              data-user-id="@uid"
-                              data-conversation-key="@Model.CurrentConversationKey">
+                        <form method="post" data-chat-form="1" data-user-id="@uid" data-conversation-key="@Model.CurrentConversationKey">
                             @Html.AntiForgeryToken()
                             <input type="hidden" asp-for="Input.RequestId" value="@Model.SelectedRequestId" />
                             <input type="hidden" asp-for="Input.Kind" value="@Model.SelectedKind" />
+                            <input type="hidden" asp-for="Input.PartnerId" value="@Model.SelectedPartnerId" />
 
                             <div class="chat-input-wrapper">
                                 <textarea asp-for="Input.NewMessageBody" class="chat-input" rows="1" placeholder="Type a message..." required></textarea>
@@ -141,8 +130,6 @@
                                     <i class="bi bi-send-fill"></i>
                                 </button>
                             </div>
-                            <span asp-validation-for="Input.NewMessageBody" class="text-danger small ms-2"></span>
-                            <div class="chat-send-error alert alert-danger mt-2 d-none"></div>
                         </form>
                     }
                 </div>

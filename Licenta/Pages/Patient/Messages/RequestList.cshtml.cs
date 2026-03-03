@@ -23,16 +23,27 @@ namespace Licenta.Pages.Patient.Messages
         }
 
         public IList<PatientMessageRequest> Requests { get; set; } = new List<PatientMessageRequest>();
-
+         
         public async Task OnGetAsync()
         {
-            var patient = await _userManager.GetUserAsync(User);
-            if (patient == null) return;
+            var patientUser = await _userManager.GetUserAsync(User);
+            if (patientUser == null) return;
+
+            var patientProfileId = await _db.Patients
+                .Where(p => p.UserId == patientUser.Id)
+                .Select(p => (Guid?)p.Id)
+                .FirstOrDefaultAsync();
+
+            if (patientProfileId == null)
+            {
+                Requests = new List<PatientMessageRequest>();
+                return;
+            }
 
             Requests = await _db.PatientMessageRequests
                 .Include(r => r.Assistant)
-                .Include(r => r.Doctor)
-                .Where(r => r.PatientId == patient.Id)
+                .Include(r => r.DoctorProfile).ThenInclude(d => d.User)
+                .Where(r => r.PatientId == patientProfileId.Value)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
         }

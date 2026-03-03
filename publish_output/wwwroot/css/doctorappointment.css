@@ -1,0 +1,167 @@
+﻿:root {
+    --primary-color: #0d6efd;
+    --primary-light: #e7f1ff;
+    --text-dark: #2c3e50;
+    --text-muted: #6c757d;
+    --border-color: #e9ecef;
+    --slot-height: 80px;
+}
+
+.appointments-container {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    padding: 1.5rem;
+    min-height: 80vh;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.date-display {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-toolbar .btn {
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    font-weight: 500;
+}
+
+/* Day View Timeline */
+.timeline-container {
+    position: relative;
+    padding-top: 1rem;
+}
+
+.time-slot {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    min-height: var(--slot-height);
+}
+
+.time-label {
+    width: 80px;
+    flex-shrink: 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding-top: 10px;
+    border-right: 1px solid var(--border-color);
+}
+
+.slot-content {
+    flex-grow: 1;
+    padding: 5px 15px;
+    background-color: #fafbfc;
+}
+
+    .slot-content.free-slot {
+        background-color: #fff;
+    }
+
+/* Appointment Card */
+.appt-card {
+    background-color: #fff;
+    border-left: 4px solid var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 4px;
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s ease;
+}
+
+    .appt-card:hover {
+        transform: translateX(2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    }
+
+.appt-info h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.appt-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+    .status-badge.confirmed {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .status-badge.pending {
+        background-color: #fff3cd;
+        color: #664d03;
+    }
+
+    .status-badge.cancelled {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+
+/* Week View Table */
+.week-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+    .week-table thead th {
+        background-color: #f8f9fa;
+        color: var(--text-muted);
+        font-weight: 600;
+        padding: 1rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .week-table tbody tr {
+        transition: background-color 0.1s;
+    }
+
+        .week-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+    .week-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
+    }
+
+.date-group-header {
+    background-color: #f1f3f5;
+    font-weight: 700;
+    color: var(--text-dark);
+    padding: 0.5rem 1rem;
+}

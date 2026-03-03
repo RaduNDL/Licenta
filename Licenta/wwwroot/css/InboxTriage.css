@@ -199,3 +199,84 @@ body {
         transform: translateY(0);
     }
 }
+@media (max-width: 768px) {
+    .inbox-container {
+        margin: 20px 10px;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .table thead {
+        display: none;
+    }
+
+    .table,
+    .table tbody,
+    .table tr,
+    .table td {
+        display: block;
+        width: 100%;
+    }
+
+        .table tbody tr {
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            background-color: white;
+        }
+
+        .table tbody td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            text-align: right;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+            .table tbody td:last-child {
+                border-bottom: none;
+                background-color: var(--bg-subtle);
+                justify-content: center;
+                padding: 16px;
+            }
+
+            .table tbody td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 0.7rem;
+                color: var(--text-muted);
+                text-align: left;
+            }
+
+    .file-name {
+        max-width: 100%;
+    }
+
+    .notes-cell {
+        max-width: 100%;
+        text-align: right;
+    }
+
+    .actions-cell {
+        gap: 8px;
+        display: flex;
+        width: 100%;
+    }
+
+    .btn {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+    }
+
+    .btn-outline {
+        margin-right: 0;
+    }
+}

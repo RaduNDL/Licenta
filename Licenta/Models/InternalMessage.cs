@@ -1,4 +1,5 @@
 ﻿using System;
+using Licenta.Areas.Identity.Data;
 
 namespace Licenta.Models
 {

@@ -462,3 +462,133 @@ body {
     border-radius: 12px;
     overflow: hidden;
 }
+@media (max-width: 768px) {
+    .future-container, .page-container {
+        padding: 1rem 0.75rem;
+    }
+
+    .dp-topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .glass-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-bottom: 1rem;
+    }
+
+        .glass-header h1 {
+            font-size: 1.75rem;
+        }
+
+    .header-stats {
+        width: 100%;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .stat-badge {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .dp-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dp-sticky-stack {
+        position: static;
+    }
+
+    .dp-meta-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+
+    .dp-meta-label {
+        font-size: 0.8rem;
+    }
+
+    .dp-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .dp-btn, .btn-hero-primary, .btn-hero-outline {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .dp-result-label {
+        font-size: 1.3rem;
+    }
+
+    .table-predictions thead {
+        display: none;
+    }
+
+    .table-predictions,
+    .table-predictions tbody,
+    .table-predictions tr,
+    .table-predictions td {
+        display: block;
+        width: 100%;
+    }
+
+        .table-predictions tr {
+            margin-bottom: 1rem;
+            border: 1px solid var(--dp-border);
+            border-radius: 12px;
+            padding: 0.75rem;
+            background: #fff;
+        }
+
+        .table-predictions td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+            .table-predictions td:last-child {
+                border-bottom: none;
+            }
+
+            .table-predictions td::before {
+                content: attr(data-label);
+                font-weight: 800;
+                text-transform: uppercase;
+                font-size: 0.7rem;
+                color: #64748b;
+                text-align: left;
+            }
+
+    .dp-accept-modal {
+        width: calc(100% - 20px);
+        padding: 12px;
+    }
+
+    .dp-links {
+        flex-direction: column;
+    }
+
+    .nav-item {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .dp-orb {
+        width: 280px;
+        height: 280px;
+    }
+
+    .dp-card-body {
+        padding: 12px;
+    }
+}

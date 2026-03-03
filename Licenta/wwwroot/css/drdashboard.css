@@ -332,3 +332,72 @@ body {
         justify-content: flex-start;
     }
 }
+@media (max-width: 576px) {
+    .future-container {
+        padding: 1rem 0.75rem;
+    }
+
+    .glass-header {
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+        .glass-header h1 {
+            font-size: 1.8rem;
+        }
+
+    .greeting-wrapper {
+        gap: 8px;
+    }
+
+    .subtitle {
+        font-size: 0.95rem;
+        margin-left: 0;
+        margin-top: 0.25rem;
+    }
+
+    .header-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .stat-badge {
+        width: 100%;
+        justify-content: center;
+        padding: 0.6rem;
+    }
+
+    .glass-alert {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        flex-wrap: wrap;
+    }
+
+    .bento-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .glass-card {
+        padding: 1.25rem;
+    }
+
+    .icon-box {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .count-badge {
+        font-size: 1.2rem;
+    }
+
+    .nav-item {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+        .nav-item:hover {
+            padding-left: 1rem;
+        }
+}

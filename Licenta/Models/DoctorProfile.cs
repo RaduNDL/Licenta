@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-
+using Licenta.Areas.Identity.Data;
 namespace Licenta.Models
 {
     public class DoctorProfile
@@ -10,9 +10,7 @@ namespace Licenta.Models
 
         [Required]
         public string UserId { get; set; } = null!;
-
-        public ApplicationUser User { get; set; } = null!;
-
+        public ApplicationUser? User { get; set; }
         [StringLength(80)]
         public string? Specialty { get; set; }
 
@@ -34,6 +32,7 @@ namespace Licenta.Models
         [StringLength(260)]
         public string? ProfileImagePath { get; set; }
 
+        public ICollection<ApplicationUser> Assistants { get; set; } = new List<ApplicationUser>();
         public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
         public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
         public ICollection<MedicalAttachment> Attachments { get; set; } = new List<MedicalAttachment>();

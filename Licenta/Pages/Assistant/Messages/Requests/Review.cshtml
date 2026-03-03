@@ -1,168 +1,71 @@
 ﻿@page "{id:guid}"
 @model Licenta.Pages.Assistant.Messages.Requests.ReviewModel
-
 @{
     ViewData["Title"] = "Review Request";
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/assistant_review.css" asp-append-version="true" />
-}
-
-<div class="container-fluid py-4">
-
-    <div class="d-flex align-items-center mb-4">
-        <a asp-page="/Assistant/Messages/Requests/Index"
-           class="btn btn-outline-secondary btn-sm me-3 shadow-sm">
-            <i class="bi bi-arrow-left"></i>
-        </a>
-
-        <div>
-            <h2 class="fw-bold text-dark mb-0">Review Request</h2>
-            <p class="text-muted mb-0 small">Request ID: @Model.Id</p>
+<div class="container py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Request Review: @Model.RequestData.Subject</h5>
         </div>
-    </div>
-
-    @if (TempData["StatusMessage"] is string status)
-    {
-        <div class="alert alert-info alert-dismissible fade show shadow-sm border-0 mb-4">
-            <i class="bi bi-info-circle-fill me-2"></i>
-            @status
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    <div class="row g-4">
-
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0 h-100">
-
-                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold text-primary">Request Details</h5>
-                    <span class="badge badge-status status-@Model.Status.ToLower()">
-                        @Model.Status
-                    </span>
+        <div class="card-body">
+            @if (TempData["StatusMessage"] is string status)
+            {
+                <div class="alert alert-info">
+                    @status
                 </div>
+            }
 
-                <div class="card-body">
-
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label class="text-xs text-uppercase text-muted fw-bold mb-1">Patient</label>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-circle me-2">
-                                    <i class="bi bi-person-fill"></i>
-                                </div>
-                                <span class="fw-bold">@Model.PatientName</span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                            <label class="text-xs text-uppercase text-muted fw-bold mb-1">Created At</label>
-                            <div class="fw-bold text-dark">
-                                <i class="bi bi-calendar3 me-1 text-secondary"></i>
-                                @Model.CreatedAtLocal.ToString("MMM dd, yyyy HH:mm")
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="text-xs text-uppercase text-muted fw-bold mb-1">Subject</label>
-                        <p class="h5 text-dark">@Model.Subject</p>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="text-xs text-uppercase text-muted fw-bold mb-1">Message Body</label>
-                        <div class="p-3 bg-light rounded-3 border">
-                            <p class="mb-0 text-break" style="white-space: pre-wrap;">
-                                @Model.Body
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="row g-3 pt-3 border-top">
-                        <div class="col-md-6">
-                            <label class="text-xs text-uppercase text-muted fw-bold mb-1">Assigned Assistant</label>
-                            <p class="mb-0 fw-semibold">
-                                @(string.IsNullOrWhiteSpace(Model.AssistantName) ? "Unassigned" : Model.AssistantName)
-                            </p>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="text-xs text-uppercase text-muted fw-bold mb-1">Assigned Doctor</label>
-                            <p class="mb-0 fw-semibold">
-                                @(string.IsNullOrWhiteSpace(Model.DoctorName) ? "None" : Model.DoctorName)
-                            </p>
-                        </div>
-                    </div>
-
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="text-muted small">Patient</label>
+                    <p class="fw-bold">@(Model.RequestData.Patient?.FullName ?? "Unknown")</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small">Target Doctor</label>
+                    <p class="fw-bold">Dr. @(Model.RequestData.DoctorProfile?.User?.FullName ?? Model.RequestData.DoctorProfile?.User?.Email ?? "Unassigned")</p>
                 </div>
             </div>
-        </div>
 
-        <div class="col-lg-4">
-            <div class="d-flex flex-column gap-3">
-
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white py-3 border-bottom">
-                        <h6 class="mb-0 fw-bold">Quick Actions</h6>
-                    </div>
-
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-
-                            @if (Model.CanAccept)
-                            {
-                                <form method="post"
-                                      asp-page-handler="Accept"
-                                      asp-route-id="@Model.Id">
-                                    <button type="submit"
-                                            class="btn btn-success w-100">
-                                        <i class="bi bi-check-lg me-2"></i>
-                                        Accept & Open Chat
-                                    </button>
-                                </form>
-                            }
-
-                            @if (Model.CanOpenAssistantChat)
-                            {
-                                <a asp-page="/Assistant/Messages/Inbox"
-                                   asp-route-requestId="@Model.Id"
-                                   class="btn btn-primary w-100">
-                                    <i class="bi bi-chat-dots-fill me-2"></i>
-                                    Open Chat
-                                </a>
-                            }
-
-                            @if (!Model.CanAccept && !Model.CanOpenAssistantChat && !Model.CanEscalate && !Model.CanReassign)
-                            {
-                                <div class="alert alert-secondary mb-0 text-center">
-                                    <i class="bi bi-slash-circle me-1"></i>
-                                    No actions available
-                                </div>
-                            }
-
-                        </div>
-                    </div>
-                </div>
-
-                @if (Model.CanEscalate)
-                {
-                    <partial name="_EscalatePartial" model="Model" />
-                }
-
-                @if (Model.CanReassign)
-                {
-                    <partial name="_ReassignPartial" model="Model" />
-                }
-
+            <div class="bg-light p-3 rounded mb-4">
+                <label class="text-muted small">Message Details</label>
+                <p>@Model.RequestData.Body</p>
             </div>
-        </div>
 
+            @if (Model.CanAccept)
+            {
+                <form method="post" asp-page-handler="Accept" asp-route-id="@Model.RequestData.Id" class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check2-circle"></i> Accept & Start Triage
+                    </button>
+                </form>
+
+                <form method="post" asp-page-handler="ReturnToDoctor" asp-route-id="@Model.RequestData.Id" class="mt-3">
+                    <div class="mb-2">
+                        <label class="text-muted small">Note to doctor (optional)</label>
+                        <textarea name="note" class="form-control" rows="3" maxlength="2000"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Send this request back to the doctor?');">
+                        <i class="bi bi-arrow-repeat"></i> Send back to doctor
+                    </button>
+                </form>
+            }
+            else
+            {
+                <div class="d-flex gap-2 mt-4">
+                    <a asp-page="/Assistant/Messages/Inbox" asp-route-requestId="@Model.RequestData.Id" class="btn btn-primary">
+                        <i class="bi bi-chat-dots"></i> Continue Triage Chat
+                    </a>
+
+                    <form method="post" asp-page-handler="ReturnToDoctor" asp-route-id="@Model.RequestData.Id">
+                        <input type="hidden" name="note" value="Assistant requested doctor review." />
+                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Send this request back to the doctor?');">
+                            <i class="bi bi-arrow-repeat"></i> Send back to doctor
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
     </div>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/assistant_review.js" asp-append-version="true"></script>
-}

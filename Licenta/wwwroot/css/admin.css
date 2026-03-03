@@ -142,3 +142,62 @@ body {
     letter-spacing: 0.5px;
     color: var(--admin-muted);
 }
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem !important;
+    }
+
+    .welcome-header {
+        text-align: center;
+    }
+
+        .welcome-header .text-md-end {
+            text-align: center !important;
+            margin-top: 1rem;
+        }
+
+    .stat-card {
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.4rem;
+        margin-right: 1rem;
+    }
+
+    .stat-content h3 {
+        font-size: 1.5rem;
+    }
+
+ 
+    .quick-action-btn {
+        padding: 1rem 0.25rem;
+    }
+
+        .quick-action-btn i {
+            font-size: 1.5rem;
+        }
+
+    .panel-body {
+        overflow-x: auto;
+    }
+
+    .panel-header h5 {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .stat-icon {
+        margin-right: 0;
+        margin-bottom: 0.75rem;
+    }
+}

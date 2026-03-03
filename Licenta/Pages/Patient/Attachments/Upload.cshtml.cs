@@ -7,10 +7,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Licenta.Pages.Patient.Attachments
@@ -38,8 +40,13 @@ namespace Licenta.Pages.Patient.Attachments
         [BindProperty]
         public InputModel Input { get; set; } = new();
 
+        public SelectList DoctorList { get; set; } = null!;
+
         public class InputModel
         {
+            [Required(ErrorMessage = "Please select a doctor.")]
+            public Guid DoctorId { get; set; }
+
             [Required(ErrorMessage = "Please select a document type.")]
             public string Type { get; set; } = "";
 
@@ -49,10 +56,19 @@ namespace Licenta.Pages.Patient.Attachments
             public IFormFile File { get; set; } = null!;
         }
 
+        public async Task<IActionResult> OnGetAsync()
+        {
+            await LoadDoctorsAsync();
+            return Page();
+        }
+
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)
+            {
+                await LoadDoctorsAsync();
                 return Page();
+            }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -63,6 +79,17 @@ namespace Licenta.Pages.Patient.Attachments
 
             if (patient == null)
                 return Forbid();
+
+            var selectedDoctor = await _db.Doctors
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d => d.Id == Input.DoctorId);
+
+            if (selectedDoctor == null || selectedDoctor.User == null)
+            {
+                ModelState.AddModelError("Input.DoctorId", "Selected doctor is not valid.");
+                await LoadDoctorsAsync();
+                return Page();
+            }
 
             var uploadsFolder = Path.Combine(
                 _env.WebRootPath,
@@ -85,18 +112,12 @@ namespace Licenta.Pages.Patient.Attachments
             {
                 Id = Guid.NewGuid(),
                 PatientId = patient.Id,
-
+                DoctorId = Input.DoctorId,
                 FileName = Input.File.FileName,
-
                 FilePath = $"/uploads/cbis_ddsm/{uniqueFileName}",
-
                 ContentType = Input.File.ContentType,
-
                 Type = string.IsNullOrWhiteSpace(Input.Type) ? "CBIS-DDSM Breast Image" : Input.Type.Trim(),
-
-
                 PatientNotes = Input.Notes,
-
                 Status = AttachmentStatus.Pending,
                 UploadedAt = DateTime.UtcNow
             };
@@ -104,29 +125,45 @@ namespace Licenta.Pages.Patient.Attachments
             _db.MedicalAttachments.Add(attachment);
             await _db.SaveChangesAsync();
 
-            var doctors = await _userManager.GetUsersInRoleAsync("Doctor");
+            await _notifier.NotifyAsync(
+                selectedDoctor.User,
+                NotificationType.Document,
+                "New breast image uploaded",
+                $"Patient {user.FullName ?? user.Email} uploaded a new image: {attachment.FileName}",
+                actionUrl: "/Doctor/Attachments/Inbox",
+                actionText: "Review Image",
+                relatedEntity: "MedicalAttachment",
+                relatedEntityId: attachment.Id.ToString(),
+                sendEmail: false
+            );
 
-            foreach (var doctor in doctors)
+            TempData["StatusMessage"] = $"Breast image uploaded successfully. Dr. {selectedDoctor.User.FullName} has been notified.";
+            return RedirectToPage("/Patient/Attachments/Index");
+        }
+
+        private async Task LoadDoctorsAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var clinicId = (user?.ClinicId ?? "").Trim();
+
+            var query = _db.Doctors
+                .Include(d => d.User)
+                .Where(d => !d.User.IsSoftDeleted);
+
+            if (!string.IsNullOrWhiteSpace(clinicId))
             {
-                if (!string.IsNullOrWhiteSpace(user.ClinicId) &&
-                    doctor.ClinicId != user.ClinicId)
-                    continue;
-
-                await _notifier.NotifyAsync(
-                    doctor,
-                    NotificationType.Document,
-                    "New breast image uploaded",
-                    $"A patient uploaded a CBIS-DDSM image: {attachment.FileName}",
-                    relatedEntity: "MedicalAttachment",
-                    relatedEntityId: attachment.Id.ToString(),
-                    sendEmail: false
-                );
+                query = query.Where(d => d.User.ClinicId == clinicId);
             }
 
-            TempData["StatusMessage"] =
-                "Breast image uploaded successfully. Your doctor has been notified.";
+            var doctors = await query
+                .Select(d => new
+                {
+                    d.Id,
+                    DisplayName = "Dr. " + (d.User.FullName ?? d.User.Email) + " - " + (d.Specialty ?? "General Practice")
+                })
+                .ToListAsync();
 
-            return RedirectToPage("/Patient/Attachments/Index");
+            DoctorList = new SelectList(doctors, "Id", "DisplayName");
         }
     }
 }

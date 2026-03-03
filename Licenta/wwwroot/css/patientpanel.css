@@ -219,3 +219,80 @@ body {
     .notification-item:last-child {
         border-bottom: none;
     }
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding-bottom: 1.5rem;
+    }
+
+    .welcome-section {
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .welcome-bg-icon {
+        font-size: 6rem;
+        right: -10px;
+        bottom: -20px;
+    }
+
+    .stat-widget {
+        margin-bottom: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+        margin-right: 0.75rem;
+    }
+
+    .dashboard-card {
+        margin-bottom: 1.25rem;
+    }
+
+    .card-header-custom {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+
+    .quick-action-btn {
+        padding: 1rem;
+        aspect-ratio: 1 / 1;
+    }
+
+        .quick-action-btn i {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quick-action-btn span {
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+    .timeline-item {
+        padding-left: 1.5rem;
+        padding-bottom: 1.25rem;
+    }
+
+    .dashboard-notification-scroll-area {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .welcome-section h2 {
+        font-size: 1.4rem;
+    }
+
+    .stat-widget .ms-auto {
+        display: none;
+    }
+
+    .dashboard-card .card-body {
+        padding: 1rem;
+    }
+}

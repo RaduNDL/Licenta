@@ -62,10 +62,13 @@
             {
                 var statusClass = r.Status.ToString().ToLower() switch
                 {
-                    "pending" => "status-pending",
-                    "completed" => "status-completed",
-                    "rejected" => "status-rejected",
-                    _ => "status-active"
+                                "waitingdoctorapproval" => "status-waiting",
+                                "pending" => "status-pending",
+                                "assistantchat" => "status-active",
+                                "activedoctorchat" => "status-active",
+                                "rejectedbydoctor" => "status-rejected",
+                                "closed" => "status-closed",
+                    _ => "status-pending"
                 };
 
                 <div class="request-card" data-subject="@r.Subject.ToLower()">
@@ -89,7 +92,7 @@
                             </div>
                             <div class="person-info">
                                 <span class="label">Assistant</span>
-                                <span class="name">@(r.Assistant?.FullName ?? r.Assistant?.UserName ?? "Waiting...")</span>
+                                <span class="name">@(r.Assistant?.FullName ?? r.Assistant?.UserName ?? "Not assigned")</span>
                             </div>
                         </div>
 
@@ -99,10 +102,34 @@
                             </div>
                             <div class="person-info">
                                 <span class="label">Doctor</span>
-                                <span class="name">@(r.Doctor?.FullName ?? r.Doctor?.UserName ?? "-")</span>
+                                <span class="name">@(r.DoctorProfile?.User?.FullName ?? r.DoctorProfile?.User?.Email ?? "Not assigned")</span>
                             </div>
                         </div>
                     </div>
+
+                    @if (r.Status.ToString() == "AssistantChat" && r.AssistantId != null)
+                    {
+                        <div class="mt-3">
+                            <a class="btn-modern btn-primary-soft"
+                               asp-page="/Patient/Messages/Inbox"
+                               asp-route-requestId="@r.Id"
+                               asp-route-kind="Assistant">
+                                Open Assistant Chat
+                            </a>
+                        </div>
+                    }
+
+                    @if (r.Status.ToString() == "ActiveDoctorChat")
+                    {
+                        <div class="mt-3">
+                            <a class="btn-modern btn-primary-soft"
+                               asp-page="/Patient/Messages/Inbox"
+                               asp-route-requestId="@r.Id"
+                               asp-route-kind="Doctor">
+                                Open Doctor Chat
+                            </a>
+                        </div>
+                    }
                 </div>
             }
         </div>

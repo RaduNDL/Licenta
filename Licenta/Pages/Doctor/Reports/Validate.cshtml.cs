@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -17,11 +18,13 @@ namespace Licenta.Pages.Doctor.Reports
     {
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly INotificationService _notifier;
 
-        public ValidateModel(AppDbContext db, UserManager<ApplicationUser> userManager)
+        public ValidateModel(AppDbContext db, UserManager<ApplicationUser> userManager, INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
+            _notifier = notifier;
         }
 
         public List<MedicalRecord> Pending { get; set; } = new();
@@ -91,12 +94,28 @@ namespace Licenta.Pages.Doctor.Reports
                 return RedirectToPage();
             }
 
-            record.Status = RecordStatus.Final;
+            record.Status = RecordStatus.Validated;
             record.ValidatedAtUtc = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
 
-            var patientName = record.Patient?.User?.FullName ?? "patient";
+            var patientUser = record.Patient?.User;
+            if (patientUser != null)
+            {
+                await _notifier.NotifyAsync(
+                    patientUser,
+                    NotificationType.Document,
+                    "Medical Report Validated",
+                    $"Dr. {currentUser.FullName ?? currentUser.Email} has validated a new medical report for your recent visit.",
+                    actionUrl: $"/Patient/MedicalRecords/Details?id={record.Id}",
+                    actionText: "View Report",
+                    relatedEntity: "MedicalRecord",
+                    relatedEntityId: record.Id.ToString(),
+                    sendEmail: false
+                );
+            }
+
+            var patientName = patientUser?.FullName ?? "patient";
             TempData["StatusMessage"] = $"Record for {patientName} has been validated.";
             return RedirectToPage();
         }

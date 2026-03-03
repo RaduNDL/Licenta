@@ -22,13 +22,16 @@ namespace Licenta.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Licenta.Models.ApplicationUser", b =>
+            modelBuilder.Entity("Licenta.Areas.Identity.Data.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("AssignedDoctorId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ClinicId")
                         .HasColumnType("nvarchar(max)");
@@ -85,6 +88,8 @@ namespace Licenta.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AssignedDoctorId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -247,13 +252,13 @@ namespace Licenta.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("PatientId");
+
                     b.HasIndex("SelectedOptionId");
 
                     b.HasIndex("AppointmentId", "Status");
-
-                    b.HasIndex("DoctorId", "Status");
-
-                    b.HasIndex("PatientId", "Status");
 
                     b.ToTable("AppointmentRescheduleRequests");
                 });
@@ -390,9 +395,11 @@ namespace Licenta.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("RecipientId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("SenderId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("SentAt")
@@ -409,35 +416,6 @@ namespace Licenta.Migrations
                     b.HasIndex("SenderId");
 
                     b.ToTable("InternalMessages");
-                });
-
-            modelBuilder.Entity("Licenta.Models.InventoryItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Category")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MinQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("InventoryItems");
                 });
 
             modelBuilder.Entity("Licenta.Models.LabResult", b =>
@@ -474,9 +452,6 @@ namespace Licenta.Migrations
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UploadedByAssistantId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<DateTime?>("ValidatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -487,11 +462,48 @@ namespace Licenta.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.HasIndex("UploadedByAssistantId");
-
                     b.HasIndex("ValidatedByDoctorId");
 
                     b.ToTable("LabResults");
+                });
+
+            modelBuilder.Entity("Licenta.Models.Licenta.Models.SystemSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClinicName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("LogoPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("MaxUploadMb")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PasswordMinLength")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("RequireDigit")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("RequireSpecialChar")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("RequireUppercase")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClinicName");
+
+                    b.ToTable("SystemSettings");
                 });
 
             modelBuilder.Entity("Licenta.Models.MedicalAttachment", b =>
@@ -499,16 +511,6 @@ namespace Licenta.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("AssignedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("AssignedByAssistantId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("AssistantNotes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<string>("ContentType")
                         .HasMaxLength(200)
@@ -551,9 +553,6 @@ namespace Licenta.Migrations
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UploadedByAssistantId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<DateTime?>("ValidatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -569,8 +568,6 @@ namespace Licenta.Migrations
                     b.HasIndex("DoctorId");
 
                     b.HasIndex("PatientId");
-
-                    b.HasIndex("UploadedByAssistantId");
 
                     b.HasIndex("ValidatedByDoctorId");
 
@@ -702,14 +699,14 @@ namespace Licenta.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("DoctorId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("DoctorProfileId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("EscalationReason")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PatientId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -725,7 +722,7 @@ namespace Licenta.Migrations
 
                     b.HasIndex("AssistantId");
 
-                    b.HasIndex("DoctorId");
+                    b.HasIndex("DoctorProfileId");
 
                     b.HasIndex("PatientId");
 
@@ -803,9 +800,6 @@ namespace Licenta.Migrations
                     b.Property<float?>("Probability")
                         .HasColumnType("real");
 
-                    b.Property<string>("RequestedByAssistantId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("ResultLabel")
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
@@ -821,8 +815,6 @@ namespace Licenta.Migrations
                     b.HasIndex("DoctorId");
 
                     b.HasIndex("PatientId");
-
-                    b.HasIndex("RequestedByAssistantId");
 
                     b.ToTable("Predictions");
                 });
@@ -888,88 +880,6 @@ namespace Licenta.Migrations
                     b.ToTable("PrescriptionItems");
                 });
 
-            modelBuilder.Entity("Licenta.Models.SterilizationCycle", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CycleNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DeviceName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("PerformedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SterilizationCycles");
-                });
-
-            modelBuilder.Entity("Licenta.Models.SystemSetting", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ClinicName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("LogoPath")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("MaxUploadMb")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PasswordMinLength")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("RequireDigit")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("RequireSpecialChar")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("RequireUppercase")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("SmtpPassword")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SmtpPort")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SmtpServer")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("SmtpUseSSL")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("SmtpUser")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClinicName");
-
-                    b.ToTable("SystemSettings");
-                });
-
             modelBuilder.Entity("Licenta.Models.UserActivityLog", b =>
                 {
                     b.Property<long>("Id")
@@ -1006,11 +916,17 @@ namespace Licenta.Migrations
 
             modelBuilder.Entity("Licenta.Models.UserNotification", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    b.Property<string>("ActionText")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("ActionUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
@@ -1021,6 +937,9 @@ namespace Licenta.Migrations
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("RelatedEntity")
                         .HasColumnType("nvarchar(max)");
@@ -1036,11 +955,12 @@ namespace Licenta.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("UserId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "IsRead", "CreatedAtUtc");
 
                     b.ToTable("UserNotifications");
                 });
@@ -1182,6 +1102,16 @@ namespace Licenta.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Licenta.Areas.Identity.Data.ApplicationUser", b =>
+                {
+                    b.HasOne("Licenta.Models.DoctorProfile", "AssignedDoctor")
+                        .WithMany("Assistants")
+                        .HasForeignKey("AssignedDoctorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AssignedDoctor");
+                });
+
             modelBuilder.Entity("Licenta.Models.Appointment", b =>
                 {
                     b.HasOne("Licenta.Models.DoctorProfile", "Doctor")
@@ -1248,7 +1178,7 @@ namespace Licenta.Migrations
 
             modelBuilder.Entity("Licenta.Models.AuditLog", b =>
                 {
-                    b.HasOne("Licenta.Models.ApplicationUser", "User")
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1269,7 +1199,7 @@ namespace Licenta.Migrations
 
             modelBuilder.Entity("Licenta.Models.DoctorProfile", b =>
                 {
-                    b.HasOne("Licenta.Models.ApplicationUser", "User")
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "User")
                         .WithOne("DoctorProfile")
                         .HasForeignKey("Licenta.Models.DoctorProfile", "UserId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1279,15 +1209,17 @@ namespace Licenta.Migrations
 
             modelBuilder.Entity("Licenta.Models.InternalMessage", b =>
                 {
-                    b.HasOne("Licenta.Models.ApplicationUser", "Recipient")
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "Recipient")
                         .WithMany()
                         .HasForeignKey("RecipientId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.HasOne("Licenta.Models.ApplicationUser", "Sender")
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "Sender")
                         .WithMany()
                         .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Recipient");
 
@@ -1302,19 +1234,12 @@ namespace Licenta.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Licenta.Models.ApplicationUser", "UploadedByAssistant")
-                        .WithMany()
-                        .HasForeignKey("UploadedByAssistantId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Licenta.Models.DoctorProfile", "ValidatedByDoctor")
                         .WithMany()
                         .HasForeignKey("ValidatedByDoctorId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Patient");
-
-                    b.Navigation("UploadedByAssistant");
 
                     b.Navigation("ValidatedByDoctor");
                 });
@@ -1332,11 +1257,6 @@ namespace Licenta.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Licenta.Models.ApplicationUser", "UploadedByAssistant")
-                        .WithMany()
-                        .HasForeignKey("UploadedByAssistantId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Licenta.Models.DoctorProfile", "ValidatedByDoctor")
                         .WithMany()
                         .HasForeignKey("ValidatedByDoctorId")
@@ -1345,8 +1265,6 @@ namespace Licenta.Migrations
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
-
-                    b.Navigation("UploadedByAssistant");
 
                     b.Navigation("ValidatedByDoctor");
                 });
@@ -1383,7 +1301,7 @@ namespace Licenta.Migrations
                         .HasForeignKey("AppointmentId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("Licenta.Models.ApplicationUser", "CreatedBy")
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "CreatedBy")
                         .WithMany()
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1403,31 +1321,33 @@ namespace Licenta.Migrations
 
             modelBuilder.Entity("Licenta.Models.PatientMessageRequest", b =>
                 {
-                    b.HasOne("Licenta.Models.ApplicationUser", "Assistant")
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "Assistant")
                         .WithMany()
                         .HasForeignKey("AssistantId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Licenta.Models.ApplicationUser", "Doctor")
+                    b.HasOne("Licenta.Models.DoctorProfile", "DoctorProfile")
                         .WithMany()
-                        .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("DoctorProfileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.HasOne("Licenta.Models.ApplicationUser", "Patient")
+                    b.HasOne("Licenta.Models.PatientProfile", "Patient")
                         .WithMany()
                         .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Assistant");
 
-                    b.Navigation("Doctor");
+                    b.Navigation("DoctorProfile");
 
                     b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("Licenta.Models.PatientProfile", b =>
                 {
-                    b.HasOne("Licenta.Models.ApplicationUser", "User")
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "User")
                         .WithOne("PatientProfile")
                         .HasForeignKey("Licenta.Models.PatientProfile", "UserId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -1449,16 +1369,9 @@ namespace Licenta.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Licenta.Models.ApplicationUser", "RequestedByAssistant")
-                        .WithMany()
-                        .HasForeignKey("RequestedByAssistantId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
-
-                    b.Navigation("RequestedByAssistant");
                 });
 
             modelBuilder.Entity("Licenta.Models.Prescription", b =>
@@ -1500,7 +1413,7 @@ namespace Licenta.Migrations
 
             modelBuilder.Entity("Licenta.Models.UserActivityLog", b =>
                 {
-                    b.HasOne("Licenta.Models.ApplicationUser", "User")
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1510,10 +1423,11 @@ namespace Licenta.Migrations
 
             modelBuilder.Entity("Licenta.Models.UserNotification", b =>
                 {
-                    b.HasOne("Licenta.Models.ApplicationUser", "User")
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "User")
                         .WithMany("Notifications")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
@@ -1529,7 +1443,7 @@ namespace Licenta.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Licenta.Models.ApplicationUser", null)
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1538,7 +1452,7 @@ namespace Licenta.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Licenta.Models.ApplicationUser", null)
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1553,7 +1467,7 @@ namespace Licenta.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Licenta.Models.ApplicationUser", null)
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1562,14 +1476,14 @@ namespace Licenta.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Licenta.Models.ApplicationUser", null)
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Licenta.Models.ApplicationUser", b =>
+            modelBuilder.Entity("Licenta.Areas.Identity.Data.ApplicationUser", b =>
                 {
                     b.Navigation("DoctorProfile");
 
@@ -1581,6 +1495,8 @@ namespace Licenta.Migrations
             modelBuilder.Entity("Licenta.Models.DoctorProfile", b =>
                 {
                     b.Navigation("Appointments");
+
+                    b.Navigation("Assistants");
 
                     b.Navigation("Attachments");
 

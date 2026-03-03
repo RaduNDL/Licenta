@@ -26,23 +26,27 @@ namespace Licenta.Pages.Doctor
         }
 
         public string DoctorName { get; set; } = "Doctor";
-
-        public int AppointmentsTodayCount { get; set; }
-        public int PendingValidationsCount { get; set; }
+        public int TodayAppointmentsCount { get; set; }
+        public int PendingDocsCount { get; set; }
         public int UnreadMessagesCount { get; set; }
-        public int TotalPatientsCount { get; set; }
         public int PendingApprovalsCount { get; set; }
-        public int PendingRescheduleApprovalsCount { get; set; }
 
-        public List<Appointment> UpcomingAppointments { get; set; } = new();
-        public List<MedicalAttachment> PendingAttachments { get; set; } = new();
-        public List<NotificationVm> RecentNotifications { get; set; } = new();
+        public List<TodayAppointmentVm> TodayAppointments { get; set; } = new();
+        public List<ActivityVm> RecentActivity { get; set; } = new();
 
-        public class NotificationVm
+        public class TodayAppointmentVm
         {
-            public string Type { get; set; } = "";
-            public string Message { get; set; } = "";
+            public string Time { get; set; } = "";
+            public string PatientName { get; set; } = "";
+            public string Status { get; set; } = "";
+            public string Reason { get; set; } = "";
+        }
+
+        public class ActivityVm
+        {
+            public string Title { get; set; } = "";
             public string TimeAgo { get; set; } = "";
+            public string IconClass { get; set; } = "";
         }
 
         public async Task OnGetAsync(CancellationToken ct)
@@ -52,7 +56,6 @@ namespace Licenta.Pages.Doctor
                 return;
 
             DoctorName = user.FullName ?? user.Email ?? "Doctor";
-            var clinicId = user.ClinicId;
 
             var doctor = await _db.Doctors
                 .AsNoTracking()
@@ -62,15 +65,11 @@ namespace Licenta.Pages.Doctor
                 return;
 
             var doctorId = doctor.Id;
-
             var todayLocal = DateTime.Today;
-            var startLocal = todayLocal.Date;
-            var endLocal = startLocal.AddDays(1);
+            var startUtc = DateTime.SpecifyKind(todayLocal, DateTimeKind.Local).ToUniversalTime();
+            var endUtc = DateTime.SpecifyKind(todayLocal.AddDays(1), DateTimeKind.Local).ToUniversalTime();
 
-            var startUtc = DateTime.SpecifyKind(startLocal, DateTimeKind.Local).ToUniversalTime();
-            var endUtc = DateTime.SpecifyKind(endLocal, DateTimeKind.Local).ToUniversalTime();
-
-            AppointmentsTodayCount = await _db.Appointments
+            TodayAppointmentsCount = await _db.Appointments
                 .AsNoTracking()
                 .Where(a => a.DoctorId == doctorId
                             && a.Status != AppointmentStatus.Cancelled
@@ -78,90 +77,83 @@ namespace Licenta.Pages.Doctor
                             && a.ScheduledAt < endUtc)
                 .CountAsync(ct);
 
-            UpcomingAppointments = await _db.Appointments
+            var upcomingAppts = await _db.Appointments
                 .AsNoTracking()
                 .Include(a => a.Patient).ThenInclude(p => p.User)
                 .Where(a => a.DoctorId == doctorId
                             && a.Status != AppointmentStatus.Cancelled
-                            && a.ScheduledAt >= DateTime.UtcNow
+                            && a.ScheduledAt >= startUtc
                             && a.ScheduledAt < endUtc)
                 .OrderBy(a => a.ScheduledAt)
                 .Take(8)
                 .ToListAsync(ct);
 
-            var attachmentsQuery = _db.MedicalAttachments
+            TodayAppointments = upcomingAppts.Select(a => new TodayAppointmentVm
+            {
+                Time = a.ScheduledAt.ToLocalTime().ToString("HH:mm"),
+                PatientName = a.Patient?.User?.FullName ?? "Unknown Patient",
+                Status = a.Status.ToString(),
+                Reason = string.IsNullOrWhiteSpace(a.Reason) ? "Consultation" : a.Reason
+            }).ToList();
+
+            PendingDocsCount = await _db.MedicalAttachments
                 .AsNoTracking()
-                .Include(a => a.Patient).ThenInclude(p => p!.User)
                 .Where(a => a.Status == AttachmentStatus.Pending
                             && a.DoctorId == doctorId
-                            && a.Type != "AppointmentRequest");
-
-            if (!string.IsNullOrWhiteSpace(clinicId))
-                attachmentsQuery = attachmentsQuery.Where(a => a.Patient != null && a.Patient.User != null && a.Patient.User.ClinicId == clinicId);
-
-            PendingValidationsCount = await attachmentsQuery.CountAsync(ct);
-
-            PendingAttachments = await attachmentsQuery
-                .OrderBy(a => a.UploadedAt)
-                .Take(8)
-                .ToListAsync(ct);
-
-            UnreadMessagesCount = await _db.InternalMessages
-                .AsNoTracking()
-                .Where(m => m.RecipientId == user.Id && !m.IsRead)
-                .CountAsync(ct);
-
-            TotalPatientsCount = await _db.Patients
-                .AsNoTracking()
-                .Include(p => p.User)
-                .Where(p => p.User != null && p.User.ClinicId == clinicId)
+                            && a.Type != "AppointmentRequest")
                 .CountAsync(ct);
 
             PendingApprovalsCount = await _db.MedicalAttachments
                 .AsNoTracking()
                 .Where(a => a.Type == "AppointmentRequest"
                             && a.Status == AttachmentStatus.Pending
-                            && a.DoctorId == doctorId
-                            && a.ValidationNotes != null
-                            && EF.Functions.Like(a.ValidationNotes, "%AWAITING_DOCTOR_APPROVAL%"))
+                            && a.DoctorId == doctorId)
                 .CountAsync(ct);
 
-            PendingRescheduleApprovalsCount = await _db.Set<AppointmentRescheduleRequest>()
+            var unreadNotifs = await _db.UserNotifications
                 .AsNoTracking()
-                .Where(r => r.DoctorId == doctorId
-                            && r.Status == AppointmentRescheduleStatus.PatientSelected
-                            && r.SelectedOptionId != null)
+                .Where(n => n.UserId == user.Id && !n.IsRead)
                 .CountAsync(ct);
+
+            UnreadMessagesCount = unreadNotifs;
 
             var nowUtc = DateTime.UtcNow;
-
             var notes = await _db.UserNotifications
                 .AsNoTracking()
                 .Where(n => n.UserId == user.Id)
                 .OrderByDescending(n => n.CreatedAtUtc)
-                .Take(12)
+                .Take(10)
                 .ToListAsync(ct);
 
-            RecentNotifications = notes
-                .Select(n => new NotificationVm
-                {
-                    Type = n.Type.ToString(),
-                    Message = n.Message ?? "",
-                    TimeAgo = FormatAgo(n.CreatedAtUtc, nowUtc)
-                })
-                .ToList();
+            RecentActivity = notes.Select(n => new ActivityVm
+            {
+                Title = string.IsNullOrWhiteSpace(n.Title) ? n.Type.ToString() : n.Title,
+                TimeAgo = FormatAgo(n.CreatedAtUtc, nowUtc),
+                IconClass = GetIconForType(n.Type.ToString())
+            }).ToList();
         }
 
         private static string FormatAgo(DateTime createdAtUtc, DateTime nowUtc)
         {
             var diff = nowUtc - createdAtUtc;
-
             if (diff.TotalSeconds < 60) return "just now";
             if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} min ago";
             if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} hrs ago";
             if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} days ago";
+            return createdAtUtc.ToLocalTime().ToString("MMM dd, HH:mm");
+        }
 
-            return createdAtUtc.ToLocalTime().ToString("g");
+        private static string GetIconForType(string type)
+        {
+            return type switch
+            {
+                "Appointment" => "fa-calendar-check text-success",
+                "Message" => "fa-envelope text-info",
+                "Document" => "fa-file-medical text-primary",
+                "System" => "fa-server text-secondary",
+                "Prediction" => "fa-robot text-warning",
+                _ => "fa-bell text-warning"
+            };
         }
     }
 }

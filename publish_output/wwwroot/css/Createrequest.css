@@ -1,0 +1,208 @@
+﻿:root {
+    --primary-blue: #2563eb;
+    --primary-teal: #0d9488;
+    --medical-gradient: linear-gradient(135deg, #1e3a8a 0%, #0d9488 100%);
+    --bg-light: #f3f4f6;
+    --text-dark: #1f2937;
+    --text-muted: #6b7280;
+}
+
+
+.request-page-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    background-color: var(--bg-light);
+    padding: 2rem;
+}
+
+.request-card {
+    display: flex;
+    width: 100%;
+    max-width: 1000px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    min-height: 600px;
+}
+
+.request-info-panel {
+    flex: 2;
+    background: var(--medical-gradient);
+    padding: 3rem;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+}
+
+.icon-header {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.9;
+}
+
+.request-info-panel h3 {
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.request-info-panel p {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    line-height: 1.6;
+}
+
+.process-steps {
+    margin-top: 3rem;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.2rem;
+    opacity: 0.6;
+    transition: 0.3s;
+}
+
+    .step.active {
+        opacity: 1;
+        font-weight: 600;
+    }
+
+    .step i {
+        width: 30px;
+        text-align: center;
+        margin-right: 10px;
+    }
+
+.request-form-panel {
+    flex: 3;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+    .form-header h2 {
+        color: var(--text-dark);
+        font-weight: 700;
+        margin: 0;
+    }
+
+.badge-status {
+    background: #e5e7eb;
+    color: var(--text-muted);
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.form-group-modern {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1rem;
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.form-control-modern {
+    width: 100%;
+    padding: 0.8rem 1rem 0.8rem 2.5rem; 
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    outline: none;
+    color: var(--text-dark);
+}
+
+.textarea-wrapper .form-control-modern {
+    padding-left: 1rem; 
+    resize: none;
+}
+
+.form-control-modern:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+
+.form-actions {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 2rem;
+}
+
+.btn-modern {
+    padding: 0.8rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+}
+
+    .btn-ghost:hover {
+        background: #f3f4f6;
+        color: var(--text-dark);
+    }
+
+.btn-gradient {
+    background: var(--medical-gradient);
+    color: white;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+}
+
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+
+
+.alert-custom-info {
+    background: #eff6ff;
+    border-left: 4px solid var(--primary-blue);
+    color: #1e40af;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+

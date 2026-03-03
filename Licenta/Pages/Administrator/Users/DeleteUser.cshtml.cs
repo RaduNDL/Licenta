@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
+using Licenta.Areas.Identity.Data;
 namespace Licenta.Pages.Administrator.Users
 {
     [Authorize(Roles = "Administrator")]

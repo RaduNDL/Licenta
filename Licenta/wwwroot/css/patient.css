@@ -417,3 +417,114 @@ a {
         margin-bottom: 0.5rem;
         opacity: 0.5;
     }
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem 0.5rem;
+    }
+
+    .stat-widget {
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.4rem;
+    }
+
+    .stat-widget h3 {
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .dashboard-card {
+        margin-bottom: 1rem;
+    }
+
+    .card-header-custom {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .table thead {
+        display: none;
+    }
+
+    .table,
+    .table tbody,
+    .table tr,
+    .table td {
+        display: block;
+        width: 100%;
+    }
+
+        .table tr {
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: var(--border-radius-md);
+            padding: 0.5rem;
+            background: #fff;
+        }
+
+        .table td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid #f1f3f5;
+        }
+
+            .table td:last-child {
+                border-bottom: none;
+            }
+
+            .table td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                text-transform: uppercase;
+                font-size: 0.7rem;
+                color: var(--text-muted);
+                text-align: left;
+            }
+
+    .quick-action-btn {
+        padding: 1.25rem 0.75rem;
+    }
+
+        .quick-action-btn i {
+            font-size: 1.5rem;
+        }
+
+    .message-bubble {
+        max-width: 90%;
+    }
+
+    .notification-item {
+        padding: 1rem;
+    }
+
+    .notif-title {
+        max-width: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stat-widget {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .stat-icon {
+        margin: 0 auto;
+    }
+
+    .btn-see-all {
+        width: 100%;
+        text-align: center;
+        margin-top: 0.5rem;
+    }
+}

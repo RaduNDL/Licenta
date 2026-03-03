@@ -5,313 +5,113 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Licenta.Pages.Assistant.Messages.Requests
+namespace Licenta.Pages.Assistant.Messages.Requests;
+
+[Authorize(Roles = "Assistant")]
+public class ReviewModel : PageModel
 {
-    [Authorize(Roles = "Assistant")]
-    public class ReviewModel : PageModel
+    private readonly AppDbContext _db;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly INotificationService _notifier;
+
+    public ReviewModel(AppDbContext db, UserManager<ApplicationUser> userManager, INotificationService notifier)
     {
-        private readonly AppDbContext _db;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly INotificationService _notifier;
+        _db = db;
+        _userManager = userManager;
+        _notifier = notifier;
+    }
 
-        public ReviewModel(
-            AppDbContext db,
-            UserManager<ApplicationUser> userManager,
-            INotificationService notifier)
+    public PatientMessageRequest RequestData { get; set; } = null!;
+    public bool CanAccept { get; set; }
+
+    public async Task<IActionResult> OnGetAsync(Guid id)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Unauthorized();
+
+        if (user.AssignedDoctorId == null) return Unauthorized();
+
+        RequestData = await _db.PatientMessageRequests
+            .Include(r => r.Patient).ThenInclude(p => p.User)
+            .Include(r => r.DoctorProfile).ThenInclude(d => d.User)
+            .Include(r => r.Assistant)
+            .FirstOrDefaultAsync(r =>
+                r.Id == id &&
+                r.DoctorProfileId == user.AssignedDoctorId.Value &&
+                (r.AssistantId == null || r.AssistantId == user.Id));
+
+        if (RequestData == null) return NotFound();
+
+        CanAccept = RequestData.Status == PatientMessageRequestStatus.Pending && string.IsNullOrEmpty(RequestData.AssistantId);
+
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostAcceptAsync(Guid id)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Unauthorized();
+        if (user.AssignedDoctorId == null) return Unauthorized();
+
+        var req = await _db.PatientMessageRequests
+            .Include(r => r.Patient)
+            .FirstOrDefaultAsync(r => r.Id == id && r.DoctorProfileId == user.AssignedDoctorId.Value);
+
+        if (req == null) return NotFound();
+        if (req.Status != PatientMessageRequestStatus.Pending) return BadRequest();
+
+        if (!string.IsNullOrWhiteSpace(req.AssistantId) && req.AssistantId != user.Id)
         {
-            _db = db;
-            _userManager = userManager;
-            _notifier = notifier;
+            TempData["StatusMessage"] = "This request is assigned to another assistant.";
+            return RedirectToPage("./Review", new { id });
         }
 
-        public Guid Id { get; set; }
+        req.AssistantId = user.Id;
+        req.Status = PatientMessageRequestStatus.AssistantChat;
+        req.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
 
-        public string PatientName { get; set; } = "-";
-        public string Subject { get; set; } = "-";
-        public string Body { get; set; } = "-";
-        public string Status { get; set; } = "-";
-        public string AssistantName { get; set; } = "-";
-        public string DoctorName { get; set; } = "-";
-        public DateTime CreatedAtLocal { get; set; }
+        await _notifier.NotifyUserAsync(
+            req.Patient.UserId,
+            "Assistant accepted your request",
+            $"/Patient/Messages/Inbox?requestId={req.Id}&kind=Assistant");
 
-        public bool CanAccept { get; set; }
-        public bool CanOpenAssistantChat { get; set; }
-        public bool CanEscalate { get; set; }
-        public bool CanReassign { get; set; }
+        return RedirectToPage("/Assistant/Messages/Inbox", new { requestId = req.Id });
+    }
 
-        public SelectList Doctors { get; set; } = default!;
+    public async Task<IActionResult> OnPostReturnToDoctorAsync(Guid id, string? note)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return Unauthorized();
+        if (user.AssignedDoctorId == null) return Unauthorized();
 
-        public class EscalateInput
-        {
-            [Required]
-            public string DoctorId { get; set; } = string.Empty;
+        var req = await _db.PatientMessageRequests
+            .Include(r => r.Patient)
+            .Include(r => r.DoctorProfile)
+            .FirstOrDefaultAsync(r => r.Id == id && r.DoctorProfileId == user.AssignedDoctorId.Value);
 
-            [Required]
-            [MinLength(5)]
-            [MaxLength(1000)]
-            public string Reason { get; set; } = string.Empty;
-        }
+        if (req == null) return NotFound();
 
-        [BindProperty]
-        public EscalateInput Escalate { get; set; } = new();
+        req.AssistantNote = string.IsNullOrWhiteSpace(note) ? "Assistant requested doctor review." : note.Trim();
+        req.AssistantId = null;
+        req.Status = PatientMessageRequestStatus.WaitingDoctorApproval;
+        req.UpdatedAt = DateTime.UtcNow;
 
-        private async Task LoadDoctorsAsync(string? clinicId, string? selectedId)
-        {
-            var cid = (clinicId ?? "").Trim();
+        await _db.SaveChangesAsync();
 
-            var doctors = (await _userManager.GetUsersInRoleAsync("Doctor"))
-                .Where(u =>
-                    !u.IsSoftDeleted &&
-                    (string.IsNullOrWhiteSpace(cid) || (u.ClinicId ?? "").Trim() == cid))
-                .OrderBy(u => u.FullName ?? u.Email)
-                .Select(u => new
-                {
-                    u.Id,
-                    Name = string.IsNullOrWhiteSpace(u.FullName)
-                        ? u.Email
-                        : u.FullName
-                })
-                .ToList();
+        await _notifier.NotifyUserAsync(
+            req.DoctorProfile.UserId,
+            $"Request returned by assistant: {req.Subject}",
+            "/Doctor/Messages/Requests");
 
-            Doctors = new SelectList(doctors, "Id", "Name", selectedId);
-        }
+        await _notifier.NotifyUserAsync(
+            req.Patient.UserId,
+            "Your request is back to the doctor for approval",
+            "/Patient/Messages/RequestList");
 
-        private async Task<PatientMessageRequest?> LoadAsync(Guid id)
-        {
-            return await _db.PatientMessageRequests
-                .Include(r => r.Patient)
-                .Include(r => r.Assistant)
-                .Include(r => r.Doctor)
-                .FirstOrDefaultAsync(r => r.Id == id);
-        }
-
-        private async Task FillAsync(
-            PatientMessageRequest r,
-            ApplicationUser assistant)
-        {
-            Id = r.Id;
-            PatientName = r.Patient?.FullName ?? r.Patient?.Email ?? "-";
-            Subject = r.Subject;
-            Body = r.Body;
-            Status = r.Status.ToString();
-            AssistantName = r.Assistant?.FullName ?? r.Assistant?.Email ?? "-";
-            DoctorName = r.Doctor?.FullName ?? r.Doctor?.Email ?? "-";
-            CreatedAtLocal = r.CreatedAt.ToLocalTime();
-
-            var isMine = r.AssistantId == assistant.Id;
-            var isUnassigned = string.IsNullOrWhiteSpace(r.AssistantId);
-
-            CanAccept =
-                r.Status == PatientMessageRequestStatus.Pending &&
-                (isUnassigned || isMine);
-
-            CanOpenAssistantChat =
-                r.Status == PatientMessageRequestStatus.AssistantChat &&
-                isMine;
-
-            CanEscalate =
-                r.Status == PatientMessageRequestStatus.AssistantChat &&
-                isMine;
-
-            CanReassign =
-                r.Status == PatientMessageRequestStatus.RejectedByDoctor &&
-                isMine;
-
-            await LoadDoctorsAsync(assistant.ClinicId, r.DoctorId);
-        }
-
-        public async Task<IActionResult> OnGetAsync(Guid id)
-        {
-            var assistant = await _userManager.GetUserAsync(User);
-            if (assistant == null)
-                return Unauthorized();
-
-            var req = await LoadAsync(id);
-            if (req == null)
-                return NotFound();
-
-            var clinicId = (assistant.ClinicId ?? "").Trim();
-            if (!string.IsNullOrWhiteSpace(clinicId))
-            {
-                var patientClinicId = (req.Patient?.ClinicId ?? "").Trim();
-                if (patientClinicId != clinicId)
-                    return Forbid();
-            }
-
-            if (req.Status != PatientMessageRequestStatus.Pending &&
-                req.AssistantId != assistant.Id)
-                return Forbid();
-
-            await FillAsync(req, assistant);
-            return Page();
-        }
-
-        public async Task<IActionResult> OnPostAcceptAsync(Guid id)
-        {
-            var assistant = await _userManager.GetUserAsync(User);
-            if (assistant == null)
-                return Unauthorized();
-
-            var req = await LoadAsync(id);
-            if (req == null)
-                return NotFound();
-
-            var clinicId = (assistant.ClinicId ?? "").Trim();
-            if (!string.IsNullOrWhiteSpace(clinicId))
-            {
-                var patientClinicId = (req.Patient?.ClinicId ?? "").Trim();
-                if (patientClinicId != clinicId)
-                    return Forbid();
-            }
-
-            if (!string.IsNullOrWhiteSpace(req.AssistantId) &&
-                req.AssistantId != assistant.Id)
-                return Forbid();
-
-            req.AssistantId = assistant.Id;
-            req.Status = PatientMessageRequestStatus.AssistantChat;
-            req.UpdatedAt = DateTime.UtcNow;
-
-            await _db.SaveChangesAsync();
-
-            if (req.Patient != null)
-            {
-                await _notifier.NotifyAsync(
-                    req.Patient,
-                    NotificationType.Message,
-                    "Assistant opened the chat",
-                    "Your request was accepted. You can now chat with the assistant.",
-                    "PatientMessageRequest",
-                    req.Id.ToString(),
-                    false);
-            }
-
-            TempData["StatusMessage"] = "Chat opened.";
-
-            return RedirectToPage(
-                "/Assistant/Messages/Inbox",
-                new { requestId = req.Id });
-        }
-
-        public async Task<IActionResult> OnPostEscalateAsync(Guid id)
-        {
-            var assistant = await _userManager.GetUserAsync(User);
-            if (assistant == null)
-                return Unauthorized();
-
-            var req = await LoadAsync(id);
-            if (req == null)
-                return NotFound();
-
-            var clinicId = (assistant.ClinicId ?? "").Trim();
-            if (!string.IsNullOrWhiteSpace(clinicId))
-            {
-                var patientClinicId = (req.Patient?.ClinicId ?? "").Trim();
-                if (patientClinicId != clinicId)
-                    return Forbid();
-            }
-
-            if (req.AssistantId != assistant.Id)
-                return Forbid();
-
-            if (!ModelState.IsValid)
-            {
-                await FillAsync(req, assistant);
-                return Page();
-            }
-
-            var target = await _db.Users.FirstOrDefaultAsync(u => u.Id == Escalate.DoctorId);
-            if (target == null) return NotFound();
-
-            var isDoctor = await _userManager.IsInRoleAsync(target, "Doctor");
-            if (!isDoctor) return Forbid();
-
-            if (!string.IsNullOrWhiteSpace(clinicId) && (target.ClinicId ?? "").Trim() != clinicId)
-                return Forbid();
-
-            req.DoctorId = Escalate.DoctorId;
-            req.EscalationReason = Escalate.Reason.Trim();
-            req.Status = PatientMessageRequestStatus.WaitingDoctorApproval;
-            req.UpdatedAt = DateTime.UtcNow;
-
-            await _db.SaveChangesAsync();
-
-            await _notifier.NotifyAsync(
-                target,
-                NotificationType.Message,
-                "New case awaiting approval",
-                $"Assistant escalated a case.<br/><b>Reason:</b> {req.EscalationReason}",
-                "PatientMessageRequest",
-                req.Id.ToString());
-
-            TempData["StatusMessage"] = "Sent to doctor.";
-
-            return RedirectToPage("/Assistant/Messages/Requests/Index");
-        }
-
-        public async Task<IActionResult> OnPostReassignAsync(Guid id)
-        {
-            var assistant = await _userManager.GetUserAsync(User);
-            if (assistant == null)
-                return Unauthorized();
-
-            var req = await LoadAsync(id);
-            if (req == null)
-                return NotFound();
-
-            var clinicId = (assistant.ClinicId ?? "").Trim();
-            if (!string.IsNullOrWhiteSpace(clinicId))
-            {
-                var patientClinicId = (req.Patient?.ClinicId ?? "").Trim();
-                if (patientClinicId != clinicId)
-                    return Forbid();
-            }
-
-            if (req.AssistantId != assistant.Id)
-                return Forbid();
-
-            if (!ModelState.IsValid)
-            {
-                await FillAsync(req, assistant);
-                return Page();
-            }
-
-            var target = await _db.Users.FirstOrDefaultAsync(u => u.Id == Escalate.DoctorId);
-            if (target == null) return NotFound();
-
-            var isDoctor = await _userManager.IsInRoleAsync(target, "Doctor");
-            if (!isDoctor) return Forbid();
-
-            if (!string.IsNullOrWhiteSpace(clinicId) && (target.ClinicId ?? "").Trim() != clinicId)
-                return Forbid();
-
-            req.DoctorId = Escalate.DoctorId;
-            req.EscalationReason = Escalate.Reason.Trim();
-            req.Status = PatientMessageRequestStatus.WaitingDoctorApproval;
-            req.UpdatedAt = DateTime.UtcNow;
-
-            await _db.SaveChangesAsync();
-
-            await _notifier.NotifyAsync(
-                target,
-                NotificationType.Message,
-                "New case awaiting approval",
-                $"A case was reassigned to you.<br/><b>Reason:</b> {req.EscalationReason}",
-                "PatientMessageRequest",
-                req.Id.ToString());
-
-            TempData["StatusMessage"] = "Reassigned to doctor.";
-
-            return RedirectToPage("/Assistant/Messages/Requests/Index");
-        }
-
-
+        TempData["StatusMessage"] = "Request sent back to the doctor.";
+        return RedirectToPage("/Assistant/Messages/Requests/Index");
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 
 namespace Licenta.Pages.Doctor.Attachments
 {
@@ -130,7 +131,6 @@ namespace Licenta.Pages.Doctor.Attachments
             var patients = await q
                 .OrderBy(p => p.User.FullName ?? p.User.Email)
                 .ToListAsync();
-
 
             Patients = new SelectList(
                 patients,

@@ -113,12 +113,14 @@ namespace Licenta.Areas.Identity.Pages.Account
             foreach (var admin in admins)
             {
                 await _notifier.NotifyAsync(
-                    admin,
-                    NotificationType.System,
-                    "User signed in",
-                    $"User <b>{displayName}</b> signed in at {loginTimeLocal:f}.",
-                    relatedEntity: "User",
-                    relatedEntityId: loggedInUser.Id
+                             admin,
+                             NotificationType.System,
+                             "User signed in",
+                             $"User {displayName} signed in at {loginTimeLocal:f}.",
+                             actionUrl: "/Administrator/Notifications",
+                             actionText: "Open notifications",
+                             relatedEntity: "User",
+                             relatedEntityId: loggedInUser.Id
                 );
             }
             if (!string.IsNullOrWhiteSpace(ReturnUrl) && Url.IsLocalUrl(ReturnUrl))

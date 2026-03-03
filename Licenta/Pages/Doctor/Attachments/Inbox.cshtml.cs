@@ -48,7 +48,7 @@ namespace Licenta.Pages.Doctor.Attachments
             Items = await _db.MedicalAttachments
                 .AsNoTracking()
                 .Include(a => a.Patient)
-                    .ThenInclude(p => p!.User) // <- aici se rezolvă warning-ul de null
+                    .ThenInclude(p => p!.User)
                 .Where(a =>
                     a.Status == AttachmentStatus.Pending &&
                     (a.DoctorId == null || a.DoctorId == doctor.Id) &&
@@ -86,7 +86,6 @@ namespace Licenta.Pages.Doctor.Attachments
                 return RedirectToPage();
 
             att.DoctorId = doctor.Id;
-            att.AssignedAtUtc = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
 

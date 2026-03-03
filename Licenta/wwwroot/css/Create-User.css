@@ -39,7 +39,6 @@ body {
     border-top: 1px solid rgba(0,0,0,0.05);
 }
 
-
 .form-floating > .form-control,
 .form-floating > .form-select {
     border: 1px solid #d1d3e2;
@@ -65,7 +64,6 @@ body {
         color: var(--primary-color);
         opacity: 0.8;
     }
-
 
 .password-group .form-control {
     border-top-right-radius: 0;
@@ -113,3 +111,43 @@ body {
         border-color: var(--primary-hover);
         transform: translateY(-1px);
     }
+
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .card {
+        margin-top: 1rem;
+        border-radius: 0.75rem;
+    }
+
+    .card-header {
+        padding: 1.25rem 1rem;
+        text-align: center;
+    }
+
+        .card-header h3 {
+            font-size: 1.25rem;
+        }
+
+    .card-body {
+        padding: 1.25rem 1rem;
+    }
+
+    .form-floating > label {
+        font-size: 0.85rem;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .card-footer {
+        padding: 1rem;
+        text-align: center;
+    }
+}

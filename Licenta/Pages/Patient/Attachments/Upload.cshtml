@@ -21,6 +21,16 @@
             <form method="post" enctype="multipart/form-data">
 
                 <div class="mb-3">
+                    <label asp-for="Input.DoctorId" class="form-label fw-bold">
+                        Select Doctor
+                    </label>
+                    <select asp-for="Input.DoctorId" class="form-select" asp-items="Model.DoctorList">
+                        <option value="">Select a doctor...</option>
+                    </select>
+                    <span asp-validation-for="Input.DoctorId" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
                     <label asp-for="Input.Type" class="form-label fw-bold">
                         Document Type
                     </label>

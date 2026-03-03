@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-
+using Licenta.Areas.Identity.Data;
 namespace Licenta.Pages.Administrator.Users
 {
     [Authorize(Roles = "Administrator")]

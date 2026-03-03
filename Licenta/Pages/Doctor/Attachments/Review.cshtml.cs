@@ -1,6 +1,7 @@
 ﻿using Licenta.Areas.Identity.Data;
 using Licenta.Data;
 using Licenta.Models;
+using Licenta.Services;
 using Licenta.Services.Ml;
 using Licenta.Services.Ml.Dtos;
 using Microsoft.AspNetCore.Authorization;
@@ -25,19 +26,22 @@ namespace Licenta.Pages.Doctor.Attachments
         private readonly IMlImagingClient _ml;
         private readonly IWebHostEnvironment _env;
         private readonly MlServiceOptions _mlOpt;
+        private readonly INotificationService _notifier;
 
         public ReviewModel(
             AppDbContext db,
             UserManager<ApplicationUser> userManager,
             IMlImagingClient ml,
             IWebHostEnvironment env,
-            IOptions<MlServiceOptions> mlOpt)
+            IOptions<MlServiceOptions> mlOpt,
+            INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
             _ml = ml;
             _env = env;
             _mlOpt = mlOpt.Value;
+            _notifier = notifier;
         }
 
         public MedicalAttachment Item { get; set; } = default!;
@@ -82,7 +86,6 @@ namespace Licenta.Pages.Doctor.Attachments
             return Page();
         }
 
-
         public async Task<IActionResult> OnPostAsync(Guid id, string action)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -95,7 +98,6 @@ namespace Licenta.Pages.Doctor.Attachments
                 .Include("Patient")
                 .Include("Patient.User")
                 .FirstOrDefaultAsync(a => a.Id == id);
-
 
             if (item == null) return NotFound();
 
@@ -117,10 +119,27 @@ namespace Licenta.Pages.Doctor.Attachments
             item.ValidatedByDoctorId = doctor.Id;
             item.ValidatedAtUtc = DateTime.UtcNow;
 
+            var patientUser = item.Patient?.User;
+
             if (string.Equals(action, "validate", StringComparison.OrdinalIgnoreCase))
             {
                 item.Status = AttachmentStatus.Validated;
                 await _db.SaveChangesAsync();
+
+                if (patientUser != null)
+                {
+                    await _notifier.NotifyAsync(
+                        patientUser,
+                        NotificationType.Document,
+                        "Document Validated",
+                        $"Dr. {user.FullName} has validated your uploaded document.",
+                        actionUrl: $"/Patient/Attachments/Details?id={item.Id}",
+                        actionText: "View Details",
+                        relatedEntity: "MedicalAttachment",
+                        relatedEntityId: item.Id.ToString(),
+                        sendEmail: false
+                    );
+                }
 
                 TempData["StatusMessage"] = "Document validated manually.";
                 return RedirectToPage("/Doctor/Attachments/Inbox");
@@ -130,6 +149,21 @@ namespace Licenta.Pages.Doctor.Attachments
             {
                 item.Status = AttachmentStatus.Rejected;
                 await _db.SaveChangesAsync();
+
+                if (patientUser != null)
+                {
+                    await _notifier.NotifyAsync(
+                        patientUser,
+                        NotificationType.Document,
+                        "Document Rejected",
+                        $"Dr. {user.FullName} has rejected your uploaded document.",
+                        actionUrl: $"/Patient/Attachments/Details?id={item.Id}",
+                        actionText: "View Details",
+                        relatedEntity: "MedicalAttachment",
+                        relatedEntityId: item.Id.ToString(),
+                        sendEmail: false
+                    );
+                }
 
                 TempData["StatusMessage"] = "Document rejected.";
                 return RedirectToPage("/Doctor/Attachments/Inbox");
@@ -189,12 +223,42 @@ namespace Licenta.Pages.Doctor.Attachments
                     item.Status = AttachmentStatus.Rejected;
                     await _db.SaveChangesAsync();
 
+                    if (patientUser != null)
+                    {
+                        await _notifier.NotifyAsync(
+                            patientUser,
+                            NotificationType.Document,
+                            "Image Rejected by AI",
+                            $"Your image was rejected due to quality or domain issues. Please upload a valid image.",
+                            actionUrl: $"/Patient/Attachments/Details?id={item.Id}",
+                            actionText: "View Details",
+                            relatedEntity: "MedicalAttachment",
+                            relatedEntityId: item.Id.ToString(),
+                            sendEmail: false
+                        );
+                    }
+
                     TempData["StatusMessage"] = BuildRejectMessage(result!);
                     return RedirectToPage("/Doctor/Attachments/Inbox");
                 }
 
                 item.Status = AttachmentStatus.Validated;
                 await _db.SaveChangesAsync();
+
+                if (patientUser != null)
+                {
+                    await _notifier.NotifyAsync(
+                        patientUser,
+                        NotificationType.Document,
+                        "Image Validated",
+                        $"Dr. {user.FullName} has validated your image and it is now being analyzed.",
+                        actionUrl: $"/Patient/Attachments/Details?id={item.Id}",
+                        actionText: "View Details",
+                        relatedEntity: "MedicalAttachment",
+                        relatedEntityId: item.Id.ToString(),
+                        sendEmail: false
+                    );
+                }
 
                 var prediction = new Prediction
                 {

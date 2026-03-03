@@ -57,12 +57,13 @@
 
     public enum NotificationType
     {
-        Info = 0,
-        Appointment = 1,
-        Document = 2,
-        Message = 3,
-        System = 4,
-        Attachment = 5
+        General = 0,
+        Message = 1,
+        Appointment = 2,
+        Document = 3,
+        Prediction = 4,
+        Info = 5,
+        System = 6
     }
 
     public enum VisitStage

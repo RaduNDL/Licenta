@@ -137,3 +137,75 @@
         display: block;
         opacity: 0.5;
     }
+@media (max-width: 768px) {
+    .page-container {
+        padding: 1rem;
+    }
+
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .table-patients thead {
+        display: none;
+    }
+
+    .table-patients,
+    .table-patients tbody,
+    .table-patients tr,
+    .table-patients td {
+        display: block;
+        width: 100%;
+    }
+
+        .table-patients tr {
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            background-color: #fff;
+        }
+
+        .table-patients td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+            .table-patients td:last-child {
+                border-bottom: none;
+                padding-top: 1rem;
+                justify-content: center;
+            }
+
+            .table-patients td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                text-transform: uppercase;
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                text-align: left;
+            }
+
+    .patient-info {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .action-buttons {
+        width: 100%;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .btn-icon-text {
+        width: 100%;
+        justify-content: center;
+        padding: 0.6rem;
+    }
+}

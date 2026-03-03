@@ -1,12 +1,10 @@
 using Licenta.Areas.Identity.Data;
-using Licenta.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -39,20 +37,18 @@ namespace Licenta.Pages.Doctor.Appointments
             if (doctor == null)
                 return Forbid();
 
-            var doctorId = doctor.Id;
-            var clinicId = user.ClinicId;
-
             var q = _db.MedicalAttachments
                 .AsNoTracking()
-                .Include(a => a.Patient).ThenInclude(p => p!.User)
+                .Include(a => a.Patient)
+                .ThenInclude(p => p!.User)
                 .Where(a => a.Type == "AppointmentRequest"
                             && a.Status == AttachmentStatus.Pending
-                            && a.DoctorId == doctorId
-                            && a.ValidationNotes != null
-                            && EF.Functions.Like(a.ValidationNotes, "%AWAITING_DOCTOR_APPROVAL%"));
+                            && a.DoctorId == doctor.Id);
 
-            if (!string.IsNullOrWhiteSpace(clinicId))
-                q = q.Where(a => a.Patient != null && a.Patient.User != null && a.Patient.User.ClinicId == clinicId);
+            if (!string.IsNullOrWhiteSpace(user.ClinicId))
+            {
+                q = q.Where(a => a.Patient != null && a.Patient.User != null && a.Patient.User.ClinicId == user.ClinicId);
+            }
 
             Items = await q
                 .OrderByDescending(a => a.UploadedAt)

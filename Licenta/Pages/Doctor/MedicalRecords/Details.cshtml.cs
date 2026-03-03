@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,11 +16,13 @@ namespace Licenta.Pages.Doctor.MedicalRecords
     {
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly INotificationService _notifier;
 
-        public DetailsModel(AppDbContext db, UserManager<ApplicationUser> userManager)
+        public DetailsModel(AppDbContext db, UserManager<ApplicationUser> userManager, INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
+            _notifier = notifier;
         }
 
         public MedicalRecord Record { get; set; } = default!;
@@ -53,7 +56,10 @@ namespace Licenta.Pages.Doctor.MedicalRecords
             var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
             if (doctor == null) return Forbid();
 
-            var record = await _db.MedicalRecords.FirstOrDefaultAsync(r => r.Id == id);
+            var record = await _db.MedicalRecords
+                .Include(r => r.Patient).ThenInclude(p => p.User)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
             if (record == null) return NotFound();
             if (record.DoctorId != doctor.Id) return Forbid();
 
@@ -62,6 +68,23 @@ namespace Licenta.Pages.Doctor.MedicalRecords
                 record.Status = RecordStatus.Validated;
                 record.ValidatedAtUtc = DateTime.UtcNow;
                 await _db.SaveChangesAsync();
+
+                var patientUser = record.Patient?.User;
+                if (patientUser != null)
+                {
+                    await _notifier.NotifyAsync(
+                        patientUser,
+                        NotificationType.Document,
+                        "Medical Record Available",
+                        $"Dr. {user.FullName} has finalized and validated your medical record. You can now view it.",
+                        actionUrl: $"/Patient/MedicalRecords/Details?id={record.Id}",
+                        actionText: "View Record",
+                        relatedEntity: "MedicalRecord",
+                        relatedEntityId: record.Id.ToString(),
+                        sendEmail: false
+                    );
+                }
+
                 TempData["StatusMessage"] = "Record validated. The patient can now see it in their portal.";
             }
 

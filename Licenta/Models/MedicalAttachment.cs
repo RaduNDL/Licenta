@@ -36,19 +36,10 @@ namespace Licenta.Models
         public string? PatientNotes { get; set; }
 
         [MaxLength(2000)]
-        public string? AssistantNotes { get; set; }
-
-        [MaxLength(2000)]
         public string? DoctorNotes { get; set; }
-
-        public DateTime? AssignedAtUtc { get; set; }
-        public string? AssignedByAssistantId { get; set; }
 
         public DateTime? ValidatedAtUtc { get; set; }
         public Guid? ValidatedByDoctorId { get; set; }
         public DoctorProfile? ValidatedByDoctor { get; set; }
-
-        public string? UploadedByAssistantId { get; set; }
-        public ApplicationUser? UploadedByAssistant { get; set; }
     }
 }

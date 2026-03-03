@@ -1,19 +1,28 @@
-﻿namespace Licenta.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Licenta.Models
 {
-    public class SystemSetting
+    namespace Licenta.Models
     {
-        public int Id { get; set; }
-        public string ClinicName { get; set; } = "LicentaMed Clinic";
-        public string? LogoPath { get; set; }
-        public int MaxUploadMb { get; set; } = 20;
-        public string SmtpServer { get; set; } = string.Empty;
-        public int SmtpPort { get; set; } = 587;
-        public string SmtpUser { get; set; } = string.Empty;
-        public string SmtpPassword { get; set; } = string.Empty;
-        public bool SmtpUseSSL { get; set; } = true;
-        public int PasswordMinLength { get; set; } = 6;
-        public bool RequireDigit { get; set; } = true;
-        public bool RequireUppercase { get; set; } = false;
-        public bool RequireSpecialChar { get; set; } = false;
+        public class SystemSetting
+        {
+            public int Id { get; set; }
+
+            [MaxLength(200)]
+            public string ClinicName { get; set; } = "";
+
+            public int MaxUploadMb { get; set; } = 10;
+
+            [MaxLength(500)]
+            public string? LogoPath { get; set; }
+
+            public int PasswordMinLength { get; set; } = 6;
+
+            public bool RequireDigit { get; set; }
+
+            public bool RequireUppercase { get; set; }
+
+            public bool RequireSpecialChar { get; set; }
+        }
     }
 }

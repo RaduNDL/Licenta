@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Licenta.Areas.Identity.Data;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Licenta.Models
 {
@@ -8,8 +10,12 @@ namespace Licenta.Models
         public Guid Id { get; set; }
 
         public string UserId { get; set; } = null!;
-        public ApplicationUser User { get; set; } = null!;
+        [NotMapped]
+        public string FullName => User?.FullName ?? "";
 
+        [NotMapped]
+        public string Email => User?.Email ?? "";
+        public ApplicationUser? User { get; set; }
         public string? NationalId { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public string? Phone { get; set; }

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using Licenta.Services;
 using Licenta.Services.Ml;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -21,17 +22,20 @@ namespace Licenta.Pages.Doctor.LabResults
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IMlLabResultClient _mlClient;
         private readonly ILogger<AnalyzeModel> _logger;
+        private readonly INotificationService _notifier;
 
         public AnalyzeModel(
             AppDbContext db,
             UserManager<ApplicationUser> userManager,
             IMlLabResultClient mlClient,
-            ILogger<AnalyzeModel> logger)
+            ILogger<AnalyzeModel> logger,
+            INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
             _mlClient = mlClient;
             _logger = logger;
+            _notifier = notifier;
         }
 
         public LabResult? LabResult { get; private set; }
@@ -117,6 +121,22 @@ namespace Licenta.Pages.Doctor.LabResults
                 });
 
                 await _db.SaveChangesAsync();
+
+                var patientUser = lab.Patient?.User;
+                if (patientUser != null)
+                {
+                    await _notifier.NotifyAsync(
+                        patientUser,
+                        NotificationType.Document,
+                        "Lab Results Analyzed",
+                        $"Dr. {user.FullName} has analyzed your lab results.",
+                        actionUrl: $"/Patient/Attachments/Index", 
+                        actionText: "View Results",
+                        relatedEntity: "LabResult",
+                        relatedEntityId: lab.Id.ToString(),
+                        sendEmail: false
+                    );
+                }
             }
             catch (Exception ex)
             {

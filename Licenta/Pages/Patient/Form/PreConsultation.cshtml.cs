@@ -97,7 +97,7 @@ namespace Licenta.Pages.Patient.Form
             {
                 Id = Guid.NewGuid(),
                 PatientId = patient.Id,
-                DoctorId = null,
+                DoctorId = user.AssignedDoctorId,
                 FileName = safeName,
                 FilePath = relPath,
                 ContentType = "application/json",
@@ -105,7 +105,6 @@ namespace Licenta.Pages.Patient.Form
                 UploadedAt = DateTime.UtcNow,
                 Status = AttachmentStatus.Pending,
                 ValidationNotes = null,
-                AssignedByAssistantId = null,
                 ValidatedByDoctorId = null
             };
 
@@ -114,30 +113,37 @@ namespace Licenta.Pages.Patient.Form
 
             var patientName = user.FullName ?? user.Email ?? user.UserName;
 
-            var assistants = await _userManager.GetUsersInRoleAsync("Assistant");
-            foreach (var assistant in assistants)
+            if (user.AssignedDoctorId.HasValue)
             {
-                await _notifier.NotifyAsync(
-                    assistant,
-                    NotificationType.Info,
-                    "New pre-consultation form",
-                    $"Patient <b>{patientName}</b> submitted a pre-consultation form. Please assign a doctor.",
-                    relatedEntity: "MedicalAttachment",
-                    relatedEntityId: att.Id.ToString()
-                );
+                var doctorUser = await _db.Users.FirstOrDefaultAsync(u => u.DoctorProfile != null && u.DoctorProfile.Id == user.AssignedDoctorId.Value);
+                if (doctorUser != null)
+                {
+                    await _notifier.NotifyAsync(
+                        doctorUser,
+                        NotificationType.Info,
+                        "New pre-consultation form",
+                        $"Patient {patientName} submitted a pre-consultation form.",
+                        actionUrl: "/Doctor/Attachments/Inbox",
+                        actionText: "Open Inbox",
+                        relatedEntity: "MedicalAttachment",
+                        relatedEntityId: att.Id.ToString()
+                    );
+                }
             }
 
             await _notifier.NotifyAsync(
                 user,
                 NotificationType.Info,
                 "Pre-consultation form submitted",
-                "Your pre-consultation form was submitted and is pending assistant review.",
+                "Your pre-consultation form was submitted.",
+                actionUrl: "/Patient/Attachments/Index",
+                actionText: "Open attachments",
                 relatedEntity: "MedicalAttachment",
                 relatedEntityId: att.Id.ToString(),
                 sendEmail: false
             );
 
-            TempData["StatusMessage"] = "Form submitted. A medical assistant will assign a doctor.";
+            TempData["StatusMessage"] = "Form submitted successfully.";
             return RedirectToPage();
         }
     }

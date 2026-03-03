@@ -1,5 +1,6 @@
 ﻿using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using Licenta.Models.Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -32,6 +33,8 @@ namespace Licenta.Pages.Administrator.Settings
         [BindProperty]
         public IFormFile? LogoFile { get; set; }
 
+        public bool HasLogo => !string.IsNullOrWhiteSpace(Input.LogoPath);
+
         public class InputModel
         {
             [MaxLength(200)]
@@ -54,7 +57,10 @@ namespace Licenta.Pages.Administrator.Settings
 
         public async Task OnGetAsync()
         {
-            var s = await _db.SystemSettings.AsNoTracking().FirstOrDefaultAsync();
+            var s = await _db.SystemSettings.AsNoTracking()
+                .OrderBy(x => x.Id)
+                .FirstOrDefaultAsync();
+
             if (s == null)
             {
                 Input = new InputModel();
@@ -81,7 +87,10 @@ namespace Licenta.Pages.Administrator.Settings
                 return Page();
             }
 
-            var s = await _db.SystemSettings.FirstOrDefaultAsync();
+            var s = await _db.SystemSettings
+                .OrderBy(x => x.Id)
+                .FirstOrDefaultAsync();
+
             if (s == null)
             {
                 s = new SystemSetting();
@@ -96,7 +105,6 @@ namespace Licenta.Pages.Administrator.Settings
             s.RequireUppercase = Input.RequireUppercase;
             s.RequireSpecialChar = Input.RequireSpecialChar;
 
-            // Logica de salvare a logoului
             if (LogoFile != null && LogoFile.Length > 0)
             {
                 var allowed = new[] { ".png", ".jpg", ".jpeg", ".webp", ".svg" };
@@ -104,7 +112,15 @@ namespace Licenta.Pages.Administrator.Settings
 
                 if (!allowed.Contains(ext))
                 {
-                    TempData["Error"] = "Invalid logo format. Allowed: .png, .jpg, .jpeg, .webp, .svg";
+                    ModelState.AddModelError(nameof(LogoFile), "Invalid logo format. Allowed: .png, .jpg, .jpeg, .webp, .svg");
+                    await ReloadLogoPathAsync();
+                    return Page();
+                }
+
+                var maxBytes = (long)s.MaxUploadMb * 1024L * 1024L;
+                if (LogoFile.Length > maxBytes)
+                {
+                    ModelState.AddModelError(nameof(LogoFile), $"Logo too large. Max allowed is {s.MaxUploadMb} MB.");
                     await ReloadLogoPathAsync();
                     return Page();
                 }
@@ -120,6 +136,19 @@ namespace Licenta.Pages.Administrator.Settings
                     await LogoFile.CopyToAsync(fs);
                 }
 
+                if (!string.IsNullOrWhiteSpace(s.LogoPath))
+                {
+                    var oldPhysical = Path.Combine(
+                        _env.WebRootPath,
+                        s.LogoPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)
+                    );
+
+                    if (System.IO.File.Exists(oldPhysical))
+                    {
+                        try { System.IO.File.Delete(oldPhysical); } catch { }
+                    }
+                }
+
                 s.LogoPath = "/uploads/logos/" + fileName;
             }
 
@@ -131,7 +160,10 @@ namespace Licenta.Pages.Administrator.Settings
 
         private async Task ReloadLogoPathAsync()
         {
-            var s = await _db.SystemSettings.AsNoTracking().FirstOrDefaultAsync();
+            var s = await _db.SystemSettings.AsNoTracking()
+                .OrderBy(x => x.Id)
+                .FirstOrDefaultAsync();
+
             if (s != null)
                 Input.LogoPath = s.LogoPath;
         }

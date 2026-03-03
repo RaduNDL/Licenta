@@ -40,7 +40,6 @@ namespace Licenta.Pages.Doctor.Appointments
             public string PatientName { get; set; } = "";
             public string Reason { get; set; } = "";
             public string RequestedDisplay { get; set; } = "-";
-            public string SuggestedDisplay { get; set; } = "";
             public string UploadedAtLocal { get; set; } = "";
         }
 
@@ -73,23 +72,24 @@ namespace Licenta.Pages.Doctor.Appointments
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
-            if (att.Status != AttachmentStatus.Pending || !IsAwaitingDoctorApproval(att.ValidationNotes))
+            if (att.Status != AttachmentStatus.Pending)
             {
-                TempData["StatusMessage"] = "This request was already processed or is not awaiting doctor approval.";
+                TempData["StatusMessage"] = "This request was already processed.";
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
-            var iso = ExtractSuggestedIso(att.ValidationNotes);
+            var iso = ExtractRequestedIso(att.ValidationNotes);
+
             if (string.IsNullOrWhiteSpace(iso) || !TryParseLocal(iso, out var local))
             {
-                TempData["StatusMessage"] = "Cannot approve: suggested time is missing or invalid.";
+                TempData["StatusMessage"] = "Cannot approve: requested time is missing or invalid.";
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
             var newUtc = local.ToUniversalTime();
             if (newUtc <= DateTime.UtcNow)
             {
-                TempData["StatusMessage"] = "Cannot approve: suggested time is in the past.";
+                TempData["StatusMessage"] = "Cannot approve: requested time is in the past.";
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
@@ -102,7 +102,7 @@ namespace Licenta.Pages.Doctor.Appointments
             var withinHours = await IsWithinDoctorAvailabilityAsync(doctor.Id, newUtc);
             if (!withinHours)
             {
-                TempData["StatusMessage"] = "Cannot approve: suggested time is outside your working hours.";
+                TempData["StatusMessage"] = "Cannot approve: requested time is outside your working hours.";
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
@@ -165,20 +165,9 @@ namespace Licenta.Pages.Doctor.Appointments
                     patientUser,
                     NotificationType.Appointment,
                     "Appointment Confirmed",
-                    $"Your appointment was approved and scheduled for <b>{local:ddd dd MMM HH:mm}</b>.",
-                    relatedEntity: "Appointment",
-                    relatedEntityId: appt.Id.ToString(),
-                    sendEmail: false
-                );
-            }
-
-            if (doctor.User != null)
-            {
-                await _notifier.NotifyAsync(
-                    doctor.User,
-                    NotificationType.Appointment,
-                    "Appointment approved",
-                    $"You approved an appointment for <b>{(patientUser?.FullName ?? patientUser?.Email ?? "patient")}</b><br/>When: <b>{local:ddd dd MMM HH:mm}</b>",
+                    $"Your appointment with Dr. {doctor.User?.FullName} was approved and scheduled for <b>{local:ddd dd MMM HH:mm}</b>.",
+                    actionUrl: "/Patient/Appointments/Index",
+                    actionText: "View Appointments",
                     relatedEntity: "Appointment",
                     relatedEntityId: appt.Id.ToString(),
                     sendEmail: false
@@ -213,9 +202,9 @@ namespace Licenta.Pages.Doctor.Appointments
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
-            if (att.Status != AttachmentStatus.Pending || !IsAwaitingDoctorApproval(att.ValidationNotes))
+            if (att.Status != AttachmentStatus.Pending)
             {
-                TempData["StatusMessage"] = "This request was already processed or is not awaiting doctor approval.";
+                TempData["StatusMessage"] = "This request was already processed.";
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
@@ -234,7 +223,9 @@ namespace Licenta.Pages.Doctor.Appointments
                     patientUser,
                     NotificationType.Appointment,
                     "Appointment Rejected",
-                    "Your appointment request was rejected by the doctor. Please submit a new request.",
+                    $"Your appointment request with Dr. {doctor.User?.FullName} was rejected. Please submit a new request.",
+                    actionUrl: "/Patient/Appointments/Request",
+                    actionText: "Request New Appointment",
                     relatedEntity: "MedicalAttachment",
                     relatedEntityId: att.Id.ToString(),
                     sendEmail: false
@@ -269,7 +260,6 @@ namespace Licenta.Pages.Doctor.Appointments
                 PatientName = att.Patient?.User?.FullName ?? att.Patient?.User?.Email ?? "Patient",
                 Reason = string.IsNullOrWhiteSpace(att.PatientNotes) ? "-" : att.PatientNotes!,
                 RequestedDisplay = ExtractRequestedDisplay(att.ValidationNotes),
-                SuggestedDisplay = ExtractSuggestedDisplay(att.ValidationNotes),
                 UploadedAtLocal = att.UploadedAt.ToLocalTime().ToString("g")
             };
         }
@@ -301,12 +291,6 @@ namespace Licenta.Pages.Doctor.Appointments
             return false;
         }
 
-        private static bool IsAwaitingDoctorApproval(string? notes)
-        {
-            if (string.IsNullOrWhiteSpace(notes)) return false;
-            return notes.IndexOf("AWAITING_DOCTOR_APPROVAL", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
         private static string ExtractRequestedDisplay(string? notes)
         {
             var iso = ExtractRequestedIso(notes);
@@ -319,36 +303,13 @@ namespace Licenta.Pages.Doctor.Appointments
             return iso;
         }
 
-        private static string ExtractSuggestedDisplay(string? notes)
-        {
-            var iso = ExtractSuggestedIso(notes);
-            if (string.IsNullOrWhiteSpace(iso))
-                return "-";
-
-            if (TryParseLocal(iso, out var local))
-                return local.ToString("ddd dd MMM HH:mm");
-
-            return iso;
-        }
-
-        private static string ExtractSuggestedIso(string? notes)
-        {
-            if (string.IsNullOrWhiteSpace(notes)) return "";
-            var idx = notes.IndexOf("Suggested:", StringComparison.OrdinalIgnoreCase);
-            if (idx < 0) return "";
-            var v = notes[(idx + "Suggested:".Length)..].Trim();
-            if (v.Contains("|"))
-                v = v.Split('|', StringSplitOptions.RemoveEmptyEntries)[0].Trim();
-            return string.IsNullOrWhiteSpace(v) ? "" : v;
-        }
-
         private static string ExtractRequestedIso(string? notes)
         {
             if (string.IsNullOrWhiteSpace(notes)) return "";
             var idx = notes.IndexOf("Selected:", StringComparison.OrdinalIgnoreCase);
             if (idx < 0) return "";
             var v = notes[(idx + "Selected:".Length)..].Trim();
-            if (v.Contains("|"))
+            if (v.Contains('|'))
                 v = v.Split('|', StringSplitOptions.RemoveEmptyEntries)[0].Trim();
             return string.IsNullOrWhiteSpace(v) ? "" : v;
         }

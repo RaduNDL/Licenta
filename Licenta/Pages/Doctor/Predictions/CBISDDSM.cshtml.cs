@@ -280,9 +280,19 @@ namespace Licenta.Pages.Doctor.Predictions
             var user = await _userManager.GetUserAsync(User);
             var clinicId = user?.ClinicId;
 
+            var patientRoleId = await _db.Roles
+                .Where(r => r.Name == "Patient")
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync(ct);
+
+            var patientUserIds = _db.UserRoles
+                .Where(ur => ur.RoleId == patientRoleId)
+                .Select(ur => ur.UserId);
+
             var q = _db.Patients
                 .Include(p => p.User)
-                .AsNoTracking();
+                .AsNoTracking()
+                .Where(p => p.User != null && patientUserIds.Contains(p.UserId));
 
             if (!string.IsNullOrWhiteSpace(clinicId))
                 q = q.Where(p => p.User != null && p.User.ClinicId == clinicId);
@@ -292,11 +302,10 @@ namespace Licenta.Pages.Doctor.Predictions
                 .Select(p => new SelectListItem
                 {
                     Value = p.Id.ToString(),
-                    Text = p.User.FullName ?? p.User.Email
+                    Text = string.IsNullOrWhiteSpace(p.User.FullName) ? p.User.Email : p.User.FullName
                 })
                 .ToListAsync(ct);
         }
-
         private Task<PatientProfile?> LoadPatientAsync(Guid id, CancellationToken ct)
         {
             return _db.Patients
