@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-02-23T13:03:49.5848952Z",
+  "ClinicId": "CL-A705ED5C",
+  "PatientUserId": "f3175928-fa24-42f1-ab0d-795146e74c26",
+  "PatientProfileId": "7b5688d3-80ce-49e7-8fec-7c1b67686faf",
+  "SelectedDoctorId": "828b02d3-a0c7-40f3-9eac-4b27a55ca50a",
+  "SelectedLocalIso": "2026-02-26T11:30",
+  "SelectedScheduledUtc": "2026-02-26T09:30:00Z",
+  "Reason": "TEest notificari!"
+}

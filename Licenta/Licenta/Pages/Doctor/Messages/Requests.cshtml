@@ -1,0 +1,141 @@
+﻿@page
+@model Licenta.Pages.Doctor.Messages.RequestsModel
+@{
+    ViewData["Title"] = "Doctor Requests";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Doctor_Requests.css" asp-append-version="true" />
+}
+
+<div class="page-container py-4">
+    <div class="container-fluid">
+        <div class="row mb-4 align-items-center">
+            <div class="col">
+                <div class="d-flex align-items-center">
+                    <div class="icon-circle bg-primary-subtle text-primary me-3">
+                        <i class="bi bi-inbox-fill fs-4"></i>
+                    </div>
+                    <div>
+                        <h2 class="page-title text-dark mb-1">Waiting Requests</h2>
+                        <p class="text-muted mb-0">Accept or delegate patient requests to your assistants.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-auto">
+                <a asp-page="/Doctor/Messages/Inbox" class="btn btn-light btn-back fw-semibold shadow-sm">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Inbox
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["StatusMessage"] is string status)
+        {
+            <div class="alert alert-info border-0 shadow-sm mb-3">@status</div>
+        }
+
+        <div class="card border-0 shadow-sm requests-card">
+            <div class="card-body p-0">
+                @if (!Model.Requests.Any())
+                {
+                    <div class="empty-state text-center py-5">
+                        <div class="empty-icon-box mx-auto mb-4 bg-light text-primary d-flex align-items-center justify-content-center">
+                            <i class="bi bi-check2-circle fs-1"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark">All Caught Up!</h4>
+                        <p class="text-muted mb-0">There are no waiting requests right now.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table custom-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">Date Received</th>
+                                    <th>Patient</th>
+                                    <th>Subject</th>
+                                    <th>Details</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in Model.Requests)
+                                {
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-bold text-dark date-text">@r.CreatedAtLocal.ToString("MMM dd, yyyy")</span>
+                                                <span class="text-muted small time-text"><i class="bi bi-clock me-1"></i>@r.CreatedAtLocal.ToString("HH:mm")</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-circle bg-primary text-white shadow-sm me-3">
+                                                    @r.PatientName.Substring(0, 1).ToUpper()
+                                                </div>
+                                                <div class="d-flex flex-column">
+                                                    <span class="fw-bold text-dark mb-0">@r.PatientName</span>
+                                                    <span class="text-muted small">Patient</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge custom-badge bg-light text-dark border">
+                                                <i class="bi bi-tag-fill text-muted me-1"></i> @r.Subject
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <p class="text-muted small mb-0 details-text" data-bs-toggle="tooltip" data-bs-placement="top" title="@r.Details">
+                                                @r.Details
+                                            </p>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <div class="d-flex justify-content-end gap-2 action-buttons">
+                                                @if (Model.Assistants.Any())
+                                                {
+                                                    <form method="post" asp-page-handler="Delegate" class="action-form d-flex gap-2 align-items-center">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@r.Id" />
+                                                        <select name="assistantId" class="form-select form-select-sm" style="max-width:220px;" required>
+                                                            <option value="" disabled selected>Select assistant</option>
+                                                            @foreach (var a in Model.Assistants)
+                                                            {
+                                                                <option value="@a.Id">@a.Name</option>
+                                                            }
+                                                        </select>
+                                                        <button class="btn btn-warning btn-action shadow-sm text-dark" type="submit">
+                                                            <i class="bi bi-person-gear me-1"></i> Delegate
+                                                        </button>
+                                                    </form>
+                                                }
+
+                                                <form method="post" asp-page-handler="Accept" asp-route-id="@r.Id" class="action-form">
+                                                    @Html.AntiForgeryToken()
+                                                    <button class="btn btn-success btn-action shadow-sm" type="submit">
+                                                        <i class="bi bi-check-lg me-1"></i> Accept
+                                                    </button>
+                                                </form>
+
+                                                <form method="post" asp-page-handler="Decline" asp-route-id="@r.Id" class="action-form">
+                                                    @Html.AntiForgeryToken()
+                                                    <button class="btn btn-outline-danger btn-action bg-white" type="submit">
+                                                        <i class="bi bi-x-lg me-1"></i> Decline
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/Doctor_Requests.js" asp-append-version="true"></script>
+}

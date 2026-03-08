@@ -1,0 +1,220 @@
+﻿@page
+@model Licenta.Pages.Assistant.Messages.Requests.IndexModel
+
+@{
+    ViewData["Title"] = "Patient Requests";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/assistant_requests.css" asp-append-version="true" />
+}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="bi bi-inbox-fill text-primary me-2"></i>
+                Patient Requests
+            </h2>
+            <p class="text-muted mb-0">
+                Manage and triage incoming patient inquiries.
+            </p>
+        </div>
+
+        <div>
+            <span class="badge bg-white text-secondary shadow-sm px-3 py-2 border">
+                Total: @Model.Requests.Count
+            </span>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info alert-dismissible fade show shadow-sm border-0 mb-4">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            @status
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-2">
+            <div class="nav nav-pills nav-fill flex-column flex-sm-row gap-2">
+
+                <a class="nav-link @(string.IsNullOrEmpty(Request.Query["status"]) ? "active" : "")"
+                   asp-route-status="">
+                    All
+                </a>
+
+                <a class="nav-link @(Request.Query["status"] == "Pending" ? "active" : "")"
+                   asp-route-status="Pending">
+                    Pending
+                </a>
+
+                <a class="nav-link @(Request.Query["status"] == "AssistantChat" ? "active" : "")"
+                   asp-route-status="AssistantChat">
+                    In Chat
+                </a>
+
+                <a class="nav-link @(Request.Query["status"] == "WaitingDoctorApproval" ? "active" : "")"
+                   asp-route-status="WaitingDoctorApproval">
+                    Waiting Approval
+                </a>
+
+                <a class="nav-link @(Request.Query["status"] == "ActiveDoctorChat" ? "active" : "")"
+                   asp-route-status="ActiveDoctorChat">
+                    Doctor Active
+                </a>
+
+                <a class="nav-link @(Request.Query["status"] == "RejectedByDoctor" ? "active" : "")"
+                   asp-route-status="RejectedByDoctor">
+                    Rejected
+                </a>
+
+                <a class="nav-link @(Request.Query["status"] == "Closed" ? "active" : "")"
+                   asp-route-status="Closed">
+                    Closed
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+
+        @if (!Model.Requests.Any())
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-clipboard-check text-muted fs-1"></i>
+                <h5 class="fw-bold text-secondary mt-3">No requests found</h5>
+                <p class="text-muted">
+                    There are no requests matching the selected filter.
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 custom-table">
+
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th>Patient</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                            <th>Assigned To</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var r in Model.Requests)
+                        {
+                            var isPending = r.Status == Licenta.Models.PatientMessageRequestStatus.Pending;
+                            var isUnassigned = string.IsNullOrWhiteSpace(r.AssistantId);
+                            var isMine = !string.IsNullOrWhiteSpace(r.AssistantId)
+                            && r.AssistantId == Model.CurrentAssistantId;
+
+                            <tr>
+
+                                <td class="ps-4">
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-bold">
+                                            @r.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")
+                                        </span>
+                                        <span class="text-muted small">
+                                            @r.CreatedAt.ToLocalTime().ToString("HH:mm")
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-initials bg-gradient-primary text-white me-2">
+                                            @((r.Patient?.FullName ?? r.Patient?.Email ?? "?")[0].ToString().ToUpper())
+                                        </div>
+                                        <span class="fw-bold">
+                                            @(r.Patient?.FullName ?? r.Patient?.Email ?? "-")
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td>@r.Subject</td>
+
+                                <td>
+                                    <span class="badge badge-status status-@r.Status.ToString().ToLower()">
+                                        @r.Status
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @if (isUnassigned)
+                                    {
+                                        <span class="badge bg-secondary">Unassigned</span>
+                                    }
+                                    else if (isMine)
+                                    {
+                                        <span class="badge bg-success">Me</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Other</span>
+                                    }
+                                    @if (r.DoctorProfile != null)
+                                    {
+                                        <div class="text-muted small mt-1">
+                                            <i class="bi bi-heart-pulse me-1"></i>
+                                            Dr. @(r.DoctorProfile.User?.FullName ?? r.DoctorProfile.User?.Email ?? "Unknown")
+                                        </div>
+                                    }
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-2">
+
+                                        @if (isPending && (isUnassigned || isMine))
+                                        {
+                                            <form method="post"
+                                                  asp-page-handler="Accept"
+                                                  asp-route-id="@r.Id">
+                                                <button type="submit"
+                                                        class="btn btn-success-soft btn-sm">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        <a asp-page="/Assistant/Messages/Requests/Review"
+                                           asp-route-id="@r.Id"
+                                           class="btn btn-primary-soft btn-sm">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        @if (isMine && r.Status == Licenta.Models.PatientMessageRequestStatus.AssistantChat)
+                                        {
+                                            <a asp-page="/Assistant/Messages/Inbox"
+                                               asp-route-requestId="@r.Id"
+                                               class="btn btn-info-soft btn-sm">
+                                                <i class="bi bi-chat-dots-fill"></i>
+                                            </a>
+                                        }
+
+                                    </div>
+                                </td>
+
+                            </tr>
+                        }
+                    </tbody>
+
+                </table>
+            </div>
+        }
+
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/assistant_requests.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,153 @@
+﻿:root {
+    --primary-color: #4e73df;
+    --primary-hover: #2e59d9;
+    --background-color: #f8f9fc;
+    --input-bg: #f8f9fc;
+    --input-focus-border: #bac8f3;
+    --card-border-radius: 1rem;
+}
+
+body {
+    background-color: var(--background-color);
+}
+
+.card {
+    border: none;
+    border-radius: var(--card-border-radius);
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 1.5rem;
+}
+
+    .card-header h3 {
+        color: #3a3b45;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px;
+    }
+
+.card-body {
+    background-color: #fff;
+}
+
+.card-footer {
+    background-color: #f8f9fc;
+    border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+.form-floating > .form-control,
+.form-floating > .form-select {
+    border: 1px solid #d1d3e2;
+    background-color: var(--input-bg);
+    border-radius: 0.5rem;
+    height: calc(3.5rem + 2px);
+    line-height: 1.25;
+}
+
+    .form-floating > .form-control:focus,
+    .form-floating > .form-select:focus {
+        background-color: #fff;
+        border-color: var(--input-focus-border);
+        box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+    }
+
+.form-floating > label {
+    padding: 1rem 0.75rem;
+    color: #858796;
+}
+
+    .form-floating > label > i {
+        color: var(--primary-color);
+        opacity: 0.8;
+    }
+
+.password-group .form-control {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.password-group .btn {
+    border: 1px solid #d1d3e2;
+    border-left: none;
+    background-color: var(--input-bg);
+    border-top-right-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+    color: #6e707e;
+    z-index: 0;
+}
+
+    .password-group .btn:hover {
+        background-color: #eaecf4;
+        color: #5a5c69;
+    }
+
+.password-group .form-floating:focus-within {
+    z-index: 2;
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-check-input:focus {
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%234e73df'/%3e%3c/svg%3e");
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    transition: all 0.2s ease;
+}
+
+    .btn-primary:hover {
+        background-color: var(--primary-hover);
+        border-color: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .card {
+        margin-top: 1rem;
+        border-radius: 0.75rem;
+    }
+
+    .card-header {
+        padding: 1.25rem 1rem;
+        text-align: center;
+    }
+
+        .card-header h3 {
+            font-size: 1.25rem;
+        }
+
+    .card-body {
+        padding: 1.25rem 1rem;
+    }
+
+    .form-floating > label {
+        font-size: 0.85rem;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .card-footer {
+        padding: 1rem;
+        text-align: center;
+    }
+}

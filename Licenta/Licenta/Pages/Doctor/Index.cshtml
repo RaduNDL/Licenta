@@ -1,0 +1,224 @@
+﻿@page
+@model Licenta.Pages.Doctor.IndexModel
+@{
+    ViewData["Title"] = "Doctor Dashboard";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/doctorpanel.css" asp-append-version="true" />
+}
+
+<div class="dashboard-wrapper">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3 fade-in-up">
+        <div class="greeting-section">
+            <h1 class="display-6 fw-bold mb-1 text-dark" id="dynamicGreeting">Welcome back, Dr. @Model.DoctorName</h1>
+            <p class="text-muted mb-0 d-flex align-items-center gap-2">
+                <i class="fa-regular fa-calendar text-primary"></i>
+                <span id="currentDateDisplay">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</span>
+                <span class="mx-2 text-muted-light">|</span>
+                <i class="fa-regular fa-clock text-primary"></i>
+                <span id="currentTimeDisplay">@DateTime.Now.ToString("HH:mm")</span>
+            </p>
+        </div>
+        <div class="quick-actions">
+            <a asp-page="/Doctor/Appointments/Index" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm hover-lift fw-medium">
+                <i class="fa-solid fa-calendar-day me-2"></i>My Schedule
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5 fade-in-up" style="animation-delay: 0.1s;">
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card h-100 border-0 shadow-sm">
+                <div class="kpi-icon-wrapper bg-primary-soft text-primary">
+                    <i class="fa-solid fa-user-doctor"></i>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-value">@Model.TodayAppointmentsCount</h3>
+                    <span class="kpi-label">Today's Appointments</span>
+                </div>
+                <a asp-page="/Doctor/Appointments/Index" class="kpi-link"></a>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card h-100 border-0 shadow-sm">
+                <div class="kpi-icon-wrapper bg-warning-soft text-warning">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-value">@Model.PendingApprovalsCount</h3>
+                    <span class="kpi-label">Pending Approvals</span>
+                </div>
+                @if (Model.PendingApprovalsCount > 0)
+                {
+                    <div class="kpi-indicator bg-warning"></div>
+                }
+                <a asp-page="/Doctor/Appointments/Approvals" class="kpi-link"></a>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card h-100 border-0 shadow-sm">
+                <div class="kpi-icon-wrapper bg-danger-soft text-danger">
+                    <i class="fa-regular fa-bell"></i>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-value">@Model.UnreadMessagesCount</h3>
+                    <span class="kpi-label">New Notifications</span>
+                </div>
+                @if (Model.UnreadMessagesCount > 0)
+                {
+                    <div class="kpi-indicator bg-danger"></div>
+                }
+                <a asp-page="/Doctor/Notifications/Index" class="kpi-link"></a>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="kpi-card h-100 border-0 shadow-sm">
+                <div class="kpi-icon-wrapper bg-success-soft text-success">
+                    <i class="fa-solid fa-file-medical"></i>
+                </div>
+                <div class="kpi-content">
+                    <h3 class="kpi-value">@Model.PendingDocsCount</h3>
+                    <span class="kpi-label">Docs to Validate</span>
+                </div>
+                <a asp-page="/Doctor/Attachments/Inbox" class="kpi-link"></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 fade-in-up" style="animation-delay: 0.2s;">
+        <div class="col-lg-8">
+            <div class="card modern-card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-3 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-list-check me-2 text-primary"></i>Today's Itinerary</h5>
+                    <a asp-page="/Doctor/Appointments/Index" class="btn btn-sm btn-light rounded-pill px-3 fw-medium">See All</a>
+                </div>
+                <div class="card-body px-4 pb-4 pt-0">
+                    @if (Model.TodayAppointments.Any())
+                    {
+                        <div class="timeline-wrapper custom-scrollbar mt-2">
+                            @foreach (var appt in Model.TodayAppointments)
+                            {
+                                var isCompleted = appt.Status == "Completed";
+                                var isOngoing = appt.Status == "InProgress";
+                                var dotClass = isCompleted ? "bg-success" : (isOngoing ? "bg-primary pulse" : "bg-light border-2 border-primary");
+                                var badgeClass = isCompleted ? "bg-success-soft text-success" : (isOngoing ? "bg-primary-soft text-primary" : "bg-light text-secondary");
+
+                                <div class="timeline-item">
+                                    <div class="timeline-time">
+                                        <span class="fw-bold text-dark">@appt.Time</span>
+                                    </div>
+                                    <div class="timeline-divider">
+                                        <div class="timeline-dot @dotClass"></div>
+                                    </div>
+                                    <div class="timeline-content">
+                                        <div class="appt-card-mini">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="avatar-xs bg-primary-soft text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px;">
+                                                        @appt.PatientName.Substring(0, 1).ToUpper()
+                                                    </div>
+                                                    <span class="fw-bold text-dark">@appt.PatientName</span>
+                                                </div>
+                                                <span class="badge @badgeClass rounded-pill border-0 px-2 py-1">
+                                                    @appt.Status
+                                                </span>
+                                            </div>
+                                            <p class="text-muted small mb-0 ms-5"><i class="fa-solid fa-stethoscope me-1 opacity-50"></i>@appt.Reason</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state-modern py-5 mt-3 rounded-4 bg-light">
+                            <div class="empty-icon text-muted opacity-50 mb-3">
+                                <i class="fa-solid fa-mug-hot"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark">No appointments today</h5>
+                            <p class="text-muted mb-0">Enjoy your free time or manage patient records.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card modern-card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-2">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-bolt me-2 text-warning"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-grid gap-3">
+                        <a asp-page="/Doctor/Predictions/Index" class="action-btn-modern ai-action">
+                            <div class="action-icon"><i class="fa-solid fa-robot"></i></div>
+                            <div class="action-text">
+                                <span class="action-title">AI Predictions</span>
+                                <span class="action-desc">Launch CBIS-DDSM model</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right action-arrow"></i>
+                        </a>
+                        <a asp-page="/Doctor/MedicalRecords/Index" class="action-btn-modern">
+                            <div class="action-icon text-success bg-success-soft"><i class="fa-solid fa-file-medical"></i></div>
+                            <div class="action-text">
+                                <span class="action-title">Medical Records</span>
+                                <span class="action-desc">Review patient histories</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right action-arrow"></i>
+                        </a>
+                        <a asp-page="/Doctor/Messages/Requests" class="action-btn-modern">
+                            <div class="action-icon text-info bg-info-soft"><i class="fa-solid fa-clipboard-question"></i></div>
+                            <div class="action-text">
+                                <span class="action-title">Triage Requests</span>
+                                <span class="action-desc">Assign or accept inquiries</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right action-arrow"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card modern-card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-bell-concierge me-2 text-danger"></i>Recent Alerts</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush custom-scrollbar" style="max-height: 280px; overflow-y: auto;">
+                        @if (Model.RecentActivity.Any())
+                        {
+                            foreach (var act in Model.RecentActivity)
+                            {
+                                <div class="list-group-item px-4 py-3 border-0 border-bottom border-light">
+                                    <div class="d-flex gap-3 align-items-start">
+                                        <div class="activity-icon bg-light rounded-circle d-flex align-items-center justify-content-center mt-1" style="width:36px; height:36px;">
+                                            <i class="fa-solid @act.IconClass"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold text-dark" style="font-size: 0.9rem; line-height: 1.3;">@act.Title</div>
+                                            <div class="text-muted small mt-1">@act.TimeAgo</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-5 text-muted small">
+                                No recent activity to display.
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/doctorpanel.js" asp-append-version="true"></script>
+}

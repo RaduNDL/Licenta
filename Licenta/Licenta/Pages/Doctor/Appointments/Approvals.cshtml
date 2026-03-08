@@ -1,0 +1,118 @@
+﻿@page
+@model Licenta.Pages.Doctor.Appointments.ApprovalsModel
+@{
+    ViewData["Title"] = "Appointment Approvals";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/approvalsdr.css" asp-append-version="true" />
+}
+
+<div class="approvals-wrapper">
+    <div class="approvals-container fade-in">
+        <div class="approvals-header">
+            <div class="header-titles">
+                <h2 class="title-main">
+                    <i class="bi bi-calendar2-check-fill text-primary"></i>
+                    Appointment Approvals
+                </h2>
+                <p class="subtitle">Review and decide patient appointment requests.</p>
+            </div>
+            <a asp-page="/Doctor/Index" class="btn btn-back">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+
+        @if (TempData["StatusMessage"] is string status)
+        {
+            <div class="alert alert-success alert-modern">
+                <i class="bi bi-check-circle-fill"></i> @status
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-modern">
+                <i class="bi bi-exclamation-triangle-fill"></i> @Model.ErrorMessage
+            </div>
+        }
+
+        <div class="approvals-card">
+            @if (Model.Items == null || !Model.Items.Any())
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+                    <h3>No pending approvals</h3>
+                    <p>There are no appointment requests awaiting your decision.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table approvals-table">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Request Details</th>
+                                <th>Submitted</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model.Items)
+                            {
+                                <tr class="table-row-hover" data-filename="@a.FileName" data-type="@a.Type">
+                                    <td>
+                                        <div class="patient-info">
+                                            <div class="patient-avatar">
+                                                <i class="bi bi-person-fill"></i>
+                                            </div>
+                                            <div class="patient-details">
+                                                <span class="patient-name">@(a.Patient?.User?.FullName ?? a.Patient?.User?.Email ?? "Unknown Patient")</span>
+                                                <span class="patient-specialty" title="Patient ID">@a.PatientId</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="request-info">
+                                            <span class="request-name" data-original="@a.FileName">Appointment Request</span>
+                                            @if (!string.IsNullOrWhiteSpace(a.Type))
+                                            {
+                                                <span class="request-type">@a.Type</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="date-info">
+                                            <span class="date-text">@a.UploadedAt.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                                            <span class="time-text">@a.UploadedAt.ToLocalTime().ToString("HH:mm")</span>
+                                            <span class="status-badge @(a.Status.ToString().ToLower() == "pending" ? "status-pending" : "status-default")">
+                                                <i class="bi bi-clock-fill"></i> @a.Status
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a class="btn btn-action btn-view" asp-page="/Files/Attachment" asp-route-id="@a.Id" title="Download attachment">
+                                                <i class="bi bi-download"></i> <span class="btn-text">Download</span>
+                                            </a>
+                                            <a class="btn btn-action btn-open" asp-page="/Doctor/Appointments/ApprovalDetails" asp-route-attachmentId="@a.Id" title="Review details">
+                                                <i class="bi bi-eye"></i> <span class="btn-text">Review</span>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/approvalsdr.js" asp-append-version="true"></script>
+}

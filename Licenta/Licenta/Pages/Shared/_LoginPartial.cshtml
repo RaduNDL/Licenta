@@ -1,0 +1,40 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using Licenta.Models
+@using Licenta.Areas.Identity.Data;
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <span class="navbar-text me-2">
+        Hello @UserManager.GetUserName(User)!
+    </span>
+
+    <form id="logoutForm"
+          class="d-inline"
+          asp-area="Identity"
+          asp-page="/Account/Logout"
+          asp-route-returnUrl="@Url.Page("/Index", new { area = "" })">
+        <button id="logout"
+                type="submit"
+                class="btn btn-sm btn-outline-secondary">
+            Logout
+        </button>
+    </form>
+}
+else
+{
+    <a class="btn btn-sm btn-outline-secondary"
+       id="login"
+       asp-area="Identity"
+       asp-page="/Account/Login">
+        Login
+    </a>
+
+    <a class="btn btn-sm btn-primary"
+       id="register"
+       asp-area="Identity"
+       asp-page="/Account/Register">
+        Register
+    </a>
+}

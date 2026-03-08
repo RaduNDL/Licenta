@@ -1,0 +1,218 @@
+﻿body {
+    background-color: #f8f9fa;
+}
+
+.wizard-step {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    height: 100%;
+    border: 1px solid #e5e7eb;
+    transition: opacity 0.3s ease;
+}
+
+.disabled-step {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.step-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #4f46e5;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 12px;
+    font-size: 0.9rem;
+}
+
+.current-info-box {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+    .info-row i {
+        font-size: 1.25rem;
+        margin-top: 4px;
+    }
+
+.date-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 4px;
+    text-align: center;
+    cursor: pointer;
+    width: 60px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+    .date-card:hover {
+        border-color: #4f46e5;
+        transform: translateY(-2px);
+    }
+
+    .date-card.active {
+        background-color: #4f46e5;
+        color: #ffffff;
+        border-color: #4f46e5;
+        box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+    }
+
+    .date-card span {
+        display: block;
+    }
+
+.day-name {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.day-number {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.month-name {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+
+.time-slot {
+    border: 1px solid #4f46e5;
+    color: #4f46e5;
+    background-color: #ffffff;
+    border-radius: 20px;
+    padding: 6px 16px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+    .time-slot:hover {
+        background-color: #e0e7ff;
+    }
+
+    .time-slot.active {
+        background-color: #4f46e5;
+        color: #ffffff;
+    }
+
+textarea.form-control {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+    textarea.form-control:focus {
+        background-color: #ffffff;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+.btn-primary {
+    background-color: #4f46e5;
+    border-color: #4f46e5;
+}
+
+    .btn-primary:hover {
+        background-color: #4338ca;
+        border-color: #4338ca;
+    }
+@media (max-width: 768px) {
+    .wizard-step {
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+
+    .step-header {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+    }
+
+    .step-number {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+
+    .current-info-box {
+        padding: 15px;
+    }
+
+    .info-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+        .info-row i {
+            font-size: 1.1rem;
+            margin-top: 0;
+        }
+
+    .date-card-container {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 10px;
+        gap: 8px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .date-card {
+        flex: 0 0 55px;
+        margin-right: 0;
+        margin-bottom: 0;
+    }
+
+    .time-slot-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 8px;
+    }
+
+    .time-slot {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 0;
+        text-align: center;
+        padding: 8px 4px;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 12px;
+        font-size: 1rem;
+    }
+}

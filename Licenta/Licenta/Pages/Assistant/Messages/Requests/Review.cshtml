@@ -1,0 +1,71 @@
+﻿@page "{id:guid}"
+@model Licenta.Pages.Assistant.Messages.Requests.ReviewModel
+@{
+    ViewData["Title"] = "Review Request";
+}
+
+<div class="container py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Request Review: @Model.RequestData.Subject</h5>
+        </div>
+        <div class="card-body">
+            @if (TempData["StatusMessage"] is string status)
+            {
+                <div class="alert alert-info">
+                    @status
+                </div>
+            }
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="text-muted small">Patient</label>
+                    <p class="fw-bold">@(Model.RequestData.Patient?.FullName ?? "Unknown")</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small">Target Doctor</label>
+                    <p class="fw-bold">Dr. @(Model.RequestData.DoctorProfile?.User?.FullName ?? Model.RequestData.DoctorProfile?.User?.Email ?? "Unassigned")</p>
+                </div>
+            </div>
+
+            <div class="bg-light p-3 rounded mb-4">
+                <label class="text-muted small">Message Details</label>
+                <p>@Model.RequestData.Body</p>
+            </div>
+
+            @if (Model.CanAccept)
+            {
+                <form method="post" asp-page-handler="Accept" asp-route-id="@Model.RequestData.Id" class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check2-circle"></i> Accept & Start Triage
+                    </button>
+                </form>
+
+                <form method="post" asp-page-handler="ReturnToDoctor" asp-route-id="@Model.RequestData.Id" class="mt-3">
+                    <div class="mb-2">
+                        <label class="text-muted small">Note to doctor (optional)</label>
+                        <textarea name="note" class="form-control" rows="3" maxlength="2000"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Send this request back to the doctor?');">
+                        <i class="bi bi-arrow-repeat"></i> Send back to doctor
+                    </button>
+                </form>
+            }
+            else
+            {
+                <div class="d-flex gap-2 mt-4">
+                    <a asp-page="/Assistant/Messages/Inbox" asp-route-requestId="@Model.RequestData.Id" class="btn btn-primary">
+                        <i class="bi bi-chat-dots"></i> Continue Triage Chat
+                    </a>
+
+                    <form method="post" asp-page-handler="ReturnToDoctor" asp-route-id="@Model.RequestData.Id">
+                        <input type="hidden" name="note" value="Assistant requested doctor review." />
+                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Send this request back to the doctor?');">
+                            <i class="bi bi-arrow-repeat"></i> Send back to doctor
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+</div>

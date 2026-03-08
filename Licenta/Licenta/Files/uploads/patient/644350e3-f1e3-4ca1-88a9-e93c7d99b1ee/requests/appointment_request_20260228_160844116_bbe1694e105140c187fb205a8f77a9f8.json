@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-02-28T16:08:44.1111931Z",
+  "ClinicId": "CL-844BC5C5",
+  "PatientUserId": "16f0c3dd-2654-47e7-bf44-dfe164e8f1e7",
+  "PatientProfileId": "644350e3-f1e3-4ca1-88a9-e93c7d99b1ee",
+  "SelectedDoctorId": "1affaa9f-ddde-4f65-830a-4bb146617371",
+  "SelectedLocalIso": "2026-03-02T09:00",
+  "SelectedScheduledUtc": "2026-03-02T07:00:00Z",
+  "Reason": "Ma doare maseaua"
+}

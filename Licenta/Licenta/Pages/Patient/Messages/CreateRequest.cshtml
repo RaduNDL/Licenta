@@ -1,0 +1,120 @@
+﻿@page
+@model Licenta.Pages.Patient.Messages.CreateRequestModel
+@{
+    ViewData["Title"] = "Request Assistance";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/patient.css" />
+    <link rel="stylesheet" href="~/css/Createrequest.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+}
+
+<div class="request-page-wrapper">
+    <div class="request-card">
+        <div class="request-info-panel">
+            <div class="info-content">
+                <div class="icon-header">
+                    <i class="fa-solid fa-user-doctor"></i>
+                </div>
+                <h3>Medical Assistance</h3>
+                <p>Select your doctor and describe your symptoms. Your request will be sent for approval before starting the consultation.</p>
+
+                <div class="process-steps">
+                    <div class="step active">
+                        <i class="fa-solid fa-user-md"></i>
+                        <span>Select Doctor</span>
+                    </div>
+                    <div class="step">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Wait for Approval</span>
+                    </div>
+                    <div class="step">
+                        <i class="fa-solid fa-stethoscope"></i>
+                        <span>Consultation</span>
+                    </div>
+                </div>
+            </div>
+            <div class="info-footer">
+                <small>MedFlow Clinic &copy; @DateTime.Now.Year</small>
+            </div>
+        </div>
+
+        <div class="request-form-panel">
+            <div class="form-header">
+                <h2>New Request</h2>
+                <span class="badge-status">Pending</span>
+            </div>
+
+            @if (TempData["StatusMessage"] is string status)
+            {
+                <div class="alert alert-custom-info">
+                    <i class="fa-solid fa-circle-info"></i> @status
+                </div>
+            }
+
+            <form method="post" id="requestForm">
+                <div class="form-group-modern">
+                    <label asp-for="Input.DoctorId" class="form-label">Select Doctor</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-hospital-user input-icon"></i>
+                        <select asp-for="Input.DoctorId" asp-items="Model.DoctorList" class="form-control-modern select-modern">
+                            <option value="">-- Choose a doctor --</option>
+                        </select>
+                    </div>
+                    <span asp-validation-for="Input.DoctorId" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="Input.Subject" class="form-label">Subject</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-tag input-icon"></i>
+                        <input asp-for="Input.Subject" class="form-control-modern" placeholder="E.g., Follow-up on recent tests" />
+                    </div>
+                    <span asp-validation-for="Input.Subject" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="Input.Body" class="form-label">Details</label>
+                    <div class="input-wrapper textarea-wrapper">
+                        <textarea asp-for="Input.Body" rows="5" class="form-control-modern" id="bodyText" placeholder="Describe your symptoms or reason for the request..."></textarea>
+                    </div>
+                    <div class="char-count-wrapper text-end mt-1">
+                        <small class="text-muted"><span id="charCount">0</span>/4000</small>
+                    </div>
+                    <span asp-validation-for="Input.Body" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <div class="form-actions">
+                    <a asp-page="/Patient/Messages/RequestList" class="btn-modern btn-ghost">Cancel</a>
+                    <button type="submit" class="btn-modern btn-gradient" id="submitBtn">
+                        <span class="btn-text">Send Request</span>
+                        <span class="btn-sending d-none">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Sending...
+                        </span>
+                        <i class="fa-solid fa-paper-plane btn-icon"></i>
+                    </button>
+                </div>
+            </form>
+
+            <div id="successOverlay" class="d-none" style="position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:9999;">
+                <div style="background:#fff; border-radius:16px; padding:22px 20px; width:min(420px, 92vw); box-shadow:0 14px 45px rgba(0,0,0,.18); text-align:center;">
+                    <div style="font-size:38px; margin-bottom:10px;">
+                        <i class="fa-solid fa-circle-check" style="color:#16a34a;"></i>
+                    </div>
+                    <h4 style="margin:0 0 6px 0;">Request sent</h4>
+                    <p style="margin:0 0 14px 0; color:#6b7280;">Redirecting to your requests list...</p>
+                    <div style="height:6px; width:100%; background:#e5e7eb; border-radius:999px; overflow:hidden;">
+                        <div id="successBar" style="height:100%; width:0%; background:#16a34a;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/Createrequest.js" asp-append-version="true"></script>
+}

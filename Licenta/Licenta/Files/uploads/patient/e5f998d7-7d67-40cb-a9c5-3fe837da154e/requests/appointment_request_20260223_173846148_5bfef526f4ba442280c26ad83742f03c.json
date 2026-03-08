@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-02-23T17:38:46.1464306Z",
+  "ClinicId": "CL-6C69F646",
+  "PatientUserId": "c7405d4b-a60e-446b-9c3e-860822cb5c01",
+  "PatientProfileId": "e5f998d7-7d67-40cb-a9c5-3fe837da154e",
+  "SelectedDoctorId": "67434b04-4f61-4f9f-80de-e6d57db3b774",
+  "SelectedLocalIso": "2026-03-02T11:00",
+  "SelectedScheduledUtc": "2026-03-02T09:00:00Z",
+  "Reason": "Ma doare caputu\r\n"
+}

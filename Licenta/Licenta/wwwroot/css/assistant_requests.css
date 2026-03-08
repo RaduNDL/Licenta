@@ -1,0 +1,229 @@
+﻿:root {
+    --primary-color: #4e73df;
+    --success-color: #1cc88a;
+    --info-color: #36b9cc;
+    --warning-color: #f6c23e;
+    --danger-color: #e74a3b;
+    --secondary-color: #858796;
+    --bg-light: #f8f9fc;
+}
+
+body {
+    background-color: var(--bg-light);
+    font-family: 'Nunito', sans-serif;
+}
+
+.nav-pills .nav-link {
+    color: var(--secondary-color);
+    font-weight: 600;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+    .nav-pills .nav-link:hover {
+        background-color: #eaecf4;
+        color: var(--primary-color);
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: var(--primary-color);
+        color: white;
+        box-shadow: 0 0.125rem 0.25rem 0 rgba(78, 115, 223, 0.4);
+    }
+
+.table thead th {
+    border-bottom: 1px solid #e3e6f0;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 1rem 1.5rem;
+}
+
+.custom-table tr td {
+    padding: 1rem 1.5rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.custom-table tr:hover {
+    background-color: #fafbfc;
+}
+
+.text-xs {
+    font-size: 0.75rem;
+}
+
+.avatar-initials {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+}
+
+.badge-status {
+    padding: 0.4em 0.8em;
+    border-radius: 0.35rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.3px;
+    display: inline-block;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+.status-assistantchat {
+    background-color: #cff4fc;
+    color: #055160;
+    border: 1px solid #b6effb;
+}
+
+.status-waitingdoctorapproval {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d6d8db;
+}
+
+.status-activedoctorchat {
+    background-color: #d1e7dd;
+    color: #0f5132;
+    border: 1px solid #badbcc;
+}
+
+.status-rejectedbydoctor {
+    background-color: #f8d7da;
+    color: #842029;
+    border: 1px solid #f5c2c7;
+}
+
+.status-closed {
+    background-color: #e9ecef;
+    color: #495057;
+    border: 1px solid #ced4da;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.35rem;
+    transition: all 0.2s;
+}
+
+.btn-success-soft {
+    background-color: rgba(28, 200, 138, 0.15);
+    color: #1cc88a;
+    border: none;
+}
+
+    .btn-success-soft:hover {
+        background-color: #1cc88a;
+        color: white;
+    }
+
+.btn-primary-soft {
+    background-color: rgba(78, 115, 223, 0.15);
+    color: #4e73df;
+    border: none;
+}
+
+    .btn-primary-soft:hover {
+        background-color: #4e73df;
+        color: white;
+    }
+
+.btn-info-soft {
+    background-color: rgba(54, 185, 204, 0.15);
+    color: #36b9cc;
+    border: none;
+}
+
+    .btn-info-soft:hover {
+        background-color: #36b9cc;
+        color: white;
+    }
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 1rem;
+    }
+
+    .nav-pills {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+
+        .nav-pills .nav-link {
+            white-space: nowrap;
+        }
+
+    .table thead {
+        display: none;
+    }
+
+    .custom-table, .custom-table tbody, .custom-table tr, .custom-table td {
+        display: block;
+        width: 100%;
+    }
+
+        .custom-table tr {
+            margin-bottom: 1rem;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.05);
+        }
+
+            .custom-table tr td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.6rem 0;
+                border: none;
+                text-align: right;
+            }
+
+                .custom-table tr td::before {
+                    content: attr(data-label);
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    font-size: 0.7rem;
+                    color: var(--secondary-color);
+                    text-align: left;
+                }
+
+                .custom-table tr td:last-child {
+                    justify-content: center;
+                    margin-top: 0.5rem;
+                    padding-top: 1rem;
+                    border-top: 1px solid #f0f2f5;
+                }
+
+    .avatar-initials {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+    }
+}

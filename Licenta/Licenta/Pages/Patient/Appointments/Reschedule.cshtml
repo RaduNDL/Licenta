@@ -1,0 +1,133 @@
+﻿@page "{id:int}"
+@model Licenta.Pages.Patient.Appointments.RescheduleModel
+@{
+    ViewData["Title"] = "Reschedule Appointment";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Reschedule.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold" style="color: #111827;">Modify Appointment</h2>
+            <p class="text-muted mb-0">Select a new date and time for your consultation.</p>
+        </div>
+        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">
+            My Appointments
+        </a>
+    </div>
+
+    @if (TempData["StatusMessage"] is string statusMsg)
+    {
+        <div class="alert alert-info border-0 shadow-sm">@statusMsg</div>
+    }
+
+    @if (!Model.CanRequest)
+    {
+        <div class="alert alert-warning border-0 shadow-sm">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>
+            You cannot request a reschedule for this appointment as it is too close to the scheduled time or already processed.
+        </div>
+        <div class="mt-3">
+            <a asp-page="/Patient/Appointments/Index" class="btn btn-secondary">Return to Appointments</a>
+        </div>
+    }
+    else
+    {
+        <form method="post" id="rescheduleForm">
+            <input type="hidden" asp-for="SelectedSlotKey" id="hiddenSlotKey" />
+
+            <div class="row g-4">
+
+                <div class="col-lg-4">
+                    <div class="wizard-step">
+                        <div class="step-header">
+                            <div class="step-number">1</div>
+                            <h5 class="mb-0">Current Details</h5>
+                        </div>
+
+                        <div class="current-info-box">
+                            <div class="info-row">
+                                <i class="fa-solid fa-user-doctor text-primary"></i>
+                                <div>
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.7rem;">Doctor</small>
+                                    <span class="fw-bold">@Model.DoctorName</span>
+                                </div>
+                            </div>
+                            <div class="info-row mt-3">
+                                <i class="fa-regular fa-calendar-xmark text-danger"></i>
+                                <div>
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.7rem;">Old Date & Time</small>
+                                    <span class="fw-bold text-decoration-line-through">@Model.CurrentScheduledAtDisplay</span>
+                                </div>
+                            </div>
+                            <div class="info-row mt-3">
+                                <i class="fa-solid fa-location-dot text-secondary"></i>
+                                <div>
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.7rem;">Location</small>
+                                    <span class="fw-bold">@Model.Location</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="wizard-step" id="step2">
+                        <div class="step-header">
+                            <div class="step-number">2</div>
+                            <h5 class="mb-0">Choose New Date and Time</h5>
+                        </div>
+
+                        <div id="datesContainer" class="d-flex flex-wrap mb-3">
+                        </div>
+
+                        <div id="timesContainer" class="d-flex flex-wrap">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="wizard-step disabled-step" id="step3">
+                        <div class="step-header">
+                            <div class="step-number">3</div>
+                            <h5 class="mb-0">Confirm Details</h5>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="alert alert-info border-0 mb-0 d-flex align-items-center">
+                                <i class="fa-regular fa-calendar-check me-2 fs-5"></i>
+                                <span id="finalSelectionText" class="fw-bold">No time selected</span>
+                            </div>
+                            <span asp-validation-for="SelectedSlotKey" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Reason for Rescheduling <span class="text-danger">*</span></label>
+                            <textarea class="form-control" asp-for="InputReason" rows="4" placeholder="Briefly explain why you need to reschedule..."></textarea>
+                            <span class="text-danger small mt-1 d-block" asp-validation-for="InputReason"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 fs-6 fw-bold py-2" id="submitBtn">
+                            Submit Reschedule
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        const doctorData = @Html.Raw(Model.DoctorSlotsJson);
+    </script>
+
+    <script src="~/js/Reschedule.js" asp-append-version="true"></script>
+}

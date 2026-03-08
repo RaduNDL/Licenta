@@ -1,0 +1,268 @@
+﻿@page
+@model Licenta.Pages.Administrator.AdminPanel.IndexModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+}
+
+<div class="container-fluid dashboard-container py-4">
+    <div class="row mb-4 align-items-center welcome-header">
+        <div class="col-md-8">
+            <h1 class="display-6 fw-bold text-dark">
+                System <span class="text-danger">Administration</span>
+            </h1>
+            <p class="text-muted mb-0">
+                <i class="bi bi-shield-lock-fill me-2"></i>Logged in as @Model.AdminEmail &bull; @DateTime.Now.ToString("D")
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <a asp-page="/Administrator/Settings/Index" class="btn btn-outline-dark shadow-sm">
+                <i class="bi bi-sliders me-2"></i>System Config
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@Model.TotalUsersCount</h3>
+                    <p>Total Users</p>
+                </div>
+                <a asp-page="/Administrator/Users/Index" class="stretched-link"></a>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-person-badge"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@Model.ActiveDoctorsCount</h3>
+                    <p>Active Doctors</p>
+                </div>
+                <a asp-page="/Administrator/Users/Index" class="stretched-link"></a>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                    <i class="bi bi-shield-exclamation"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@Model.RecentSecurityEvents</h3>
+                    <p>Security Events</p>
+                </div>
+                <a asp-page="/Administrator/Audit" class="stretched-link"></a>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-bell"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>@Model.UnreadNotifications</h3>
+                    <p>System Alerts</p>
+                </div>
+                <a asp-page="/Administrator/Notifications/Index" class="stretched-link"></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="dashboard-panel mb-4">
+                <div class="panel-header">
+                    <div>
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-activity me-2 text-danger"></i>Security Audit Log</h5>
+                        <small class="text-muted">Recent login activities and security events</small>
+                    </div>
+                    <a asp-page="/Administrator/Audit" class="btn btn-sm btn-light">View Full Log</a>
+                </div>
+                <div class="panel-body p-0">
+                    @if (Model.RecentLogins != null && Model.RecentLogins.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">User</th>
+                                        <th>Role/Scheme</th>
+                                        <th>Timestamp</th>
+                                        <th class="text-end pe-4">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var log in Model.RecentLogins)
+                                    {
+                                        <tr>
+                                            <td class="ps-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm bg-light text-dark rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                                        <i class="bi bi-person"></i>
+                                                    </div>
+                                                    <span class="fw-medium">@log.UserName</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-secondary border">@log.RoleOrScheme</span>
+                                            </td>
+                                            <td class="text-muted small">@log.TimestampUtc.ToLocalTime().ToString("g")</td>
+                                            <td class="text-end pe-4">
+                                                @if (log.Success)
+                                                {
+                                                    <span class="badge bg-success-subtle text-success rounded-pill">Success</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger-subtle text-danger rounded-pill">Failed</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state-panel text-center p-5">
+                            <i class="bi bi-shield-check text-muted opacity-25" style="font-size: 2.5rem;"></i>
+                            <p class="text-muted mt-2">No recent security events logged.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="dashboard-panel">
+                <div class="panel-header">
+                    <div>
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-people me-2 text-primary"></i>Newest Users</h5>
+                        <small class="text-muted">Based on tracked create events</small>
+                    </div>
+                    <a asp-page="/Administrator/Users/Index" class="btn btn-sm btn-light">Manage All</a>
+                </div>
+                <div class="panel-body p-0">
+                    @if (Model.NewestUsers != null && Model.NewestUsers.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var user in Model.NewestUsers)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-box-sm bg-primary bg-opacity-10 text-primary rounded me-3 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            <i class="bi bi-person-plus"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-semibold text-dark">@user.Email</h6>
+                                            <small class="text-muted">
+                                                Role: @user.Role &bull;
+                                                @(user.CreatedDateUtc.HasValue? user.CreatedDateUtc.Value.ToLocalTime().ToString("MMM dd") : "N/A")
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <a asp-page="/Administrator/Users/Edit" asp-route-id="@user.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="dashboard-panel mb-4">
+                <div class="panel-header">
+                    <h5 class="mb-0 fw-bold">Quick Administration</h5>
+                </div>
+                <div class="panel-body p-3">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <a asp-page="/Administrator/Users/Create" class="quick-action-btn">
+                                <i class="bi bi-person-plus-fill text-success"></i>
+                                <span>Create User</span>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a asp-page="/Administrator/Users/Index" class="quick-action-btn">
+                                <i class="bi bi-people-fill text-primary"></i>
+                                <span>User List</span>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a asp-page="/Administrator/Staff/Assignments" class="quick-action-btn">
+                                <i class="bi bi-person-vcard-fill text-info"></i>
+                                <span>Assignments</span>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a asp-page="/Administrator/Notifications/Index" class="quick-action-btn">
+                                <i class="bi bi-bell-fill text-warning"></i>
+                                <span>Alerts</span>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a asp-page="/Administrator/Settings/Index" class="quick-action-btn">
+                                <i class="bi bi-sliders text-dark"></i>
+                                <span>Settings</span>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a asp-page="/Administrator/Audit" class="quick-action-btn">
+                                <i class="bi bi-shield-lock-fill text-danger"></i>
+                                <span>Audit Logs</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-panel mb-4">
+                <div class="panel-header">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-hdd-stack me-2 text-secondary"></i>System Status</h5>
+                </div>
+                <div class="panel-body p-4">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">Database Health</span>
+                            <span class="small text-success">Optimal</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">Storage Usage</span>
+                            <span class="small text-warning">@Model.StorageUsage%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: @Model.StorageUsage%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">Server Load</span>
+                            <span class="small text-primary">Low</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 15%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

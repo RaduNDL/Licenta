@@ -1,0 +1,237 @@
+﻿@page
+@using Licenta.Models
+@model Licenta.Pages.Patient.Appointments.IndexModel
+@{
+    ViewData["Title"] = "My Appointments";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/patient.css" />
+    <link rel="stylesheet" href="~/css/Patientappointments.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+}
+
+<div class="appointments-container">
+
+    <div class="appointments-header">
+        <div class="header-content">
+            <h1>Appointments</h1>
+            <p>Track your requests and confirmed appointments.</p>
+        </div>
+        <div class="header-stats">
+            <div class="stat-item">
+                <span class="stat-value">@Model.Requests.Count</span>
+                <span class="stat-label">Requests</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">@Model.Appointments.Count</span>
+                <span class="stat-label">Confirmed</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls-bar">
+        <div class="search-box">
+            <i class="fa-solid fa-search"></i>
+            <input type="text" id="appointmentSearch" placeholder="Search by doctor, status, or date..." />
+        </div>
+        <div class="ms-auto d-flex gap-2">
+            <a asp-page="/Patient/Appointments/Request" class="btn-action-primary">
+                <i class="fa-solid fa-plus"></i> New request
+            </a>
+        </div>
+    </div>
+
+    <div class="section-title mt-4">
+        <h3 class="mb-3">Confirmed appointments</h3>
+    </div>
+
+    @if (Model.Appointments == null || !Model.Appointments.Any())
+    {
+        <div class="elegant-empty-state">
+            <div class="icon-wrapper blue-theme">
+                <i class="fa-regular fa-calendar-check"></i>
+            </div>
+            <h4>No Confirmed Appointments</h4>
+            <p>You don't have any upcoming scheduled appointments at the moment. Once a doctor approves your request, it will appear here.</p>
+        </div>
+    }
+    else
+    {
+        <div class="appointments-grid">
+            @foreach (var a in Model.Appointments)
+            {
+                var statusLabel = a.Status == AppointmentStatus.Cancelled ? "Cancelled" :
+                a.Status == AppointmentStatus.Rejected ? "Rejected" :
+                a.Status == AppointmentStatus.Completed ? "Completed" :
+                a.Status == AppointmentStatus.Approved ? "Scheduled" : a.Status.ToString();
+
+                var statusClass = a.Status == AppointmentStatus.Cancelled || a.Status == AppointmentStatus.Rejected
+                ? "status-rejected"
+                : "status-accepted";
+
+                var statusIcon = a.Status == AppointmentStatus.Cancelled || a.Status == AppointmentStatus.Rejected
+                ? "fa-circle-xmark"
+                : "fa-circle-check";
+
+                <div class="appt-card @statusClass" data-doctor="@a.DoctorName" data-status="@statusLabel">
+                    <div class="card-status-strip"></div>
+
+                    <div class="card-body">
+                        <div class="card-header-row">
+                            <div class="doctor-info">
+                                <div class="avatar-circle">
+                                    <i class="fa-solid fa-user-doctor"></i>
+                                </div>
+                                <div>
+                                    <span class="label-text">Doctor</span>
+                                    <h4 class="doctor-name">@a.DoctorName</h4>
+                                </div>
+                            </div>
+                            <span class="badge-pill @statusClass">
+                                <i class="fa-regular @statusIcon"></i> @statusLabel
+                            </span>
+                        </div>
+
+                        <div class="timeline-info">
+                            <div class="time-point">
+                                <div class="icon-small"><i class="fa-solid fa-calendar-check"></i></div>
+                                <div>
+                                    <span class="label-text">When</span>
+                                    <span class="value-text">@a.ScheduledAtUtc.ToLocalTime().ToString("MMM dd, HH:mm")</span>
+                                </div>
+                            </div>
+
+                            <div class="time-point">
+                                <div class="icon-small"><i class="fa-solid @a.ProgressIcon"></i></div>
+                                <div>
+                                    <span class="label-text">Progress</span>
+                                    <span class="value-text">@a.ProgressLabel</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="notes-section">
+                            <span class="label-text">Location</span>
+                            <div class="notes-content">@a.Location</div>
+                        </div>
+
+                        <div class="notes-section">
+                            <span class="label-text">Reason</span>
+                            <div class="notes-content">@a.Reason</div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-3">
+                            <a asp-page="/Patient/Appointments/Reschedule" asp-route-id="@a.AppointmentId" class="btn btn-outline-secondary btn-sm">
+                                Request reschedule
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="section-title mt-5">
+        <h3 class="mb-3">Appointment requests</h3>
+    </div>
+
+    @if (Model.Requests == null || !Model.Requests.Any())
+    {
+        <div class="elegant-empty-state">
+            <div class="icon-wrapper green-theme">
+                <i class="fa-solid fa-notes-medical"></i>
+            </div>
+            <h4>No Pending Requests</h4>
+            <p>You haven't submitted any appointment requests. Need medical assistance? Start by creating a new request to connect with a doctor.</p>
+            <a asp-page="/Patient/Appointments/Request" class="btn-action-primary mt-3">
+                <i class="fa-solid fa-plus"></i> Create New Request
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="appointments-grid">
+            @foreach (var r in Model.Requests)
+            {
+                <div class="appt-card @r.StateClass" data-doctor="@r.DoctorName" data-status="@r.StateLabel">
+                    <div class="card-status-strip"></div>
+
+                    <div class="card-body">
+                        <div class="card-header-row">
+                            <div class="doctor-info">
+                                <div class="avatar-circle">
+                                    <i class="fa-solid fa-user-doctor"></i>
+                                </div>
+                                <div>
+                                    <span class="label-text">Doctor</span>
+                                    <h4 class="doctor-name">@r.DoctorName</h4>
+                                </div>
+                            </div>
+                            <span class="badge-pill @r.StateClass">
+                                <i class="fa-regular @r.IconClass"></i> @r.StateLabel
+                            </span>
+                        </div>
+
+                        <div class="timeline-info">
+                            <div class="time-point">
+                                <div class="icon-small"><i class="fa-solid fa-upload"></i></div>
+                                <div>
+                                    <span class="label-text">Submitted</span>
+                                    <span class="value-text">@r.UploadedAtUtc.ToLocalTime().ToString("MMM dd, HH:mm")</span>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(r.RequestedSlotDisplay) && r.RequestedSlotDisplay != "-")
+                            {
+                                <div class="time-point">
+                                    <div class="icon-small"><i class="fa-solid fa-calendar"></i></div>
+                                    <div>
+                                        <span class="label-text">Requested</span>
+                                        <span class="value-text">@r.RequestedSlotDisplay</span>
+                                    </div>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(r.ScheduledSlotDisplay) && r.ScheduledSlotDisplay != "-")
+                            {
+                                <div class="time-point">
+                                    <div class="icon-small"><i class="fa-solid fa-calendar-check"></i></div>
+                                    <div>
+                                        <span class="label-text">Scheduled</span>
+                                        <span class="value-text">@r.ScheduledSlotDisplay</span>
+                                    </div>
+                                </div>
+                            }
+
+                            @if (r.ValidatedAtUtc.HasValue)
+                            {
+                                <div class="time-point">
+                                    <div class="icon-small"><i class="fa-solid fa-check-double"></i></div>
+                                    <div>
+                                        <span class="label-text">Processed</span>
+                                        <span class="value-text">@r.ValidatedAtUtc.Value.ToLocalTime().ToString("MMM dd, HH:mm")</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="notes-section">
+                            <span class="label-text">Reason</span>
+                            <div class="notes-content">@r.Reason</div>
+                        </div>
+
+                        <div class="notes-section">
+                            <span class="label-text">Notes</span>
+                            <div class="notes-content raw-notes">@r.NotesDisplay</div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/Patientappointments.js"></script>
+}

@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-02-22T13:03:57.3073012Z",
+  "ClinicId": "CL-97A6F9AC",
+  "PatientUserId": "ef38dea5-ef63-4402-844d-a9aa5a2ccb19",
+  "PatientProfileId": "3f42c6a9-49cf-4725-92c5-f559a3a15f05",
+  "SelectedDoctorId": "1d2c11c4-57af-41a9-8e92-8ba2dfd6a405",
+  "SelectedLocalIso": "2026-02-23T10:00",
+  "SelectedScheduledUtc": "2026-02-23T08:00:00Z",
+  "Reason": "Ma doare piciorusul de lebada"
+}
