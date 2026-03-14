@@ -74,7 +74,8 @@ public class InboxModel : PageModel
 
     private static string ConversationKey(string doctorId, string patientId) => $"chat:doctor:{doctorId}:patient:{patientId}";
 
-    public async Task<IActionResult> OnGetAsync(string? partnerId)
+    // Accepts optional partnerId and optional requestId (when redirected after accepting a message request)
+    public async Task<IActionResult> OnGetAsync(string? partnerId, Guid? requestId)
     {
         var doctorUser = await _userManager.GetUserAsync(User);
         if (doctorUser == null) return Page();
@@ -96,11 +97,27 @@ public class InboxModel : PageModel
 
         var hiddenPartners = await GetHiddenChatsForUser(doctorUser.Id);
 
+        // If a requestId is provided (redirect after Accept), resolve partnerId from it
+        if (requestId.HasValue)
+        {
+            var req = await _db.PatientMessageRequests
+                .AsNoTracking()
+                .Include(r => r.Patient)
+                .FirstOrDefaultAsync(r => r.Id == requestId.Value && r.DoctorProfileId == doctorProfile.Id);
+
+            if (req != null)
+            {
+                partnerId = req.Patient.UserId;
+                SelectedRequestId = req.Id;
+            }
+        }
+
         if (!string.IsNullOrEmpty(partnerId) && hiddenPartners.Contains(partnerId))
         {
             return RedirectToPage("/Doctor/Messages/Inbox");
         }
 
+        // All internal messages involving this doctor
         var doctorMessages = await _db.InternalMessages
             .AsNoTracking()
             .Include(m => m.Sender)
@@ -108,84 +125,112 @@ public class InboxModel : PageModel
             .Where(m => m.SenderId == doctorUser.Id || m.RecipientId == doctorUser.Id)
             .ToListAsync();
 
+        // Partners that have active doctor chats (patient initiated & accepted)
         var activePartnerIds = await _db.PatientMessageRequests
             .Where(r => r.DoctorProfileId == doctorProfile.Id && r.Status == PatientMessageRequestStatus.ActiveDoctorChat)
             .Select(r => r.Patient.UserId)
+            .Distinct()
             .ToListAsync();
 
+        // Build conversations from messages grouped by partner
         var groupedByPartner = doctorMessages
             .GroupBy(m => m.SenderId == doctorUser.Id ? m.RecipientId : m.SenderId)
-            .Where(g => !hiddenPartners.Contains(g.Key))
-            .ToList();
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(m => m.SentAt).First());
 
-        foreach (var group in groupedByPartner)
+        // Add conversations derived from messages
+        foreach (var kvp in groupedByPartner)
         {
-            var pId = group.Key;
-            var lastMsg = group.OrderByDescending(m => m.SentAt).First();
-
-            var partnerName = lastMsg.SenderId == doctorUser.Id
-                ? (lastMsg.Recipient?.FullName ?? lastMsg.Recipient?.Email ?? "Patient")
-                : (lastMsg.Sender?.FullName ?? lastMsg.Sender?.Email ?? "Patient");
-
-            var preview = lastMsg.Body ?? "";
-            if (preview.Length > 60) preview = preview[..60] + "...";
-
-            bool isActive = activePartnerIds.Contains(pId);
+            var partner = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == kvp.Key);
+            var last = kvp.Value;
+            var preview = last.Body ?? "";
+            if (preview.Length > 70) preview = preview[..70] + "...";
 
             Conversations.Add(new ConversationVm(
-                pId,
-                partnerName,
-                lastMsg.SentAt,
+                kvp.Key,
+                partner?.FullName ?? partner?.Email ?? partner?.UserName ?? "Patient",
+                last.SentAt,
                 preview,
-                ConversationKey(doctorUser.Id, pId),
-                isActive));
+                ConversationKey(doctorUser.Id, kvp.Key),
+                activePartnerIds.Contains(kvp.Key)
+            ));
         }
 
-        Conversations = Conversations.OrderByDescending(x => x.LastAt).ToList();
-
-        SelectedPartnerId = partnerId ?? Conversations.FirstOrDefault()?.PartnerId;
-
-        if (string.IsNullOrEmpty(SelectedPartnerId)) return Page();
-
-        var currentPartner = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == SelectedPartnerId);
-        SelectedPartnerName = currentPartner?.FullName ?? currentPartner?.Email ?? "Patient";
-        CurrentConversationKey = ConversationKey(doctorUser.Id, SelectedPartnerId);
-
-        var activeRequest = await _db.PatientMessageRequests
-            .AsNoTracking()
-            .Include(r => r.Patient)
-            .OrderByDescending(r => r.CreatedAt)
-            .FirstOrDefaultAsync(r => r.DoctorProfileId == doctorProfile.Id
-                                      && r.Patient.UserId == SelectedPartnerId
-                                      && r.Status == PatientMessageRequestStatus.ActiveDoctorChat);
-
-        if (activeRequest != null)
+        // Ensure active partners (requests accepted by doctor) are present even if there are no messages yet
+        foreach (var pid in activePartnerIds)
         {
-            CanSend = true;
-            CanClose = true;
-            SelectedRequestId = activeRequest.Id;
-            Input.RequestId = activeRequest.Id;
-        }
-        else
-        {
-            CanSend = false;
-            CanClose = false;
+            if (groupedByPartner.ContainsKey(pid)) continue;
+
+            var patient = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == pid);
+            var lastActivity = await _db.PatientMessageRequests
+                .Where(r => r.DoctorProfileId == doctorProfile.Id && r.Patient.UserId == pid)
+                .OrderByDescending(r => r.UpdatedAt ?? r.CreatedAt)
+                .Select(r => r.UpdatedAt ?? r.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            var preview = "No messages yet";
+            Conversations.Add(new ConversationVm(
+                pid,
+                patient?.FullName ?? patient?.Email ?? patient?.UserName ?? "Patient",
+                lastActivity == default ? DateTime.UtcNow : lastActivity,
+                preview,
+                ConversationKey(doctorUser.Id, pid),
+                true
+            ));
         }
 
-        Messages = await _db.InternalMessages
-            .AsNoTracking()
-            .Where(m =>
-                (m.SenderId == doctorUser.Id && m.RecipientId == SelectedPartnerId) ||
-                (m.SenderId == SelectedPartnerId && m.RecipientId == doctorUser.Id)
-            )
-            .OrderBy(m => m.SentAt)
-            .Select(m => new MessageVm(
-                m.Id,
-                m.Body,
-                m.SentAt,
-                m.SentAt.ToLocalTime(),
-                m.SenderId == doctorUser.Id))
-            .ToListAsync();
+        // Sort conversations by last activity desc
+        Conversations = Conversations.OrderByDescending(c => c.LastAt).ToList();
+
+        // If partnerId provided, load messages for that partner
+        if (!string.IsNullOrWhiteSpace(partnerId))
+        {
+            SelectedPartnerId = partnerId;
+            SelectedPartnerName = (await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == partnerId))?.FullName ?? "";
+            CurrentConversationKey = ConversationKey(doctorUser.Id, partnerId);
+
+            Messages = await _db.InternalMessages
+                .AsNoTracking()
+                .Where(m =>
+                    (m.SenderId == doctorUser.Id && m.RecipientId == partnerId) ||
+                    (m.SenderId == partnerId && m.RecipientId == doctorUser.Id)
+                )
+                .OrderBy(m => m.SentAt)
+                .Select(m => new MessageVm(
+                    m.Id,
+                    m.Body,
+                    m.SentAt,
+                    m.SentAt.ToLocalTime(),
+                    m.SenderId == doctorUser.Id))
+                .ToListAsync();
+
+            // If a requestId was supplied, mark the SelectedRequestId and determine send/close permissions
+            if (requestId.HasValue)
+            {
+                SelectedRequestId = requestId.Value;
+            }
+            else
+            {
+                // try to find an active request for this patient-doctor pair
+                var req = await _db.PatientMessageRequests
+                    .AsNoTracking()
+                    .Where(r => r.DoctorProfileId == doctorProfile.Id && r.Patient.UserId == partnerId &&
+                                (r.Status == PatientMessageRequestStatus.ActiveDoctorChat || r.Status == PatientMessageRequestStatus.Closed))
+                    .OrderByDescending(r => r.UpdatedAt ?? r.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                if (req != null)
+                    SelectedRequestId = req.Id;
+            }
+
+            if (SelectedRequestId != Guid.Empty)
+            {
+                var reqEntity = await _db.PatientMessageRequests
+                    .FirstOrDefaultAsync(r => r.Id == SelectedRequestId);
+
+                CanSend = reqEntity != null && reqEntity.Status == PatientMessageRequestStatus.ActiveDoctorChat;
+                CanClose = reqEntity != null && reqEntity.Status == PatientMessageRequestStatus.ActiveDoctorChat;
+            }
+        }
 
         return Page();
     }
@@ -273,21 +318,24 @@ public class InboxModel : PageModel
             afterUtc = dto.UtcDateTime;
         }
 
-        var messages = await _db.InternalMessages
+        var messagesQuery = _db.InternalMessages
             .AsNoTracking()
             .Where(m =>
-                (afterUtc == null || m.SentAt > afterUtc.Value) &&
-                (
-                    (m.SenderId == doctorUser.Id && m.RecipientId == partnerId) ||
-                    (m.SenderId == partnerId && m.RecipientId == doctorUser.Id)
-                ))
+                (m.SenderId == doctorUser.Id && m.RecipientId == partnerId) ||
+                (m.SenderId == partnerId && m.RecipientId == doctorUser.Id));
+
+        if (afterUtc.HasValue)
+            messagesQuery = messagesQuery.Where(m => m.SentAt > afterUtc.Value);
+
+        var messages = await messagesQuery
             .OrderBy(m => m.SentAt)
             .Select(m => new
             {
-                messageId = m.Id,
+                id = m.Id,
                 body = m.Body,
-                sentAtUtc = m.SentAt,
-                senderId = m.SenderId
+                sentAt = m.SentAt,
+                sentAtLocal = m.SentAt.ToLocalTime(),
+                isMine = m.SenderId == doctorUser.Id
             })
             .ToListAsync();
 
@@ -297,21 +345,18 @@ public class InboxModel : PageModel
     public async Task<IActionResult> OnPostDelegateAsync(Guid id, string assistantId)
     {
         var doctorUser = await _userManager.GetUserAsync(User);
-        if (doctorUser == null) return Unauthorized();
+        if (doctorUser == null) return RedirectToPage();
 
         var doctorProfile = await _db.Doctors
+            .AsNoTracking()
             .Include(d => d.Assistants)
             .FirstOrDefaultAsync(d => d.UserId == doctorUser.Id);
 
-        if (doctorProfile == null || !doctorProfile.Assistants.Any(a => !a.IsSoftDeleted))
-        {
-            TempData["StatusMessage"] = "You have no assistants assigned.";
-            return RedirectToPage();
-        }
+        if (doctorProfile == null) return RedirectToPage();
 
         if (string.IsNullOrWhiteSpace(assistantId))
         {
-            TempData["StatusMessage"] = "Please select an assistant.";
+            TempData["StatusMessage"] = "Please choose an assistant.";
             return RedirectToPage();
         }
 

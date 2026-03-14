@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-03-08T15:12:00.5258635Z",
+  "ClinicId": "CL-3E4180FA",
+  "PatientUserId": "2a1f1ff0-8e62-493b-83f4-96d76e3e8c08",
+  "PatientProfileId": "e1f180c3-abbd-496d-a183-37cf13582b3a",
+  "SelectedDoctorId": "324ec6b2-5dce-4e01-b0b0-15c3f1af11ba",
+  "SelectedLocalIso": "2026-03-09T16:30",
+  "SelectedScheduledUtc": "2026-03-09T14:30:00Z",
+  "Reason": "Ma doare in gat"
+}

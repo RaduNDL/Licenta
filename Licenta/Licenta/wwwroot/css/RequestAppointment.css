@@ -22,6 +22,13 @@ body {
     height: 100%;
     border: 1px solid var(--border);
     animation: slideUp 0.5s ease-out;
+    transition: opacity 0.3s ease;
+}
+
+.disabled-step {
+    opacity: 0.4;
+    pointer-events: none;
+    filter: grayscale(20%);
 }
 
 .step-header {
@@ -93,7 +100,8 @@ body {
 }
 
 .date-pill {
-    display: inline-block;
+    display: inline-flex;
+    flex-direction: column;
     padding: 10px 16px;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -103,6 +111,7 @@ body {
     margin: 0 8px 12px 0;
     transition: 0.2s;
     background: var(--bg-surface);
+    user-select: none;
 }
 
     .date-pill:hover {
@@ -123,6 +132,10 @@ body {
         letter-spacing: 0.5px;
     }
 
+    .date-pill.selected .day-name {
+        color: white;
+    }
+
     .date-pill .day-num {
         font-size: 1.2rem;
         font-weight: 700;
@@ -141,6 +154,7 @@ body {
     font-weight: 600;
     transition: 0.2s;
     background: var(--bg-surface);
+    user-select: none;
 }
 
     .time-pill:hover {
@@ -151,12 +165,6 @@ body {
         background: var(--primary);
         color: white;
     }
-
-.disabled-step {
-    opacity: 0.4;
-    pointer-events: none;
-    filter: grayscale(20%);
-}
 
 .form-label {
     display: block;
@@ -211,6 +219,7 @@ textarea.form-control {
         background-color: var(--text-muted);
         cursor: not-allowed;
         transform: none;
+        box-shadow: none;
     }
 
 .spinner {

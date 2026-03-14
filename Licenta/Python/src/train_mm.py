@@ -37,7 +37,8 @@ def _gpu_info():
 
 def parse_args():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset-dir", type=str, default=r"D:\Facultate\Licenta\Python\dataset\Breast Cancer Detection and Medical Education\Mammogram Mastery A Robust Dataset for Breast Cancer Detection and Medical Education\Breast Cancer Dataset")
+    ap.add_argument("--dataset-dir", type=str,
+    default=r"E:\Facultate\Licenta\Licenta\Python\dataset\dataset\Augmented Dataset\Augmented Dataset")
     ap.add_argument("--artifact-dir", type=str, default=str(PROJECT_ROOT / "artifacts" / "mammogram_mastery_images"))
     ap.add_argument("--preset", type=str, default=os.getenv("CBIS_PRESET", "best"))
     ap.add_argument("--epochs-cap", type=int, default=int(os.getenv("CBIS_EPOCHS_CAP", "12")))

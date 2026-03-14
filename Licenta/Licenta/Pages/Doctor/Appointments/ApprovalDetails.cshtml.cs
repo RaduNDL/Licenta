@@ -86,7 +86,8 @@ namespace Licenta.Pages.Doctor.Appointments
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
-            var newUtc = local.ToUniversalTime();
+            // convert local (explicitly Local) -> UTC and ensure Kind = Utc
+            var newUtc = DateTime.SpecifyKind(local.ToUniversalTime(), DateTimeKind.Utc);
             if (newUtc <= DateTime.UtcNow)
             {
                 TempData["StatusMessage"] = "Cannot approve: requested time is in the past.";
@@ -135,15 +136,17 @@ namespace Licenta.Pages.Doctor.Appointments
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
+            // Ensure ScheduledAt and StartTimeUtc are saved as UTC (DateTimeKind.Utc)
             var appt = new Appointment
             {
                 PatientId = att.PatientId,
                 DoctorId = doctor.Id,
-                ScheduledAt = newUtc,
+                ScheduledAt = DateTime.SpecifyKind(newStartUtc, DateTimeKind.Utc),
                 Reason = string.IsNullOrWhiteSpace(att.PatientNotes) ? null : att.PatientNotes,
                 Status = AppointmentStatus.Approved,
                 Location = "Clinic",
-                StartTimeUtc = newUtc,
+                StartTimeUtc = DateTime.SpecifyKind(newStartUtc, DateTimeKind.Utc),
+                VisitStage = VisitStage.NotArrived,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             };
@@ -222,10 +225,10 @@ namespace Licenta.Pages.Doctor.Appointments
                 await _notifier.NotifyAsync(
                     patientUser,
                     NotificationType.Appointment,
-                    "Appointment Rejected",
-                    $"Your appointment request with Dr. {doctor.User?.FullName} was rejected. Please submit a new request.",
-                    actionUrl: "/Patient/Appointments/Request",
-                    actionText: "Request New Appointment",
+                    "Appointment request rejected",
+                    $"Your appointment request with Dr. {doctor.User?.FullName} was rejected.",
+                    actionUrl: "/Patient/Appointments/Index",
+                    actionText: "View Appointments",
                     relatedEntity: "MedicalAttachment",
                     relatedEntityId: att.Id.ToString(),
                     sendEmail: false

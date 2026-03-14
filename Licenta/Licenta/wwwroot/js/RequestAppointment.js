@@ -25,7 +25,8 @@ function initWizard() {
         const card = document.createElement('div');
         card.className = 'doctor-card';
         card.innerHTML = `
-<img src="${doc.ProfileImagePath}" class="doc-img" onerror="this.src='/images/default.jpg'" alt="Dr. ${doc.Name}">            <div class="doc-info w-100">
+            <img src="${doc.ProfileImagePath}" class="doc-img" onerror="this.src='/images/default.jpg'" alt="Dr. ${doc.Name}">
+            <div class="doc-info w-100">
                 <h6>Dr. ${doc.Name}</h6>
                 <p>${doc.Specialty}</p>
                 ${statusText}
@@ -35,6 +36,7 @@ function initWizard() {
         doctorsContainer.appendChild(card);
     });
 }
+
 function selectDoctor(doc, cardElement) {
     selectedDate = null;
     document.getElementById('hiddenSlotKey').value = '';
