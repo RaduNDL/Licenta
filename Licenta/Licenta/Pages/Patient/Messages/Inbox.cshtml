@@ -22,14 +22,37 @@
     <div class="chat-layout @(isChatOpen ? "chat-active" : "")">
         <div class="chat-sidebar">
             <div class="sidebar-header">
-                <h5 class="mb-0 fw-bold"><i class="bi bi-chat-heart text-primary me-2"></i>Messages</h5>
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-chat-heart text-primary me-2"></i>
+                    @(Model.ShowHidden ? "Hidden Messages" : "Messages")
+                </h5>
+
                 <div class="sidebar-actions">
                     <a asp-page="/Patient/Messages/CreateRequest" class="btn-action-circle bg-primary" title="New Request">
                         <i class="bi bi-plus-lg text-white"></i>
                     </a>
+
                     <a asp-page="/Patient/Messages/RequestList" class="btn-action-circle border-secondary" title="History">
                         <i class="bi bi-list text-secondary"></i>
                     </a>
+
+                    @if (!Model.ShowHidden)
+                    {
+                        <a asp-page="/Patient/Messages/Inbox"
+                               asp-route-showHidden="true"
+                               class="btn-action-circle border-secondary"
+                               title="Hidden conversations">
+                            <i class="bi bi-eye-slash text-secondary"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-page="/Patient/Messages/Inbox"
+                               class="btn-action-circle border-secondary"
+                               title="Back to visible conversations">
+                            <i class="bi bi-arrow-return-left text-secondary"></i>
+                        </a>
+                    }
                 </div>
             </div>
 
@@ -37,33 +60,78 @@
                 @if (!Model.Conversations.Any())
                 {
                     <div class="empty-conversation">
-                        <i class="bi bi-chat-square"></i>
-                        <p>No conversations yet.</p>
+                        <i class="bi @(Model.ShowHidden ? "bi-eye-slash" : "bi-chat-square")"></i>
+                        <p>@(Model.ShowHidden ? "No hidden conversations." : "No conversations yet.")</p>
                     </div>
                 }
                 else
                 {
                     @foreach (var c in Model.Conversations)
                     {
-                        var isActive = c.RequestId == Model.SelectedRequestId && c.Kind == Model.SelectedKind && (c.PartnerId ?? "") == (Model.SelectedPartnerId ?? "");
-                        <a asp-page="/Patient/Messages/Inbox"
-                           asp-route-requestId="@c.RequestId"
-                           asp-route-kind="@c.Kind"
-                           asp-route-partnerId="@c.PartnerId"
-                           class="conversation-item @(isActive ? "active" : "")">
-                            <div class="avatar-circle">
-                                <i class="bi bi-person-fill"></i>
-                            </div>
-                            <div class="conversation-info">
-                                <div class="conversation-top">
-                                    <span class="conversation-name">@c.PartnerName</span>
-                                    <span class="conversation-meta">@c.Kind</span>
+                        var isActive = c.RequestId == Model.SelectedRequestId &&
+                                       c.Kind == Model.SelectedKind &&
+                                       (c.PartnerId ?? "") == (Model.SelectedPartnerId ?? "");
+
+                        <div class="d-flex align-items-stretch gap-2">
+                            <a asp-page="/Patient/Messages/Inbox"
+                                   asp-route-requestId="@c.RequestId"
+                                   asp-route-kind="@c.Kind"
+                                   asp-route-showHidden="@Model.ShowHidden"
+                                   class="conversation-item flex-grow-1 @(isActive ? "active" : "")">
+                                <div class="avatar-circle">
+                                    <i class="bi bi-person-fill"></i>
                                 </div>
-                                <div class="conversation-preview">
-                                    @(string.IsNullOrEmpty(c.LastMessagePreview) ? "No messages" : c.LastMessagePreview)
+
+                                <div class="conversation-info">
+                                    <div class="conversation-top">
+                                        <span class="conversation-name">@c.PartnerName</span>
+                                        <span class="conversation-meta">@c.Kind</span>
+                                    </div>
+
+                                    <div class="conversation-preview">
+                                        @if (c.IsClosed)
+                                        {
+                                            <span class="badge bg-secondary me-1">Closed</span>
+                                        }
+
+                                        @if (c.IsHidden)
+                                        {
+                                            <span class="badge bg-warning text-dark me-1">Hidden</span>
+                                        }
+
+                                        @(string.IsNullOrWhiteSpace(c.LastMessagePreview) ? "No messages" : c.LastMessagePreview)
+                                    </div>
                                 </div>
-                            </div>
-                        </a>
+                            </a>
+
+                            @if (Model.ShowHidden && c.IsHidden)
+                            {
+                                <form method="post" asp-page-handler="RevealConversation" class="d-flex align-items-center">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="requestId" value="@c.RequestId" />
+                                    <input type="hidden" name="kind" value="@c.Kind" />
+                                    <button type="submit"
+                                            class="btn btn-link btn-sm text-success text-decoration-none px-1"
+                                            title="Reveal conversation">
+                                        <i class="bi bi-eye fs-5"></i>
+                                    </button>
+                                </form>
+                            }
+                            else if (c.IsClosed)
+                            {
+                                <form method="post" asp-page-handler="HideConversation" class="d-flex align-items-center">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="requestId" value="@c.RequestId" />
+                                    <input type="hidden" name="kind" value="@c.Kind" />
+                                    <button type="submit"
+                                            class="btn btn-link btn-sm text-secondary text-decoration-none px-1"
+                                            title="Hide conversation"
+                                            onclick="return confirm('Hide this closed conversation from your list? You can reveal it later from Hidden.');">
+                                        <i class="bi bi-eye-slash fs-5"></i>
+                                    </button>
+                                </form>
+                            }
+                        </div>
                     }
                 }
             </div>
@@ -73,21 +141,25 @@
             @if (!isChatOpen)
             {
                 <div class="empty-state">
-                    <i class="bi bi-chat-left-text"></i>
-                    <h4>Welcome to Messages</h4>
-                    <p>Select a conversation to start communicating.</p>
+                    <i class="bi @(Model.ShowHidden ? "bi-eye-slash" : "bi-chat-left-text")"></i>
+                    <h4>@(Model.ShowHidden ? "Hidden conversations" : "Welcome to Messages")</h4>
+                    <p>@(Model.ShowHidden ? "Reveal a conversation to place it back in your history." : "Select a conversation to start communicating.")</p>
                 </div>
             }
             else
             {
                 <div class="chat-header">
                     <div class="chat-partner-info">
-                        <a asp-page="/Patient/Messages/Inbox" class="mobile-back-btn">
+                        <a asp-page="/Patient/Messages/Inbox"
+                               asp-route-showHidden="@Model.ShowHidden"
+                               class="mobile-back-btn">
                             <i class="bi bi-arrow-left fs-4"></i>
                         </a>
+
                         <div class="avatar-header">
                             <i class="bi bi-hospital"></i>
                         </div>
+
                         <div>
                             <div class="fw-bold">@Model.SelectedUserName</div>
                             <div class="small text-muted">@Model.SelectedSubtitle</div>
@@ -98,7 +170,9 @@
                 <div class="messages-container" id="chatBody">
                     @foreach (var m in Model.Messages)
                     {
-                        <div class="message-row @(m.IsMine ? "mine" : "other")" data-id="@m.Id" data-utc="@m.SentAtUtc.ToString("O")">
+                        <div class="message-row @(m.IsMine ? "mine" : "other")"
+                             data-id="@m.Id"
+                             data-utc="@m.SentAtUtc.ToString("O")">
                             <div class="message-bubble">
                                 <span class="message-text">@m.Body</span>
                                 <span class="message-time">@m.SentAtLocal.ToString("HH:mm")</span>
@@ -113,19 +187,26 @@
                     @if (!Model.CanSend)
                     {
                         <div class="alert-closed">
-                            <i class="bi bi-lock"></i> Conversation is closed.
+                            <i class="bi bi-lock"></i> Conversation is closed or not active right now. History is still available.
                         </div>
                     }
                     else
                     {
-                        <form method="post" data-chat-form="1" data-user-id="@uid" data-conversation-key="@Model.CurrentConversationKey">
+                        <form method="post"
+                              data-chat-form="1"
+                              data-user-id="@uid"
+                              data-conversation-key="@Model.CurrentConversationKey">
                             @Html.AntiForgeryToken()
                             <input type="hidden" asp-for="Input.RequestId" value="@Model.SelectedRequestId" />
                             <input type="hidden" asp-for="Input.Kind" value="@Model.SelectedKind" />
                             <input type="hidden" asp-for="Input.PartnerId" value="@Model.SelectedPartnerId" />
 
                             <div class="chat-input-wrapper">
-                                <textarea asp-for="Input.NewMessageBody" class="chat-input" rows="1" placeholder="Type a message..." required></textarea>
+                                <textarea asp-for="Input.NewMessageBody"
+                                          class="chat-input"
+                                          rows="1"
+                                          placeholder="Type a message..."
+                                          required></textarea>
                                 <button type="submit" class="btn btn-primary btn-send">
                                     <i class="bi bi-send-fill"></i>
                                 </button>

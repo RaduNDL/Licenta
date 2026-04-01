@@ -4,7 +4,9 @@ using Licenta.Data;
 using Licenta.Services;
 using Licenta.Services.Ml;
 using Licenta.Services.Prediction;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -77,6 +79,7 @@ namespace Licenta
             {
                 o.Cookie.HttpOnly = true;
                 o.Cookie.IsEssential = true;
+                o.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
                 o.IdleTimeout = TimeSpan.FromHours(8);
             });
 
@@ -93,12 +96,24 @@ namespace Licenta
                 o.Limits.MaxRequestBodySize = uploadLimitBytes;
             });
 
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto |
+                    ForwardedHeaders.XForwardedHost;
+
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            });
+
             builder.Services.AddScoped<INotificationService, NotificationService>();
             builder.Services.AddSingleton<IPdfService, PdfService>();
 
             builder.Services.AddSingleton<IPredictionTargetRegistry, PredictionTargetRegistry>();
 
-            builder.Services.Configure<MlServiceOptions>(builder.Configuration.GetSection("MlServiceOptions"));
+            builder.Services.Configure<MlServiceOptions>(
+                builder.Configuration.GetSection("MlServiceOptions"));
 
             builder.Services.AddHostedService<PythonServerHostedService>();
 
@@ -126,13 +141,15 @@ namespace Licenta
 
             var app = builder.Build();
 
+            app.UseForwardedHeaders();
+
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
+                app.UseHttpsRedirection();
             }
 
-            app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseRouting();
@@ -145,7 +162,9 @@ namespace Licenta
             app.UseAuditMiddleware();
 
             app.MapRazorPages();
+
             app.MapHub<NotificationHub>("/hubs/notifications");
+            app.MapHub<NotificationHub>("/notificationHub");
 
             if (app.Environment.IsDevelopment())
             {
@@ -157,12 +176,16 @@ namespace Licenta
                         {
                             using var scope = app.Services.CreateScope();
                             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
                             await SystemSettingsSeeder.SeedAsync(db);
                             await IdentitySeed.SeedAsync(scope.ServiceProvider);
                         }
                         catch (Exception ex)
                         {
-                            var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("StartupSeed");
+                            var logger = app.Services
+                                .GetRequiredService<ILoggerFactory>()
+                                .CreateLogger("StartupSeed");
+
                             logger.LogError(ex, "Startup seed failed");
                         }
                     });

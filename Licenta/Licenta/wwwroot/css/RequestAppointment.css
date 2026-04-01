@@ -259,3 +259,86 @@ textarea.form-control {
         transform: translateY(0);
     }
 }
+
+.exit-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 1rem;
+}
+
+    .exit-modal-backdrop.show {
+        display: flex;
+    }
+
+.exit-modal-card {
+    width: 100%;
+    max-width: 460px;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    animation: slideUp 0.18s ease-out;
+    border: 1px solid var(--border);
+}
+
+.exit-modal-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.exit-modal-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.exit-modal-body {
+    padding: 1rem 1.25rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+}
+
+.exit-modal-actions {
+    padding: 1rem 1.25rem 1.25rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: .75rem;
+}
+
+.btn-exit-cancel,
+.btn-exit-confirm {
+    border: none;
+    border-radius: 10px;
+    padding: .7rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-exit-cancel {
+    background: #f3f4f6;
+    color: var(--text-main);
+}
+
+    .btn-exit-cancel:hover {
+        background: #e5e7eb;
+    }
+
+.btn-exit-confirm {
+    background: #dc2626;
+    color: #fff;
+}
+
+    .btn-exit-confirm:hover {
+        background: #b91c1c;
+    }
+
+body.modal-open-request {
+    overflow: hidden;
+}

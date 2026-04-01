@@ -10,8 +10,8 @@
         public double DomainMinMargin { get; set; } = 0.10;
 
         public bool AutoStartPythonServer { get; set; } = true;
-        public string PythonExecutablePath { get; set; } = "python";
-        public string PythonProjectDirectory { get; set; } = @"D:\Facultate\Licenta\Python";
-        public string PythonScriptPath { get; set; } = "src/run_server.py";
+        public string PythonExecutablePath { get; set; } = @"C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe";
+        public string PythonProjectDirectory { get; set; } = @"E:\Facultate\Licenta\Licenta\Python";
+        public string PythonScriptPath { get; set; } = "src\\run_server.py";
     }
 }

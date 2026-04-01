@@ -4,7 +4,7 @@
 
 @{
     ViewData["Title"] = "Doctor Inbox";
-    bool isChatOpen = !string.IsNullOrEmpty(Model.SelectedPartnerId);
+    bool isChatOpen = Model.SelectedRequestId != Guid.Empty;
     var uid = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
 }
 
@@ -38,12 +38,13 @@
                 {
                     @foreach (var c in Model.Conversations)
                     {
-                        var active = c.PartnerId == Model.SelectedPartnerId;
+                        var active = c.RequestId == Model.SelectedRequestId;
                         <div class="conversation-wrapper">
                             <a asp-page="/Doctor/Messages/Inbox"
-                               asp-route-partnerId="@c.PartnerId"
-                               class="conversation-item @(active ? "active" : "")"
-                               data-conversation-key="@c.ConversationKey">
+                                   asp-route-requestId="@c.RequestId"
+                                   asp-route-partnerId="@c.PartnerId"
+                                   class="conversation-item @(active ? "active" : "")"
+                                   data-conversation-key="@c.ConversationKey">
                                 <div class="avatar-circle"><i class="bi bi-person"></i></div>
                                 <div class="conversation-info">
                                     <div class="conversation-top">
@@ -59,10 +60,14 @@
                                     </div>
                                 </div>
                             </a>
+
                             <form method="post" asp-page-handler="HideChat" class="delete-chat-form">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="partnerIdToHide" value="@c.PartnerId" />
-                                <button type="submit" class="btn-delete-chat" title="Hide conversation for me" onclick="return confirm('Are you sure you want to hide this conversation? The patient will still see it.');">
+                                <button type="submit"
+                                        class="btn-delete-chat"
+                                        title="Hide conversation for me"
+                                        onclick="return confirm('Are you sure you want to hide this conversation? The patient will still see it.');">
                                     <i class="bi bi-trash3"></i>
                                 </button>
                             </form>
@@ -96,12 +101,11 @@
                     @if (Model.CanClose)
                     {
                         <div class="chat-actions d-flex gap-2 position-relative">
-
                             <div class="escalate-dropdown-container">
                                 <button class="btn btn-sm btn-outline-warning"
                                         type="button"
                                         id="escalateToggleBtn"
-                                        @(!Model.Assistants.Any() ? "disabled" : "")>
+                                    @(!Model.Assistants.Any() ? "disabled" : "")>
                                     <i class="bi bi-person-lines-fill"></i> Escalate <i class="bi bi-chevron-down escalate-chevron"></i>
                                 </button>
 
@@ -139,7 +143,11 @@
                             <form method="post" asp-page-handler="Close">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@Model.SelectedRequestId" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('End this consultation?');">End Chat</button>
+                                <button type="submit"
+                                        class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Close this conversation? History will remain visible, but no one will be able to send new messages.');">
+                                    End Chat
+                                </button>
                             </form>
                         </div>
                     }
@@ -148,7 +156,9 @@
                 <div class="messages-container" id="chatBody">
                     @foreach (var m in Model.Messages)
                     {
-                        <div class="message-row @(m.IsMine ? "mine" : "other")" data-id="@m.Id" data-utc="@m.SentAtUtc.ToString("O")">
+                        <div class="message-row @(m.IsMine ? "mine" : "other")"
+                             data-id="@m.Id"
+                             data-utc="@m.SentAtUtc.ToString("O")">
                             <div class="message-bubble">
                                 <span class="message-text">@m.Body</span>
                                 <span class="message-time">@m.SentAtLocal.ToString("HH:mm")</span>
@@ -163,17 +173,27 @@
                     @if (!Model.CanSend)
                     {
                         <div class="alert-closed w-100 text-center text-muted p-2 bg-light rounded border">
-                            <i class="bi bi-lock"></i> Conversation is closed. View-only mode.
+                            <i class="bi bi-lock"></i> Conversation is closed. History is still available.
                         </div>
                     }
                     else
                     {
-                        <form method="post" data-chat-form="1" data-user-id="@uid" data-conversation-key="@Model.CurrentConversationKey" class="w-100">
+                        <form method="post"
+                              data-chat-form="1"
+                              data-user-id="@uid"
+                              data-conversation-key="@Model.CurrentConversationKey"
+                              class="w-100">
                             @Html.AntiForgeryToken()
                             <input type="hidden" asp-for="Input.RequestId" value="@Model.SelectedRequestId" />
                             <div class="chat-input-wrapper">
-                                <textarea asp-for="Input.NewMessageBody" class="chat-input" rows="1" placeholder="Write a reply..." required></textarea>
-                                <button type="submit" class="btn btn-primary btn-send"><i class="bi bi-send-fill"></i></button>
+                                <textarea asp-for="Input.NewMessageBody"
+                                          class="chat-input"
+                                          rows="1"
+                                          placeholder="Write a reply..."
+                                          required></textarea>
+                                <button type="submit" class="btn btn-primary btn-send">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
                             </div>
                         </form>
                     }

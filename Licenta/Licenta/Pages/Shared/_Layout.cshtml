@@ -131,8 +131,8 @@
                 <span class="brand-text">@clinicName</span>
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
-                <span class="navbar-toggler-icon"></span>
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+                <i class="bi bi-list fs-2 text-dark"></i>
             </button>
 
             <div class="collapse navbar-collapse" id="navContent">
@@ -211,7 +211,6 @@
                             <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-page="/Assistant/AssistantPanel/Index">Panel</a>
                             </li>
-                           
                             <li class="nav-item">
                                 <a class="nav-link" asp-area="" asp-page="/Assistant/Patients/Index">Patients</a>
                             </li>
@@ -258,7 +257,7 @@
                     }
                 </ul>
 
-                <div class="nav-actions d-flex align-items-center gap-3">
+                <div class="nav-actions d-flex align-items-center justify-content-center gap-4 mt-3 mt-xl-0">
                     @if (isSignedIn)
                     {
                         <div class="dropdown notif-dropdown">
@@ -269,7 +268,7 @@
                                     <span class="pulse-badge">@(unreadNotifCount > 9 ? "9+" : unreadNotifCount.ToString())</span>
                                 }
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 notif-panel">
+                            <div class="dropdown-menu dropdown-menu-end shadow-sm border-0 notif-panel">
                                 <div class="notif-header">
                                     <h6 class="mb-0 fw-bold">Notifications</h6>
                                     @if (unreadNotifCount > 0)
@@ -310,7 +309,13 @@
                         </div>
 
                         <div class="dropdown profile-dropdown">
-                            <a href="#" class="profile-btn d-flex align-items-center gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a href="#" class="profile-btn d-flex align-items-center gap-3" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="d-none d-xl-flex flex-column text-end lh-1">
+                                    <span class="profile-name">@fullName</span>
+                                    <span class="profile-role mt-1">
+                                        @(User.IsInRole("Administrator") ? "Administrator" : User.IsInRole("Doctor") ? "Doctor" : User.IsInRole("Assistant") ? "Assistant" : "Patient")
+                                    </span>
+                                </div>
                                 <div class="avatar-sm">
                                     @if (!string.IsNullOrWhiteSpace(avatarUrl))
                                     {
@@ -321,36 +326,29 @@
                                         <span>@((string.IsNullOrWhiteSpace(fullName) ? "U" : fullName.Substring(0, 1)).ToUpper())</span>
                                     }
                                 </div>
-                                <div class="d-none d-xl-block text-start lh-sm">
-                                    <div class="profile-name">@fullName</div>
-                                    <div class="profile-role">
-                                        @(User.IsInRole("Administrator") ? "Admin" : User.IsInRole("Doctor") ? "Doctor" : User.IsInRole("Assistant") ? "Assistant" : "Patient")
-                                    </div>
-                                </div>
-                                <i class="bi bi-chevron-down ms-1 d-none d-xl-block text-muted small"></i>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 profile-menu">
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 profile-menu mt-2">
                                 <li>
-                                    <div class="dropdown-header d-xl-none">
-                                        <div class="fw-bold text-dark">@fullName</div>
-                                        <div class="small text-muted">@(User.IsInRole("Administrator") ? "Admin" : User.IsInRole("Doctor") ? "Doctor" : User.IsInRole("Assistant") ? "Assistant" : "Patient")</div>
+                                    <div class="dropdown-header d-xl-none px-4 py-3 border-bottom mb-2">
+                                        <div class="fw-bold text-dark fs-6">@fullName</div>
+                                        <div class="small text-muted mt-1">@(User.IsInRole("Administrator") ? "Admin" : User.IsInRole("Doctor") ? "Doctor" : User.IsInRole("Assistant") ? "Assistant" : "Patient")</div>
                                     </div>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" asp-area="@profileArea" asp-page="@profilePage">
-                                        <i class="bi bi-person-circle"></i> My Profile
+                                    <a class="dropdown-item px-4 py-2" asp-area="@profileArea" asp-page="@profilePage">
+                                        <i class="bi bi-person me-2"></i> My Profile
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/ChangePassword">
-                                        <i class="bi bi-shield-lock"></i> Security
+                                    <a class="dropdown-item px-4 py-2" asp-area="Identity" asp-page="/Account/Manage/ChangePassword">
+                                        <i class="bi bi-shield-lock me-2"></i> Security
                                     </a>
                                 </li>
-                                <li><hr class="dropdown-divider"></li>
+                                <li><hr class="dropdown-divider my-2"></li>
                                 <li>
                                     <form class="m-0" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index", new { area = "" })">
-                                        <button type="submit" class="dropdown-item text-danger">
-                                            <i class="bi bi-box-arrow-right"></i> Sign Out
+                                        <button type="submit" class="dropdown-item px-4 py-2 text-danger">
+                                            <i class="bi bi-box-arrow-right me-2"></i> Sign Out
                                         </button>
                                     </form>
                                 </li>
@@ -359,8 +357,8 @@
                     }
                     else
                     {
-                        <a class="btn btn-outline-primary rounded-pill px-4 me-2 d-none d-lg-inline-block" asp-area="Identity" asp-page="/Account/Login">Sign In</a>
-                        <a class="btn btn-primary rounded-pill px-4 shadow-sm" asp-area="Identity" asp-page="/Account/Register">Get Started</a>
+                        <a class="btn btn-outline-primary rounded-pill px-4 d-none d-lg-inline-block fw-semibold" asp-area="Identity" asp-page="/Account/Login">Sign In</a>
+                        <a class="btn btn-primary rounded-pill px-4 shadow-sm fw-semibold" asp-area="Identity" asp-page="/Account/Register">Get Started</a>
                     }
                 </div>
             </div>

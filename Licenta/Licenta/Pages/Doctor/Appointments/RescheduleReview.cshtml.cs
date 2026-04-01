@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
@@ -59,14 +60,16 @@ namespace Licenta.Pages.Doctor.Appointments
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return;
 
-            // Fully-qualified type to avoid ambiguity/namespace conflicts
-            var doctor = await _db.Set<Licenta.Models.DoctorProfile>().AsNoTracking().FirstOrDefaultAsync(d => d.UserId == user.Id);
+            var doctor = await _db.Set<Licenta.Models.DoctorProfile>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.UserId == user.Id);
+
             if (doctor == null) return;
 
             var req = await _db.Set<AppointmentRescheduleRequest>()
                 .AsNoTracking()
-                .Include(r => r.Appointment).ThenInclude(a => a.Patient).ThenInclude(p => p.User)
-                .Include(r => r.SelectedOption)
+                .Include(r => r.Appointment)
+                .Include(r => r.Patient).ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(r => r.Id == RequestId && r.DoctorId == doctor.Id);
 
             if (req == null) return;
@@ -74,20 +77,20 @@ namespace Licenta.Pages.Doctor.Appointments
             CanView = true;
             PatientName = req.Patient?.User?.FullName ?? req.Patient?.User?.Email ?? "Patient";
             Reason = string.IsNullOrWhiteSpace(req.Reason) ? "-" : req.Reason;
+            OldTime = req.OldScheduledAtUtc == default
+                ? "-"
+                : req.OldScheduledAtUtc.ToLocalTime().ToString("ddd dd MMM HH:mm");
 
-            // Old time - OldScheduledAtUtc is stored as UTC -> convert to local for display
-            OldTime = req.OldScheduledAtUtc == default ? "-" : req.OldScheduledAtUtc.ToLocalTime().ToString("ddd dd MMM HH:mm");
-
-            if (req.SelectedOption != null)
-            {
-                // ProposedStartUtc is stored in UTC; convert to local for display
-                SelectedTime = req.SelectedOption.ProposedStartUtc.ToLocalTime().ToString("ddd dd MMM HH:mm");
-                Location = string.IsNullOrWhiteSpace(req.SelectedOption.Location) ? Location : req.SelectedOption.Location;
-            }
-            else if (req.NewScheduledAtUtc.HasValue)
+            if (req.NewScheduledAtUtc.HasValue)
             {
                 SelectedTime = req.NewScheduledAtUtc.Value.ToLocalTime().ToString("ddd dd MMM HH:mm");
             }
+            else
+            {
+                SelectedTime = FormatLocalIsoForDisplay(req.PreferredWindows);
+            }
+
+            Location = string.IsNullOrWhiteSpace(req.Appointment?.Location) ? "Clinic" : req.Appointment!.Location;
         }
 
         public async Task<IActionResult> OnPostApproveAsync()
@@ -103,24 +106,35 @@ namespace Licenta.Pages.Doctor.Appointments
 
             var req = await _db.Set<AppointmentRescheduleRequest>()
                 .Include(r => r.Appointment)
-                .Include(r => r.SelectedOption)
                 .Include(r => r.Patient).ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(r => r.Id == RequestId && r.DoctorId == doctor.Id);
 
             if (req == null) return NotFound();
 
-            if (req.Status != AppointmentRescheduleStatus.PatientSelected || req.SelectedOptionId == null || req.SelectedOption == null)
+            if (req.Status != AppointmentRescheduleStatus.Requested)
             {
                 TempData["StatusMessage"] = "This request cannot be approved.";
                 return RedirectToPage(new { requestId = RequestId });
             }
 
-            var opt = req.SelectedOption;
+            DateTime proposedStartUtc;
+            if (req.NewScheduledAtUtc.HasValue)
+            {
+                proposedStartUtc = DateTime.SpecifyKind(req.NewScheduledAtUtc.Value, DateTimeKind.Utc);
+            }
+            else
+            {
+                var parsed = ParsePreferredWindowsToUtc(req.PreferredWindows);
+                if (!parsed.HasValue)
+                {
+                    TempData["StatusMessage"] = "Invalid requested reschedule time.";
+                    return RedirectToPage(new { requestId = RequestId });
+                }
 
-            // opt.ProposedStartUtc / ProposedEndUtc are expected to be UTC in DB.
-            // Make sure the DateTimeKind is Utc to avoid later conversion issues.
-            var proposedStartUtc = DateTime.SpecifyKind(opt.ProposedStartUtc, DateTimeKind.Utc);
-            var proposedEndUtc = DateTime.SpecifyKind(opt.ProposedEndUtc, DateTimeKind.Utc);
+                proposedStartUtc = parsed.Value;
+            }
+
+            var proposedEndUtc = proposedStartUtc.AddMinutes(30);
 
             var conflict = await _db.Set<Appointment>()
                 .AnyAsync(a =>
@@ -128,9 +142,9 @@ namespace Licenta.Pages.Doctor.Appointments
                     a.Id != req.AppointmentId &&
                     a.Status != AppointmentStatus.Cancelled &&
                     a.Status != AppointmentStatus.Completed &&
-                    // Ensure a.StartTimeUtc is treated as UTC
-                    DateTime.SpecifyKind(a.StartTimeUtc, DateTimeKind.Utc) < proposedEndUtc &&
-                    proposedStartUtc < DateTime.SpecifyKind(a.StartTimeUtc, DateTimeKind.Utc).AddMinutes(30));
+                    a.Status != AppointmentStatus.Rejected &&
+                    a.ScheduledAt < proposedEndUtc &&
+                    proposedStartUtc < a.ScheduledAt.AddMinutes(30));
 
             if (conflict)
             {
@@ -145,10 +159,8 @@ namespace Licenta.Pages.Doctor.Appointments
                 return RedirectToPage(new { requestId = RequestId });
             }
 
-            // Save UTC explicitly
             appt.ScheduledAt = DateTime.SpecifyKind(proposedStartUtc, DateTimeKind.Utc);
             appt.StartTimeUtc = DateTime.SpecifyKind(proposedStartUtc, DateTimeKind.Utc);
-            appt.Location = string.IsNullOrWhiteSpace(opt.Location) ? appt.Location : opt.Location;
             appt.RescheduleReason = req.Reason;
             appt.Status = AppointmentStatus.Rescheduled;
             appt.VisitStage = VisitStage.NotArrived;
@@ -203,7 +215,9 @@ namespace Licenta.Pages.Doctor.Appointments
                 return RedirectToPage("/Doctor/Appointments/RescheduleApprovals");
             }
 
-            if (req.Status == AppointmentRescheduleStatus.Approved || req.Status == AppointmentRescheduleStatus.Rejected || req.Status == AppointmentRescheduleStatus.Cancelled)
+            if (req.Status == AppointmentRescheduleStatus.Approved ||
+                req.Status == AppointmentRescheduleStatus.Rejected ||
+                req.Status == AppointmentRescheduleStatus.Cancelled)
             {
                 TempData["StatusMessage"] = "This request cannot be rejected.";
                 return RedirectToPage(new { requestId = RequestId });
@@ -234,6 +248,38 @@ namespace Licenta.Pages.Doctor.Appointments
 
             TempData["StatusMessage"] = "Rejected.";
             return RedirectToPage("/Doctor/Appointments/RescheduleApprovals");
+        }
+
+        private static DateTime? ParsePreferredWindowsToUtc(string? localIso)
+        {
+            if (string.IsNullOrWhiteSpace(localIso))
+                return null;
+
+            if (!DateTime.TryParseExact(
+                    localIso,
+                    new[] { "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss" },
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var dt))
+                return null;
+
+            return DateTime.SpecifyKind(dt, DateTimeKind.Local).ToUniversalTime();
+        }
+
+        private static string FormatLocalIsoForDisplay(string? localIso)
+        {
+            if (string.IsNullOrWhiteSpace(localIso))
+                return "-";
+
+            if (!DateTime.TryParseExact(
+                    localIso,
+                    new[] { "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss" },
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var dt))
+                return localIso;
+
+            return DateTime.SpecifyKind(dt, DateTimeKind.Local).ToString("ddd dd MMM HH:mm");
         }
     }
 }

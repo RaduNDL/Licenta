@@ -2,8 +2,10 @@ using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,17 +28,52 @@ namespace Licenta.Pages.Patient.Predictions
 
         public async Task OnGetAsync()
         {
+            Items = await GetPredictionsForCurrentPatientAsync();
+        }
+
+        public async Task<JsonResult> OnGetListAsync()
+        {
+            var items = await GetPredictionsForCurrentPatientAsync();
+
+            var payload = items.Select(p => new PredictionListItemDto
+            {
+                Id = p.Id,
+                ModelName = p.ModelName ?? "-",
+                ResultLabel = string.IsNullOrWhiteSpace(p.ResultLabel) ? "-" : p.ResultLabel,
+                Probability = p.Probability,
+                CreatedAtUtc = p.CreatedAtUtc
+            }).ToList();
+
+            return new JsonResult(payload);
+        }
+
+        private async Task<List<Prediction>> GetPredictionsForCurrentPatientAsync()
+        {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return;
+            if (user == null)
+                return new List<Prediction>();
 
-            var patient = await _db.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == user.Id);
-            if (patient == null) return;
+            var patient = await _db.Patients
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.UserId == user.Id);
 
-            Items = await _db.Predictions
+            if (patient == null)
+                return new List<Prediction>();
+
+            return await _db.Predictions
                 .AsNoTracking()
                 .Where(p => p.PatientId == patient.Id && p.Status == PredictionStatus.Accepted)
                 .OrderByDescending(p => p.CreatedAtUtc)
                 .ToListAsync();
+        }
+
+        public class PredictionListItemDto
+        {
+            public Guid Id { get; set; }
+            public string ModelName { get; set; } = "-";
+            public string ResultLabel { get; set; } = "-";
+            public float? Probability { get; set; }
+            public DateTime CreatedAtUtc { get; set; }
         }
     }
 }

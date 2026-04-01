@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-03-14T09:58:04.5854296Z",
+  "ClinicId": "CL-3E4180FA",
+  "PatientUserId": "2a1f1ff0-8e62-493b-83f4-96d76e3e8c08",
+  "PatientProfileId": "e1f180c3-abbd-496d-a183-37cf13582b3a",
+  "SelectedDoctorId": "e557b6ee-4a04-4979-aa19-90ce676fb7c9",
+  "SelectedLocalIso": "2026-03-16T09:00",
+  "SelectedScheduledUtc": "2026-03-16T07:00:00Z",
+  "Reason": "Ceva1"
+}

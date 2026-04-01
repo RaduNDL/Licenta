@@ -153,7 +153,10 @@ namespace Licenta.Pages.Doctor.Predictions
                 Probability = (float?)result.EffectiveProbabilitySafe,
                 InputDataJson = inputJson,
                 OutputDataJson = outputJson,
-                Status = PredictionStatus.Draft
+
+                
+                Status = PredictionStatus.Accepted,
+                ValidatedAtUtc = DateTime.UtcNow
             };
 
             _db.Predictions.Add(pred);

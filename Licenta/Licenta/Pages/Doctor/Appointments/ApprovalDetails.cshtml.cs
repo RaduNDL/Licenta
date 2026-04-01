@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,13 +17,14 @@ namespace Licenta.Pages.Doctor.Appointments
     [Authorize(Roles = "Doctor")]
     public class ApprovalDetailsModel : PageModel
     {
-        private const int DurationMinutes = 30;
-
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly INotificationService _notifier;
 
-        public ApprovalDetailsModel(AppDbContext db, UserManager<ApplicationUser> userManager, INotificationService notifier)
+        public ApprovalDetailsModel(
+            AppDbContext db,
+            UserManager<ApplicationUser> userManager,
+            INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
@@ -32,308 +34,257 @@ namespace Licenta.Pages.Doctor.Appointments
         [BindProperty(SupportsGet = true)]
         public Guid AttachmentId { get; set; }
 
-        public DetailsVm? Item { get; set; }
+        [BindProperty]
+        [StringLength(200)]
+        public string? DecisionNote { get; set; }
 
-        public class DetailsVm
+        [BindProperty]
+        [StringLength(200)]
+        public string Location { get; set; } = "Clinic";
+
+        public bool CanView { get; set; }
+        public string PatientName { get; set; } = "Patient";
+        public string DoctorName { get; set; } = "Doctor";
+        public string UploadedAtDisplay { get; set; } = "-";
+        public string RequestedSlotDisplay { get; set; } = "-";
+        public string Reason { get; set; } = "-";
+
+        public async Task<IActionResult> OnGetAsync()
         {
-            public Guid AttachmentId { get; set; }
-            public string PatientName { get; set; } = "";
-            public string Reason { get; set; } = "";
-            public string RequestedDisplay { get; set; } = "-";
-            public string UploadedAtLocal { get; set; } = "";
+            await LoadAsync();
+            return Page();
         }
 
-        public async Task OnGetAsync()
+        private async Task LoadAsync()
         {
-            Item = await LoadVmAsync();
+            CanView = false;
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return;
+
+            var doctor = await _db.Doctors
+                .AsNoTracking()
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d => d.UserId == user.Id);
+
+            if (doctor == null)
+                return;
+
+            var attachment = await _db.MedicalAttachments
+                .AsNoTracking()
+                .Include(a => a.Patient).ThenInclude(p => p!.User)
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .FirstOrDefaultAsync(a =>
+                    a.Id == AttachmentId &&
+                    a.Type == "AppointmentRequest" &&
+                    a.DoctorId == doctor.Id);
+
+            if (attachment == null)
+                return;
+
+            CanView = true;
+            PatientName = attachment.Patient?.User?.FullName ?? attachment.Patient?.User?.Email ?? "Patient";
+            DoctorName = attachment.Doctor?.User?.FullName ?? attachment.Doctor?.User?.Email ?? "Doctor";
+            UploadedAtDisplay = attachment.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+            RequestedSlotDisplay = FormatLocalIsoForDisplay(ExtractRequestedIso(attachment.ValidationNotes));
+            Reason = string.IsNullOrWhiteSpace(attachment.PatientNotes) ? "-" : attachment.PatientNotes;
         }
 
         public async Task<IActionResult> OnPostApproveAsync()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return RedirectToPage("/Doctor/Appointments/Approvals");
+            if (user == null)
+                return Challenge();
 
             var doctor = await _db.Doctors
                 .Include(d => d.User)
                 .FirstOrDefaultAsync(d => d.UserId == user.Id);
 
-            if (doctor == null) return RedirectToPage("/Doctor/Appointments/Approvals");
+            if (doctor == null)
+                return Forbid();
 
-            var att = await _db.MedicalAttachments
+            var attachment = await _db.MedicalAttachments
                 .Include(a => a.Patient).ThenInclude(p => p!.User)
                 .FirstOrDefaultAsync(a =>
                     a.Id == AttachmentId &&
                     a.Type == "AppointmentRequest" &&
                     a.DoctorId == doctor.Id);
 
-            if (att == null)
+            if (attachment == null)
+                return NotFound();
+
+            if (attachment.Status != AttachmentStatus.Pending)
             {
-                TempData["StatusMessage"] = "Item not found.";
+                TempData["StatusMessage"] = "This request has already been processed.";
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
-            if (att.Status != AttachmentStatus.Pending)
+            var requestedIso = ExtractRequestedIso(attachment.ValidationNotes);
+            if (string.IsNullOrWhiteSpace(requestedIso) ||
+                !DateTime.TryParseExact(
+                    requestedIso,
+                    new[] { "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss" },
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var localDt))
             {
-                TempData["StatusMessage"] = "This request was already processed.";
+                TempData["StatusMessage"] = "Invalid requested slot.";
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
-            var iso = ExtractRequestedIso(att.ValidationNotes);
+            var localKinded = DateTime.SpecifyKind(localDt, DateTimeKind.Local);
+            var scheduledUtc = localKinded.ToUniversalTime();
 
-            if (string.IsNullOrWhiteSpace(iso) || !TryParseLocal(iso, out var local))
+            if (scheduledUtc <= DateTime.UtcNow)
             {
-                TempData["StatusMessage"] = "Cannot approve: requested time is missing or invalid.";
+                TempData["StatusMessage"] = "The selected slot is in the past.";
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
-            // convert local (explicitly Local) -> UTC and ensure Kind = Utc
-            var newUtc = DateTime.SpecifyKind(local.ToUniversalTime(), DateTimeKind.Utc);
-            if (newUtc <= DateTime.UtcNow)
+            var conflict = await _db.Appointments
+                .AnyAsync(a =>
+                    a.DoctorId == doctor.Id &&
+                    a.Status != AppointmentStatus.Cancelled &&
+                    a.Status != AppointmentStatus.Rejected &&
+                    a.ScheduledAt < scheduledUtc.AddMinutes(30) &&
+                    a.ScheduledAt.AddMinutes(30) > scheduledUtc);
+
+            if (conflict)
             {
-                TempData["StatusMessage"] = "Cannot approve: requested time is in the past.";
+                TempData["StatusMessage"] = "This slot overlaps with another appointment.";
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
-            if (att.PatientId == Guid.Empty)
+            var appointment = new Appointment
             {
-                TempData["StatusMessage"] = "Cannot approve: patient is missing.";
-                return RedirectToPage("/Doctor/Appointments/Approvals");
-            }
-
-            var withinHours = await IsWithinDoctorAvailabilityAsync(doctor.Id, newUtc);
-            if (!withinHours)
-            {
-                TempData["StatusMessage"] = "Cannot approve: requested time is outside your working hours.";
-                return RedirectToPage("/Doctor/Appointments/Approvals");
-            }
-
-            var newStartUtc = newUtc;
-            var newEndUtc = newUtc.AddMinutes(DurationMinutes);
-
-            var doctorConflict = await _db.Appointments.AsNoTracking().AnyAsync(a =>
-                a.DoctorId == doctor.Id &&
-                a.Status != AppointmentStatus.Cancelled &&
-                a.Status != AppointmentStatus.Rejected &&
-                a.ScheduledAt < newEndUtc &&
-                a.ScheduledAt.AddMinutes(DurationMinutes) > newStartUtc);
-
-            if (doctorConflict)
-            {
-                TempData["StatusMessage"] = "Cannot approve: you already have an appointment around that time.";
-                return RedirectToPage("/Doctor/Appointments/Approvals");
-            }
-
-            var patientConflict = await _db.Appointments.AsNoTracking().AnyAsync(a =>
-                a.PatientId == att.PatientId &&
-                a.Status != AppointmentStatus.Cancelled &&
-                a.Status != AppointmentStatus.Rejected &&
-                a.ScheduledAt < newEndUtc &&
-                a.ScheduledAt.AddMinutes(DurationMinutes) > newStartUtc);
-
-            if (patientConflict)
-            {
-                TempData["StatusMessage"] = "Cannot approve: the patient already has an appointment around that time.";
-                return RedirectToPage("/Doctor/Appointments/Approvals");
-            }
-
-            // Ensure ScheduledAt and StartTimeUtc are saved as UTC (DateTimeKind.Utc)
-            var appt = new Appointment
-            {
-                PatientId = att.PatientId,
+                PatientId = attachment.PatientId,
                 DoctorId = doctor.Id,
-                ScheduledAt = DateTime.SpecifyKind(newStartUtc, DateTimeKind.Utc),
-                Reason = string.IsNullOrWhiteSpace(att.PatientNotes) ? null : att.PatientNotes,
+                ScheduledAt = DateTime.SpecifyKind(scheduledUtc, DateTimeKind.Utc),
+                StartTimeUtc = DateTime.SpecifyKind(scheduledUtc, DateTimeKind.Utc),
+                Reason = string.IsNullOrWhiteSpace(attachment.PatientNotes) ? "-" : attachment.PatientNotes,
+                Location = string.IsNullOrWhiteSpace(Location) ? "Clinic" : Location.Trim(),
                 Status = AppointmentStatus.Approved,
-                Location = "Clinic",
-                StartTimeUtc = DateTime.SpecifyKind(newStartUtc, DateTimeKind.Utc),
                 VisitStage = VisitStage.NotArrived,
-                CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             };
 
-            _db.Appointments.Add(appt);
+            _db.Appointments.Add(appointment);
 
-            att.Status = AttachmentStatus.Validated;
-            att.ValidatedAtUtc = DateTime.UtcNow;
-            att.ValidatedByDoctorId = doctor.Id;
-            att.DoctorNotes = "Approved by doctor.";
-            att.ValidationNotes = $"APPROVED_BY_DOCTOR|Scheduled:{local:yyyy-MM-ddTHH:mm}|{att.ValidationNotes ?? ""}";
+            attachment.Status = AttachmentStatus.Validated;
+            attachment.ValidatedAtUtc = DateTime.UtcNow;
+            attachment.ValidationNotes =
+                $"APPROVED_BY_DOCTOR|Selected:{requestedIso}|Scheduled:{requestedIso}" +
+                (string.IsNullOrWhiteSpace(DecisionNote) ? "" : $"|Note:{DecisionNote.Trim()}");
 
             await _db.SaveChangesAsync();
 
-            var patientUser = att.Patient?.User;
+            var patientUser = attachment.Patient?.User;
             if (patientUser != null)
             {
                 await _notifier.NotifyAsync(
                     patientUser,
                     NotificationType.Appointment,
-                    "Appointment Confirmed",
-                    $"Your appointment with Dr. {doctor.User?.FullName} was approved and scheduled for <b>{local:ddd dd MMM HH:mm}</b>.",
+                    "Appointment Approved",
+                    $"Your appointment request was approved for <b>{localKinded:ddd dd MMM HH:mm}</b>.",
                     actionUrl: "/Patient/Appointments/Index",
                     actionText: "View Appointments",
                     relatedEntity: "Appointment",
-                    relatedEntityId: appt.Id.ToString(),
+                    relatedEntityId: appointment.Id.ToString(),
                     sendEmail: false
                 );
             }
 
-            TempData["StatusMessage"] = "Approved and appointment created.";
+            TempData["StatusMessage"] = "Appointment approved successfully.";
             return RedirectToPage("/Doctor/Appointments/Approvals");
         }
 
         public async Task<IActionResult> OnPostRejectAsync()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return RedirectToPage("/Doctor/Appointments/Approvals");
+            if (user == null)
+                return Challenge();
 
             var doctor = await _db.Doctors
-                .Include(d => d.User)
                 .FirstOrDefaultAsync(d => d.UserId == user.Id);
 
-            if (doctor == null) return RedirectToPage("/Doctor/Appointments/Approvals");
+            if (doctor == null)
+                return Forbid();
 
-            var att = await _db.MedicalAttachments
+            var attachment = await _db.MedicalAttachments
                 .Include(a => a.Patient).ThenInclude(p => p!.User)
                 .FirstOrDefaultAsync(a =>
                     a.Id == AttachmentId &&
                     a.Type == "AppointmentRequest" &&
                     a.DoctorId == doctor.Id);
 
-            if (att == null)
+            if (attachment == null)
+                return NotFound();
+
+            if (attachment.Status != AttachmentStatus.Pending)
             {
-                TempData["StatusMessage"] = "Item not found.";
+                TempData["StatusMessage"] = "This request has already been processed.";
                 return RedirectToPage("/Doctor/Appointments/Approvals");
             }
 
-            if (att.Status != AttachmentStatus.Pending)
-            {
-                TempData["StatusMessage"] = "This request was already processed.";
-                return RedirectToPage("/Doctor/Appointments/Approvals");
-            }
-
-            att.Status = AttachmentStatus.Rejected;
-            att.ValidatedAtUtc = DateTime.UtcNow;
-            att.ValidatedByDoctorId = doctor.Id;
-            att.DoctorNotes = "Rejected by doctor.";
-            att.ValidationNotes = $"REJECTED_BY_DOCTOR|{att.ValidationNotes ?? ""}";
+            attachment.Status = AttachmentStatus.Rejected;
+            attachment.ValidatedAtUtc = DateTime.UtcNow;
+            attachment.ValidationNotes =
+                "REJECTED_BY_DOCTOR" +
+                (string.IsNullOrWhiteSpace(DecisionNote) ? "" : $"|Note:{DecisionNote.Trim()}");
 
             await _db.SaveChangesAsync();
 
-            var patientUser = att.Patient?.User;
+            var patientUser = attachment.Patient?.User;
             if (patientUser != null)
             {
                 await _notifier.NotifyAsync(
                     patientUser,
                     NotificationType.Appointment,
-                    "Appointment request rejected",
-                    $"Your appointment request with Dr. {doctor.User?.FullName} was rejected.",
+                    "Appointment Rejected",
+                    "Your appointment request was rejected by the doctor.",
                     actionUrl: "/Patient/Appointments/Index",
                     actionText: "View Appointments",
                     relatedEntity: "MedicalAttachment",
-                    relatedEntityId: att.Id.ToString(),
+                    relatedEntityId: attachment.Id.ToString(),
                     sendEmail: false
                 );
             }
 
-            TempData["StatusMessage"] = "Rejected.";
+            TempData["StatusMessage"] = "Appointment request rejected.";
             return RedirectToPage("/Doctor/Appointments/Approvals");
-        }
-
-        private async Task<DetailsVm?> LoadVmAsync()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return null;
-
-            var doctor = await _db.Doctors.AsNoTracking().FirstOrDefaultAsync(d => d.UserId == user.Id);
-            if (doctor == null) return null;
-
-            var att = await _db.MedicalAttachments
-                .AsNoTracking()
-                .Include(a => a.Patient).ThenInclude(p => p!.User)
-                .FirstOrDefaultAsync(a =>
-                    a.Id == AttachmentId &&
-                    a.Type == "AppointmentRequest" &&
-                    a.DoctorId == doctor.Id);
-
-            if (att == null) return null;
-
-            return new DetailsVm
-            {
-                AttachmentId = att.Id,
-                PatientName = att.Patient?.User?.FullName ?? att.Patient?.User?.Email ?? "Patient",
-                Reason = string.IsNullOrWhiteSpace(att.PatientNotes) ? "-" : att.PatientNotes!,
-                RequestedDisplay = ExtractRequestedDisplay(att.ValidationNotes),
-                UploadedAtLocal = att.UploadedAt.ToLocalTime().ToString("g")
-            };
-        }
-
-        private async Task<bool> IsWithinDoctorAvailabilityAsync(Guid doctorId, DateTime scheduledUtc)
-        {
-            var local = scheduledUtc.ToLocalTime();
-            var day = local.DayOfWeek;
-            var minutes = local.Hour * 60 + local.Minute;
-
-            var items = await _db.DoctorAvailabilities
-                .AsNoTracking()
-                .Where(a => a.DoctorId == doctorId && a.IsActive)
-                .ToListAsync();
-
-            if (items.Count == 0) return true;
-
-            foreach (var a in items)
-            {
-                if (a.DayOfWeek != day) continue;
-
-                var start = a.StartTime.Hours * 60 + a.StartTime.Minutes;
-                var end = a.EndTime.Hours * 60 + a.EndTime.Minutes;
-
-                if (minutes >= start && minutes < end)
-                    return true;
-            }
-
-            return false;
-        }
-
-        private static string ExtractRequestedDisplay(string? notes)
-        {
-            var iso = ExtractRequestedIso(notes);
-            if (string.IsNullOrWhiteSpace(iso))
-                return "-";
-
-            if (TryParseLocal(iso, out var local))
-                return local.ToString("ddd dd MMM HH:mm");
-
-            return iso;
         }
 
         private static string ExtractRequestedIso(string? notes)
         {
-            if (string.IsNullOrWhiteSpace(notes)) return "";
+            if (string.IsNullOrWhiteSpace(notes))
+                return "";
+
             var idx = notes.IndexOf("Selected:", StringComparison.OrdinalIgnoreCase);
-            if (idx < 0) return "";
-            var v = notes[(idx + "Selected:".Length)..].Trim();
-            if (v.Contains('|'))
-                v = v.Split('|', StringSplitOptions.RemoveEmptyEntries)[0].Trim();
-            return string.IsNullOrWhiteSpace(v) ? "" : v;
+            if (idx < 0)
+                return "";
+
+            var value = notes[(idx + "Selected:".Length)..].Trim();
+            if (value.Contains('|'))
+                value = value.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
+
+            return string.IsNullOrWhiteSpace(value) ? "" : value;
         }
 
-        private static bool TryParseLocal(string value, out DateTime local)
+        private static string FormatLocalIsoForDisplay(string? localIso)
         {
-            local = default;
+            if (string.IsNullOrWhiteSpace(localIso))
+                return "-";
 
-            var formats = new[]
-            {
-                "yyyy-MM-ddTHH:mm",
-                "yyyy-MM-dd HH:mm",
-                "yyyy-MM-ddTHH:mm:ss",
-                "yyyy-MM-dd HH:mm:ss"
-            };
+            if (!DateTime.TryParseExact(
+                    localIso,
+                    new[] { "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss" },
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var dt))
+                return localIso;
 
-            if (!DateTime.TryParseExact(value, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
-                return false;
-
-            local = DateTime.SpecifyKind(dt, DateTimeKind.Local);
-            return true;
+            return DateTime.SpecifyKind(dt, DateTimeKind.Local).ToString("ddd dd MMM HH:mm");
         }
     }
 }

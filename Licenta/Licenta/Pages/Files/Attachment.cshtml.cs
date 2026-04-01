@@ -5,9 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.IO;
-using System.Threading.Tasks;
+
 
 namespace Licenta.Pages.Files
 {

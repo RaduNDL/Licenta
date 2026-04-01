@@ -31,7 +31,7 @@
                 </h5>
 
                 <a asp-page="/Assistant/Messages/Requests/Index"
-                   class="btn btn-sm btn-outline-info position-relative">
+                       class="btn btn-sm btn-outline-info position-relative">
                     Requests
                     @if (Model.PendingRequestsCount > 0)
                     {
@@ -58,8 +58,8 @@
                         var active = c.RequestId == Model.SelectedRequestId;
 
                         <a asp-page="/Assistant/Messages/Inbox"
-                           asp-route-requestId="@c.RequestId"
-                           class="conversation-item @(active ? "active" : "")">
+                               asp-route-requestId="@c.RequestId"
+                               class="conversation-item @(active ? "active" : "")">
 
                             <div class="avatar-circle">
                                 <i class="bi bi-person-circle"></i>
@@ -74,8 +74,8 @@
                                 </div>
                                 <div class="conversation-preview">
                                     @(string.IsNullOrWhiteSpace(c.LastMessagePreview)
-                                                                ? "Processing request..."
-                                                                : c.LastMessagePreview)
+                                        ? "Processing request..."
+                                        : c.LastMessagePreview)
                                 </div>
                             </div>
                         </a>
@@ -100,7 +100,7 @@
 
                     <div class="chat-partner-info">
                         <a asp-page="/Assistant/Messages/Inbox"
-                           class="d-md-none me-3 text-dark">
+                               class="d-md-none me-3 text-dark">
                             <i class="bi bi-arrow-left fs-4"></i>
                         </a>
 
@@ -121,7 +121,7 @@
                             <input type="hidden" name="id" value="@Model.SelectedRequestId" />
                             <button type="submit"
                                     class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('Archive this conversation?');">
+                                    onclick="return confirm('Close this conversation? History will remain visible, but no one will be able to send new messages.');">
                                 <i class="bi bi-x-lg"></i>
                             </button>
                         </form>
@@ -146,7 +146,7 @@
                     @if (!Model.CanSend)
                     {
                         <div class="alert alert-warning mb-0 py-2 small text-center">
-                            <i class="bi bi-lock-fill"></i> This conversation is closed.
+                            <i class="bi bi-lock-fill"></i> This conversation is closed. History is still available.
                         </div>
                     }
                     else

@@ -2,7 +2,6 @@
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -158,11 +157,17 @@ namespace Licenta.Pages.Patient.Appointments
             if (status == AppointmentStatus.Cancelled)
                 return ("Cancelled", "fa-circle-xmark");
 
+            if (status == AppointmentStatus.Rejected)
+                return ("Rejected", "fa-circle-xmark");
+
             if (status == AppointmentStatus.NoShow)
                 return ("No-show", "fa-user-slash");
 
             if (status == AppointmentStatus.Completed)
                 return ("Completed", "fa-circle-check");
+
+            if (status == AppointmentStatus.Rescheduled)
+                return ("Rescheduled", "fa-calendar-check");
 
             return stage switch
             {
@@ -326,12 +331,12 @@ namespace Licenta.Pages.Patient.Appointments
         private static string FormatLocalIsoForDisplay(string localIso)
         {
             string[] formats =
-            [
+            {
                 "yyyy-MM-ddTHH:mm",
                 "yyyy-MM-dd HH:mm",
                 "yyyy-MM-ddTHH:mm:ss",
                 "yyyy-MM-dd HH:mm:ss"
-            ];
+            };
 
             if (!DateTime.TryParseExact(localIso, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
                 return localIso;

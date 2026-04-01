@@ -48,11 +48,9 @@ namespace Licenta.Pages.Doctor.Appointments
             var list = await _db.Set<AppointmentRescheduleRequest>()
                 .AsNoTracking()
                 .Include(r => r.Patient).ThenInclude(p => p.User)
-                .Include(r => r.SelectedOption)
                 .Where(r =>
                     r.DoctorId == doctor.Id &&
-                    r.Status == AppointmentRescheduleStatus.PatientSelected &&
-                    r.SelectedOptionId != null)
+                    r.Status == AppointmentRescheduleStatus.Requested)
                 .OrderByDescending(r => r.UpdatedAtUtc)
                 .Take(200)
                 .ToListAsync();
@@ -63,7 +61,9 @@ namespace Licenta.Pages.Doctor.Appointments
                 Created = r.CreatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
                 Patient = r.Patient?.User?.FullName ?? r.Patient?.User?.Email ?? "Patient",
                 OldTime = r.OldScheduledAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
-                NewTime = r.SelectedOption == null ? "-" : r.SelectedOption.ProposedStartUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                NewTime = r.NewScheduledAtUtc.HasValue
+                    ? r.NewScheduledAtUtc.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                    : (!string.IsNullOrWhiteSpace(r.PreferredWindows) ? r.PreferredWindows : "-")
             }).ToList();
         }
     }

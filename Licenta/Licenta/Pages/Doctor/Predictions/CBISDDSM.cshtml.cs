@@ -35,6 +35,7 @@ namespace Licenta.Pages.Doctor.Predictions
         {
             WriteIndented = true
         };
+
         private const string DefaultModelId = "mammogram_mastery_images:torch_cnn";
 
         public CBISDDSMModel(
@@ -128,22 +129,29 @@ namespace Licenta.Pages.Doctor.Predictions
 
             try
             {
-                var attachmentId = await SaveDoctorImageAsync(Patient.Id, Upload, ct);
-
-                await using var ms = new MemoryStream();
-                await Upload.CopyToAsync(ms, ct);
-                ms.Position = 0;
-
                 var effectiveModelId = NormalizeModelId(ModelId);
-
-
                 var effectiveImageSize = ImageSize <= 0 ? 224 : ImageSize;
-
                 var requireDomain = _mlOpt.RequireDomainGateImaging;
                 var requireQuality = false;
 
+                byte[] fileBytes;
+                await using (var inputMs = new MemoryStream())
+                {
+                    await Upload.CopyToAsync(inputMs, ct);
+                    fileBytes = inputMs.ToArray();
+                }
+
+                if (fileBytes.Length == 0)
+                {
+                    ErrorMessage = "Uploaded file is empty.";
+                    await RefreshTrainingBannerAsync(ct);
+                    return Page();
+                }
+
+                await using var predictMs = new MemoryStream(fileBytes);
+
                 Result = await _ml.PredictImagingAsync(
-                    ms,
+                    predictMs,
                     Upload.FileName ?? "image",
                     string.IsNullOrWhiteSpace(Upload.ContentType) ? "application/octet-stream" : Upload.ContentType,
                     effectiveModelId,
@@ -157,11 +165,28 @@ namespace Licenta.Pages.Doctor.Predictions
 
                 if (IsRejected(Result))
                 {
-                    await MarkAttachmentRejectedAsync(attachmentId, doctor.Id, ct);
+                    await SaveDoctorImageAsync(
+                        Patient.Id,
+                        Upload,
+                        fileBytes,
+                        AttachmentStatus.Rejected,
+                        doctor.Id,
+                        BuildRejectMessage(Result),
+                        ct);
+
                     ErrorMessage = BuildRejectMessage(Result);
                     await RefreshTrainingBannerAsync(ct);
                     return Page();
                 }
+
+                var attachmentId = await SaveDoctorImageAsync(
+                    Patient.Id,
+                    Upload,
+                    fileBytes,
+                    AttachmentStatus.Validated,
+                    doctor.Id,
+                    "AI prediction accepted.",
+                    ct);
 
                 var id = await SavePredictionAsync(
                     Patient,
@@ -174,8 +199,8 @@ namespace Licenta.Pages.Doctor.Predictions
                     ct);
 
                 SavedPredictionId = id.ToString();
-
                 TempData["StatusMessage"] = "Prediction completed and saved.";
+
                 return RedirectToPage("/Doctor/Predictions/Record", new { id });
             }
             catch (Exception ex)
@@ -186,48 +211,46 @@ namespace Licenta.Pages.Doctor.Predictions
             }
         }
 
-        private async Task<Guid> SaveDoctorImageAsync(Guid patientId, IFormFile file, CancellationToken ct)
+        private async Task<Guid> SaveDoctorImageAsync(
+            Guid patientId,
+            IFormFile file,
+            byte[] fileBytes,
+            AttachmentStatus status,
+            Guid doctorId,
+            string? validationNotes,
+            CancellationToken ct)
         {
             var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "cbis_ddsm");
             Directory.CreateDirectory(uploadsFolder);
 
-            var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+            var originalName = Path.GetFileName(file.FileName ?? "image");
+            var uniqueFileName = $"{Guid.NewGuid()}_{originalName}";
             var physicalPath = Path.Combine(uploadsFolder, uniqueFileName);
 
-            await using (var stream = new FileStream(physicalPath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream, ct);
-            }
+            await System.IO.File.WriteAllBytesAsync(physicalPath, fileBytes, ct);
+
+            var utcNow = DateTime.UtcNow;
 
             var attachment = new MedicalAttachment
             {
                 Id = Guid.NewGuid(),
                 PatientId = patientId,
-                FileName = file.FileName,
+                DoctorId = doctorId,
+                ValidatedByDoctorId = doctorId,
+                ValidatedAtUtc = utcNow,
+                FileName = originalName,
                 FilePath = $"/uploads/cbis_ddsm/{uniqueFileName}",
-                ContentType = file.ContentType,
+                ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
                 Type = "CBIS-DDSM Breast Image (Doctor Upload)",
-                Status = AttachmentStatus.Validated,
-                UploadedAt = DateTime.UtcNow
+                Status = status,
+                UploadedAt = utcNow,
+                ValidationNotes = validationNotes
             };
 
             _db.MedicalAttachments.Add(attachment);
             await _db.SaveChangesAsync(ct);
 
             return attachment.Id;
-        }
-
-        private async Task MarkAttachmentRejectedAsync(Guid attachmentId, Guid doctorId, CancellationToken ct)
-        {
-            var att = await _db.MedicalAttachments.FirstOrDefaultAsync(a => a.Id == attachmentId, ct);
-            if (att == null) return;
-
-            att.Status = AttachmentStatus.Rejected;
-            att.DoctorId = doctorId;
-            att.ValidatedByDoctorId = doctorId;
-            att.ValidatedAtUtc = DateTime.UtcNow;
-
-            await _db.SaveChangesAsync(ct);
         }
 
         private async Task<Guid> SavePredictionAsync(
@@ -254,25 +277,28 @@ namespace Licenta.Pages.Doctor.Predictions
 
             var safeLabel = string.IsNullOrWhiteSpace(resp.Label) ? "UNKNOWN" : resp.Label;
 
-            var p = new Prediction
+            var prediction = new Prediction
             {
                 Id = Guid.NewGuid(),
                 PatientId = patient.Id,
                 DoctorId = doctor.Id,
                 CreatedAtUtc = DateTime.UtcNow,
-                ModelName = modelId.StartsWith("mammogram_mastery", StringComparison.OrdinalIgnoreCase) ? "Mammogram Mastery" : "CBIS-DDSM",
+                ModelName = modelId.StartsWith("mammogram_mastery", StringComparison.OrdinalIgnoreCase)
+                    ? "Mammogram Mastery"
+                    : "CBIS-DDSM",
                 InputSummary = upload?.FileName,
                 ResultLabel = safeLabel,
                 Probability = (float)resp.EffectiveProbabilitySafe,
                 InputDataJson = inputJson,
                 OutputDataJson = outputJson,
-                Status = PredictionStatus.Draft
+                Status = PredictionStatus.Accepted,
+                ValidatedAtUtc = DateTime.UtcNow
             };
 
-            _db.Predictions.Add(p);
+            _db.Predictions.Add(prediction);
             await _db.SaveChangesAsync(ct);
 
-            return p.Id;
+            return prediction.Id;
         }
 
         private async Task LoadPatientsAsync(CancellationToken ct)
@@ -289,23 +315,24 @@ namespace Licenta.Pages.Doctor.Predictions
                 .Where(ur => ur.RoleId == patientRoleId)
                 .Select(ur => ur.UserId);
 
-            var q = _db.Patients
+            var query = _db.Patients
                 .Include(p => p.User)
                 .AsNoTracking()
                 .Where(p => p.User != null && patientUserIds.Contains(p.UserId));
 
             if (!string.IsNullOrWhiteSpace(clinicId))
-                q = q.Where(p => p.User != null && p.User.ClinicId == clinicId);
+                query = query.Where(p => p.User != null && p.User.ClinicId == clinicId);
 
-            Patients = await q
-                .OrderBy(p => p.User.FullName)
+            Patients = await query
+                .OrderBy(p => p.User!.FullName)
                 .Select(p => new SelectListItem
                 {
                     Value = p.Id.ToString(),
-                    Text = string.IsNullOrWhiteSpace(p.User.FullName) ? p.User.Email : p.User.FullName
+                    Text = string.IsNullOrWhiteSpace(p.User!.FullName) ? p.User.Email! : p.User.FullName!
                 })
                 .ToListAsync(ct);
         }
+
         private Task<PatientProfile?> LoadPatientAsync(Guid id, CancellationToken ct)
         {
             return _db.Patients
@@ -383,7 +410,8 @@ namespace Licenta.Pages.Doctor.Predictions
 
         private static bool IsRejected(ImagingPredictResponse? r)
         {
-            if (r == null) return true;
+            if (r == null)
+                return true;
 
             if (!string.IsNullOrWhiteSpace(r.Label) &&
                 string.Equals(r.Label, "OUT_OF_DOMAIN", StringComparison.OrdinalIgnoreCase))
@@ -420,6 +448,7 @@ namespace Licenta.Pages.Doctor.Predictions
 
             return "AI rejected: uploaded image is not acceptable.";
         }
+
         private static string NormalizeModelId(string? raw)
         {
             var s = (raw ?? "").Trim();
@@ -445,6 +474,5 @@ namespace Licenta.Pages.Doctor.Predictions
 
             return s;
         }
-
     }
 }

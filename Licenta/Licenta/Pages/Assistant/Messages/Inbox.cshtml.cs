@@ -50,7 +50,8 @@ public class InboxModel : PageModel
         public string NewMessageBody { get; set; } = "";
     }
 
-    [BindProperty] public InputModel Input { get; set; } = new();
+    [BindProperty]
+    public InputModel Input { get; set; } = new();
 
     public List<ConversationVm> Conversations { get; set; } = new();
     public List<MessageVm> Messages { get; set; } = new();
@@ -62,33 +63,33 @@ public class InboxModel : PageModel
 
     public bool CanSend { get; set; }
     public bool CanClose { get; set; }
-
     public int PendingRequestsCount { get; set; }
 
-    private static string ThreadKey(Guid id) => $"REQ:{id}";
+    private static string ThreadKey(Guid reqId) => $"REQ:{reqId}";
+    private static string ConversationKey(Guid reqId) => $"req:{reqId}:assistant";
+
+    private bool IsAjaxRequest()
+        => string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
     public async Task OnGetAsync(Guid? requestId)
     {
         var assistant = await _userManager.GetUserAsync(User);
         if (assistant == null) return;
 
-        if (assistant.AssignedDoctorId != null)
-        {
-            PendingRequestsCount = await _db.PatientMessageRequests.CountAsync(r =>
+        PendingRequestsCount = assistant.AssignedDoctorId != null
+            ? await _db.PatientMessageRequests.CountAsync(r =>
                 r.DoctorProfileId == assistant.AssignedDoctorId.Value &&
                 r.Status == PatientMessageRequestStatus.Pending &&
-                (r.AssistantId == null || r.AssistantId == assistant.Id));
-        }
-        else
-        {
-            PendingRequestsCount = 0;
-        }
+                (r.AssistantId == null || r.AssistantId == assistant.Id))
+            : 0;
 
         var requests = await _db.PatientMessageRequests
-            .Include(r => r.Patient).ThenInclude(p => p.User)
+            .Include(r => r.Patient)
+            .ThenInclude(p => p.User)
             .Where(r =>
                 r.AssistantId == assistant.Id &&
-                (r.Status == PatientMessageRequestStatus.AssistantChat || r.Status == PatientMessageRequestStatus.Closed))
+                (r.Status == PatientMessageRequestStatus.AssistantChat ||
+                 r.Status == PatientMessageRequestStatus.Closed))
             .OrderByDescending(r => r.UpdatedAt ?? r.CreatedAt)
             .ToListAsync();
 
@@ -96,14 +97,12 @@ public class InboxModel : PageModel
         {
             var patientUserId = r.Patient.UserId;
 
-            var last = await _db.InternalMessages
+            var lastMsg = await _db.InternalMessages
                 .AsNoTracking()
                 .Where(m =>
                     m.Subject == ThreadKey(r.Id) &&
-                    (
-                        (m.SenderId == assistant.Id && m.RecipientId == patientUserId) ||
-                        (m.SenderId == patientUserId && m.RecipientId == assistant.Id)
-                    ))
+                    ((m.SenderId == assistant.Id && m.RecipientId == patientUserId) ||
+                     (m.SenderId == patientUserId && m.RecipientId == assistant.Id)))
                 .OrderByDescending(m => m.SentAt)
                 .FirstOrDefaultAsync();
 
@@ -111,60 +110,90 @@ public class InboxModel : PageModel
                 r.Id,
                 patientUserId,
                 r.Patient.FullName ?? r.Patient.Email ?? "Patient",
-                last?.SentAt ?? r.CreatedAt,
-                (last?.Body ?? r.Subject) ?? ""));
+                lastMsg?.SentAt ?? (r.UpdatedAt ?? r.CreatedAt),
+                lastMsg?.Body ?? r.Subject ?? ""));
         }
 
-        if (requestId.HasValue)
+        if (!requestId.HasValue)
+            return;
+
+        var req = requests.FirstOrDefault(x => x.Id == requestId.Value);
+        if (req == null)
+            return;
+
+        SelectedRequestId = req.Id;
+        SelectedPatientName = req.Patient.FullName ?? req.Patient.Email ?? "Patient";
+        SelectedSubject = req.Subject;
+        CurrentConversationKey = ConversationKey(req.Id);
+
+        CanSend = req.Status == PatientMessageRequestStatus.AssistantChat;
+        CanClose = req.Status == PatientMessageRequestStatus.AssistantChat;
+
+        var patientUserIdSelected = req.Patient.UserId;
+
+        Messages = await _db.InternalMessages
+            .AsNoTracking()
+            .Where(m =>
+                m.Subject == ThreadKey(req.Id) &&
+                ((m.SenderId == assistant.Id && m.RecipientId == patientUserIdSelected) ||
+                 (m.SenderId == patientUserIdSelected && m.RecipientId == assistant.Id)))
+            .OrderBy(m => m.SentAt)
+            .Select(m => new MessageVm(
+                m.Id,
+                m.Body,
+                m.SentAt,
+                m.SentAt.ToLocalTime(),
+                m.SenderId == assistant.Id))
+            .ToListAsync();
+
+        var unread = await _db.InternalMessages
+            .Where(m =>
+                m.Subject == ThreadKey(req.Id) &&
+                m.RecipientId == assistant.Id &&
+                !m.IsRead)
+            .ToListAsync();
+
+        if (unread.Count > 0)
         {
-            var req = requests.FirstOrDefault(x => x.Id == requestId.Value);
-            if (req != null)
-            {
-                SelectedRequestId = req.Id;
-                SelectedPatientName = req.Patient.FullName ?? req.Patient.Email ?? "Patient";
-                SelectedSubject = req.Subject;
+            foreach (var m in unread)
+                m.IsRead = true;
 
-                CurrentConversationKey = $"patient:{req.Id}:assistant";
-
-                CanSend = req.Status == PatientMessageRequestStatus.AssistantChat;
-                CanClose = CanSend;
-
-                var patientUserId = req.Patient.UserId;
-
-                Messages = await _db.InternalMessages
-                    .AsNoTracking()
-                    .Where(m =>
-                        m.Subject == ThreadKey(req.Id) &&
-                        (
-                            (m.SenderId == assistant.Id && m.RecipientId == patientUserId) ||
-                            (m.SenderId == patientUserId && m.RecipientId == assistant.Id)
-                        ))
-                    .OrderBy(m => m.SentAt)
-                    .Select(m => new MessageVm(
-                        m.Id,
-                        m.Body,
-                        m.SentAt,
-                        m.SentAt.ToLocalTime(),
-                        m.SenderId == assistant.Id))
-                    .ToListAsync();
-
-                Input.RequestId = req.Id;
-            }
+            await _db.SaveChangesAsync();
         }
+
+        Input.RequestId = req.Id;
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         var assistant = await _userManager.GetUserAsync(User);
-        if (assistant == null || string.IsNullOrWhiteSpace(Input.NewMessageBody))
-            return new JsonResult(new { ok = false });
+        var body = Input.NewMessageBody?.Trim() ?? "";
+
+        if (assistant == null)
+        {
+            if (IsAjaxRequest()) return new JsonResult(new { ok = false, error = "Unauthorized." });
+            return Unauthorized();
+        }
+
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            if (IsAjaxRequest()) return new JsonResult(new { ok = false, error = "Message cannot be empty." });
+            TempData["StatusMessage"] = "Message cannot be empty.";
+            return RedirectToPage("/Assistant/Messages/Inbox", new { requestId = Input.RequestId });
+        }
 
         var req = await _db.PatientMessageRequests
             .Include(r => r.Patient)
             .FirstOrDefaultAsync(r => r.Id == Input.RequestId);
 
-        if (req == null || req.AssistantId != assistant.Id || req.Status != PatientMessageRequestStatus.AssistantChat)
-            return new JsonResult(new { ok = false });
+        if (req == null ||
+            req.AssistantId != assistant.Id ||
+            req.Status != PatientMessageRequestStatus.AssistantChat)
+        {
+            if (IsAjaxRequest()) return new JsonResult(new { ok = false, error = "Conversation is not open." });
+            TempData["StatusMessage"] = "Conversation is not open.";
+            return RedirectToPage("/Assistant/Messages/Inbox", new { requestId = Input.RequestId });
+        }
 
         var patientUserId = req.Patient.UserId;
 
@@ -174,7 +203,7 @@ public class InboxModel : PageModel
             SenderId = assistant.Id,
             RecipientId = patientUserId,
             Subject = ThreadKey(req.Id),
-            Body = Input.NewMessageBody.Trim(),
+            Body = body,
             SentAt = DateTime.UtcNow,
             IsRead = false
         };
@@ -190,7 +219,7 @@ public class InboxModel : PageModel
                 patientUser,
                 NotificationType.Message,
                 "New Message from Assistant",
-                $"You received a new message from the assistant.",
+                "You received a new message from the assistant.",
                 actionUrl: $"/Patient/Messages/Inbox?requestId={req.Id}&kind=Assistant",
                 actionText: "Reply",
                 relatedEntity: "InternalMessage",
@@ -200,34 +229,41 @@ public class InboxModel : PageModel
 
         var payload = new
         {
-            conversationKey = $"patient:{req.Id}:assistant",
-            messageId = msg.Id,
-            senderId = msg.SenderId,
+            conversationKey = ConversationKey(req.Id),
+            id = msg.Id,
             requestId = req.Id,
+            senderId = msg.SenderId,
             body = msg.Body,
-            sentAtUtc = msg.SentAt
+            sentAtUtc = msg.SentAt,
+            sentAtLocal = msg.SentAt.ToLocalTime()
         };
 
-        await _hub.Clients.Users(new[] { patientUserId, assistant.Id }).SendAsync("message:new", payload);
+        await _hub.Clients.Users(new[] { patientUserId, assistant.Id })
+            .SendAsync("message:new", payload);
 
-        return new JsonResult(new { ok = true, messageId = msg.Id, sentAtUtc = msg.SentAt });
+        if (!IsAjaxRequest())
+            return RedirectToPage("/Assistant/Messages/Inbox", new { requestId = req.Id });
+
+        return new JsonResult(new
+        {
+            ok = true,
+            id = msg.Id,
+            body = msg.Body,
+            senderId = msg.SenderId,
+            sentAtUtc = msg.SentAt,
+            sentAtLocal = msg.SentAt.ToLocalTime()
+        });
     }
 
     public async Task<IActionResult> OnGetSync(string conversationKey, string? after)
     {
         var assistant = await _userManager.GetUserAsync(User);
-        if (assistant == null)
-            return new JsonResult(new { messages = Array.Empty<object>() });
-
-        if (string.IsNullOrWhiteSpace(conversationKey))
-            return new JsonResult(new { messages = Array.Empty<object>() });
+        if (assistant == null || string.IsNullOrWhiteSpace(conversationKey))
+            return new JsonResult(new { messages = Array.Empty<object>(), reloadRequired = false });
 
         var parts = conversationKey.Split(':', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 3)
-            return new JsonResult(new { messages = Array.Empty<object>() });
-
-        if (!Guid.TryParse(parts[1], out var reqId))
-            return new JsonResult(new { messages = Array.Empty<object>() });
+        if (parts.Length != 3 || parts[0] != "req" || !Guid.TryParse(parts[1], out var reqId) || parts[2] != "assistant")
+            return new JsonResult(new { messages = Array.Empty<object>(), reloadRequired = false });
 
         var req = await _db.PatientMessageRequests
             .AsNoTracking()
@@ -235,7 +271,13 @@ public class InboxModel : PageModel
             .FirstOrDefaultAsync(r => r.Id == reqId && r.AssistantId == assistant.Id);
 
         if (req == null)
-            return new JsonResult(new { messages = Array.Empty<object>() });
+            return new JsonResult(new { messages = Array.Empty<object>(), reloadRequired = true });
+
+        if (req.Status != PatientMessageRequestStatus.AssistantChat &&
+            req.Status != PatientMessageRequestStatus.Closed)
+        {
+            return new JsonResult(new { messages = Array.Empty<object>(), reloadRequired = true });
+        }
 
         var patientUserId = req.Patient.UserId;
 
@@ -246,28 +288,44 @@ public class InboxModel : PageModel
             afterUtc = dto.UtcDateTime;
         }
 
-        var thread = ThreadKey(reqId);
-
-        var messages = await _db.InternalMessages
+        var query = _db.InternalMessages
             .AsNoTracking()
             .Where(m =>
-                m.Subject == thread &&
-                (afterUtc == null || m.SentAt > afterUtc.Value) &&
-                (
-                    (m.SenderId == assistant.Id && m.RecipientId == patientUserId) ||
-                    (m.SenderId == patientUserId && m.RecipientId == assistant.Id)
-                ))
+                m.Subject == ThreadKey(reqId) &&
+                ((m.SenderId == assistant.Id && m.RecipientId == patientUserId) ||
+                 (m.SenderId == patientUserId && m.RecipientId == assistant.Id)));
+
+        if (afterUtc.HasValue)
+            query = query.Where(m => m.SentAt > afterUtc.Value);
+
+        var messages = await query
             .OrderBy(m => m.SentAt)
             .Select(m => new
             {
-                messageId = m.Id,
+                id = m.Id,
                 body = m.Body,
                 sentAtUtc = m.SentAt,
+                sentAtLocal = m.SentAt.ToLocalTime(),
                 senderId = m.SenderId
             })
             .ToListAsync();
 
-        return new JsonResult(new { messages });
+        var unread = await _db.InternalMessages
+            .Where(m =>
+                m.Subject == ThreadKey(reqId) &&
+                m.RecipientId == assistant.Id &&
+                !m.IsRead)
+            .ToListAsync();
+
+        if (unread.Count > 0)
+        {
+            foreach (var m in unread)
+                m.IsRead = true;
+
+            await _db.SaveChangesAsync();
+        }
+
+        return new JsonResult(new { messages, reloadRequired = false });
     }
 
     public async Task<IActionResult> OnPostCloseAsync(Guid id)
@@ -283,7 +341,6 @@ public class InboxModel : PageModel
 
         req.Status = PatientMessageRequestStatus.Closed;
         req.UpdatedAt = DateTime.UtcNow;
-
         await _db.SaveChangesAsync();
 
         var patientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == req.Patient.UserId);
@@ -293,7 +350,7 @@ public class InboxModel : PageModel
                 patientUser,
                 NotificationType.System,
                 "Conversation Closed",
-                $"Your conversation with the assistant has been closed.",
+                "Your conversation with the assistant has been closed.",
                 actionUrl: $"/Patient/Messages/Inbox?requestId={req.Id}&kind=Assistant",
                 actionText: "View History",
                 relatedEntity: "PatientMessageRequest",
@@ -301,6 +358,7 @@ public class InboxModel : PageModel
             );
         }
 
-        return RedirectToPage();
+        TempData["StatusMessage"] = "Conversation closed. History is still available.";
+        return RedirectToPage("/Assistant/Messages/Inbox", new { requestId = req.Id });
     }
 }

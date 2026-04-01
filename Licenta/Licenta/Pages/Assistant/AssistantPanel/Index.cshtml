@@ -8,71 +8,93 @@
     <link rel="stylesheet" href="~/css/assistantpanel.css" asp-append-version="true" />
 }
 
-<div class="container-fluid dashboard-container py-4">
-    <div class="welcome-header mb-5">
-        <h1 class="fw-bold">Welcome, <span class="text-primary">@Model.AssistantName</span></h1>
-        <p class="text-muted"><i class="bi bi-shield-check-fill text-success me-2"></i>You are currently managing the Clinic Triage Hub.</p>
-    </div>
-
-    <div class="row g-4 mb-5">
-        <div class="col-md-3">
-            <div class="stat-card border-start border-4 border-danger shadow-sm p-4 bg-white rounded-3">
-                <small class="text-uppercase fw-bold text-muted">New Inquiries</small>
-                <h2 class="fw-bold mb-0">@Model.NewInquiriesCount</h2>
-            </div>
+<div class="assistant-dashboard py-4">
+    <div class="dashboard-header mb-5">
+        <div class="header-content">
+            <h1 class="display-5 fw-bold greeting-text">Welcome back, <span>@Model.AssistantName</span></h1>
+            <p class="subtitle"><i class="bi bi-shield-check-fill"></i> Clinic Triage Hub</p>
         </div>
-        <div class="col-md-3">
-            <div class="stat-card border-start border-4 border-primary shadow-sm p-4 bg-white rounded-3">
-                <small class="text-uppercase fw-bold text-muted">In Triage</small>
-                <h2 class="fw-bold mb-0">@Model.ActiveTriageCount</h2>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card border-start border-4 border-warning shadow-sm p-4 bg-white rounded-3">
-                <small class="text-uppercase fw-bold text-muted">Escalated</small>
-                <h2 class="fw-bold mb-0">@Model.EscalatedToDoctorCount</h2>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card border-start border-4 border-info shadow-sm p-4 bg-white rounded-3">
-                <small class="text-uppercase fw-bold text-muted">Unread</small>
-                <h2 class="fw-bold mb-0">@Model.UnreadMessagesCount</h2>
-            </div>
+        <div class="header-actions">
+            <button class="btn btn-modern-refresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between">
-                    <h5 class="fw-bold">Recent Inquiries</h5>
-                    <a asp-page="/Assistant/Messages/Requests/Index" class="btn btn-sm btn-link text-decoration-none">View All</a>
+    <div class="row g-4 mb-5 stats-row">
+        <div class="col-xl-3 col-sm-6">
+            <div class="modern-stat-card card-new">
+                <div class="card-icon"><i class="bi bi-inbox-fill"></i></div>
+                <div class="card-info">
+                    <h5>New Inquiries</h5>
+                    <h2>@Model.NewInquiriesCount</h2>
                 </div>
-                <div class="card-body p-0">
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="modern-stat-card card-triage">
+                <div class="card-icon"><i class="bi bi-activity"></i></div>
+                <div class="card-info">
+                    <h5>In Triage</h5>
+                    <h2>@Model.ActiveTriageCount</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="modern-stat-card card-escalated">
+                <div class="card-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                <div class="card-info">
+                    <h5>Escalated</h5>
+                    <h2>@Model.EscalatedToDoctorCount</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="modern-stat-card card-unread">
+                <div class="card-icon"><i class="bi bi-chat-dots-fill"></i></div>
+                <div class="card-info">
+                    <h5>Unread</h5>
+                    <h2>@Model.UnreadMessagesCount</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 content-row">
+        <div class="col-lg-8">
+            <div class="modern-card main-table-card">
+                <div class="modern-card-header">
+                    <h4 class="fw-bold m-0">Recent Inquiries</h4>
+                    <a asp-page="/Assistant/Messages/Requests/Index" class="btn btn-modern-outline">View All</a>
+                </div>
+                <div class="modern-card-body p-0">
                     <div class="table-responsive">
-                        <table class="table align-middle mb-0 table-hover">
-                            <thead class="bg-light">
+                        <table class="table modern-table mb-0">
+                            <thead>
                                 <tr>
-                                    <th class="ps-4">Patient</th>
+                                    <th>Patient</th>
                                     <th>Subject</th>
                                     <th>Status</th>
-                                    <th class="text-end pe-4">Action</th>
+                                    <th class="text-end">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var r in Model.RecentRequests)
                                 {
-                                    <tr>
-                                        <td class="ps-4">
-                                            <div class="fw-bold">@r.PatientName</div>
-                                            <small class="text-muted">@r.TimeAgo</small>
-                                        </td>
-                                        <td>@r.Subject</td>
+                                    <tr class="table-row-hover">
                                         <td>
-                                            <span class="badge @(r.Status == "Pending" ? "bg-danger" : "bg-primary")">@r.Status</span>
+                                            <div class="patient-cell">
+                                                <div class="patient-avatar">@r.PatientName.Substring(0, 1).ToUpper()</div>
+                                                <div class="patient-details">
+                                                    <span class="patient-name">@r.PatientName</span>
+                                                    <span class="time-ago">@r.TimeAgo</span>
+                                                </div>
+                                            </div>
                                         </td>
-                                        <td class="text-end pe-4">
-                                            <a asp-page="/Assistant/Messages/Inbox" asp-route-requestId="@r.RequestId" class="btn btn-sm btn-outline-primary rounded-pill px-3">Chat</a>
+                                        <td class="align-middle fw-medium">@r.Subject</td>
+                                        <td class="align-middle">
+                                            <span class="modern-badge status-@(r.Status.ToLower().Replace(" ", "-"))">@r.Status</span>
+                                        </td>
+                                        <td class="text-end align-middle">
+                                            <a asp-page="/Assistant/Messages/Inbox" asp-route-requestId="@r.RequestId" class="btn btn-modern-action">Chat</a>
                                         </td>
                                     </tr>
                                 }
@@ -84,36 +106,39 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-header bg-transparent border-0 pt-4 px-4">
-                    <h5 class="fw-bold">Quick Actions</h5>
+            <div class="modern-card quick-actions-card mb-4">
+                <div class="modern-card-header">
+                    <h4 class="fw-bold m-0">Quick Actions</h4>
                 </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a asp-page="/Assistant/Messages/Inbox" class="btn btn-primary py-3 fw-bold rounded-3">
-                            <i class="bi bi-chat-fill me-2"></i>Open Triage Inbox
+                <div class="modern-card-body">
+                    <div class="d-flex flex-column gap-3">
+                        <a asp-page="/Assistant/Messages/Inbox" class="modern-btn-primary">
+                            <i class="bi bi-chat-right-text-fill"></i> Open Triage Inbox
                         </a>
-                        <a asp-page="/Assistant/Patients/Index" class="btn btn-light py-3 fw-bold rounded-3 border">
-                            <i class="bi bi-people-fill me-2"></i>Patient Directory
+                        <a asp-page="/Assistant/Patients/Index" class="modern-btn-secondary">
+                            <i class="bi bi-people-fill"></i> Patient Directory
                         </a>
                     </div>
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-transparent border-0 pt-4 px-4">
-                    <h5 class="fw-bold">Recent Alerts</h5>
+            <div class="modern-card alerts-card">
+                <div class="modern-card-header">
+                    <h4 class="fw-bold m-0">Recent Alerts</h4>
                 </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
+                <div class="modern-card-body p-0">
+                    <div class="modern-alert-list">
                         @foreach (var n in Model.RecentNotifications)
                         {
-                            <div class="list-group-item px-4 py-3">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="small fw-bold text-primary">@n.Type</span>
-                                    <span class="extra-small text-muted">@n.TimeAgo</span>
+                            <div class="modern-alert-item">
+                                <div class="alert-indicator"></div>
+                                <div class="alert-content">
+                                    <div class="alert-top">
+                                        <span class="alert-type">@n.Type</span>
+                                        <span class="alert-time">@n.TimeAgo</span>
+                                    </div>
+                                    <p class="alert-message">@n.Message</p>
                                 </div>
-                                <p class="mb-0 small">@n.Message</p>
                             </div>
                         }
                     </div>
@@ -122,3 +147,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/assistantpanel.js" asp-append-version="true"></script>
+}
