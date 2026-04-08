@@ -1,0 +1,424 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Licenta -> E:\Facultate\Licenta\Licenta\Licenta\bin\Debug\net9.0\Licenta.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.98
+[17:32:07 INF] User profile is available. Using 'C:\Users\Administrator\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+[17:32:08 INF] Now listening on: http://127.0.0.1:5000
+[17:32:08 INF] Application started. Press Ctrl+C to shut down.
+[17:32:08 INF] Hosting environment: Development
+[17:32:08 INF] Content root path: E:\Facultate\Licenta\Licenta\Licenta
+[17:32:08 INF] Application started successfully
+[17:32:08 INF] Request starting HTTP/1.1 GET http://127.0.0.1:5000/ - null null
+[17:32:08 INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+[17:32:08 INF] AuthenticationScheme: Identity.Application was challenged.
+[17:32:08 INF] Request finished HTTP/1.1 GET http://127.0.0.1:5000/ - 302 0 null 43.8602ms
+[17:32:08 INF] Request starting HTTP/1.1 GET http://127.0.0.1:5000/Identity/Account/Login?ReturnUrl=%2F - null null
+[17:32:08 INF] Executing endpoint '/Account/Login'
+[17:32:08 INF] Route matched with {page = "/Account/Login", area = "Identity"}. Executing page /Account/Login
+[17:32:08 INF] Executing handler method Licenta.Areas.Identity.Pages.Account.LoginModel.OnGetAsync - ModelState is Valid
+[17:32:08 INF] Executed handler method OnGetAsync, returned result .
+[17:32:08 INF] Executing an implicit handler method - ModelState is Valid
+[17:32:08 INF] Executed an implicit handler method, returned result Microsoft.AspNetCore.Mvc.RazorPages.PageResult.
+[17:32:09 WRN] The query uses the 'First'/'FirstOrDefault' operator without 'OrderBy' and filter operators. This may lead to unpredictable results.
+[17:32:12 INF] Request starting HTTP/1.1 GET http://127.0.0.1:5000/ - null null
+[17:32:12 INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+[17:32:12 INF] AuthenticationScheme: Identity.Application was challenged.
+[17:32:12 INF] Request finished HTTP/1.1 GET http://127.0.0.1:5000/ - 302 0 null 3.6677ms
+[17:32:12 INF] Request starting HTTP/1.1 GET http://127.0.0.1:5000/Identity/Account/Login?ReturnUrl=%2F - null null
+[17:32:12 INF] Executing endpoint '/Account/Login'
+[17:32:12 INF] Route matched with {page = "/Account/Login", area = "Identity"}. Executing page /Account/Login
+[17:32:12 INF] Executing handler method Licenta.Areas.Identity.Pages.Account.LoginModel.OnGetAsync - ModelState is Valid
+[17:32:12 INF] Executed handler method OnGetAsync, returned result .
+[17:32:12 INF] Executing an implicit handler method - ModelState is Valid
+[17:32:12 INF] Executed an implicit handler method, returned result Microsoft.AspNetCore.Mvc.RazorPages.PageResult.
+[17:32:12 INF] Executed DbCommand (40ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [SystemSettings] AS [s]) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+[17:32:12 INF] Executed DbCommand (39ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [s].[Id], [s].[ClinicName], [s].[LogoPath], [s].[MaxUploadMb], [s].[PasswordMinLength], [s].[RequireDigit], [s].[RequireSpecialChar], [s].[RequireUppercase]
+FROM [SystemSettings] AS [s]
+[17:32:12 INF] Executed DbCommand (40ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [s].[Id], [s].[ClinicName], [s].[LogoPath], [s].[MaxUploadMb], [s].[PasswordMinLength], [s].[RequireDigit], [s].[RequireSpecialChar], [s].[RequireUppercase]
+FROM [SystemSettings] AS [s]
+[17:32:12 INF] Executed page /Account/Login in 532.0238ms
+[17:32:12 INF] Executed page /Account/Login in 4387.9359ms
+[17:32:12 INF] Executed endpoint '/Account/Login'
+[17:32:12 INF] Executed endpoint '/Account/Login'
+[17:32:12 INF] HTTP GET /Identity/Account/Login responded 200 in 535 ms
+[17:32:12 INF] HTTP GET /Identity/Account/Login responded 200 in 4412 ms
+[17:32:12 INF] Request finished HTTP/1.1 GET http://127.0.0.1:5000/Identity/Account/Login?ReturnUrl=%2F - 200 null text/html; charset=utf-8 4426.9762ms
+[17:32:12 INF] Request finished HTTP/1.1 GET http://127.0.0.1:5000/Identity/Account/Login?ReturnUrl=%2F - 200 null text/html; charset=utf-8 547.8602ms
+[17:32:12 INF] Executed DbCommand (57ms) [Parameters=[@__normalizedName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+FROM [AspNetRoles] AS [a]
+WHERE [a].[NormalizedName] = @__normalizedName_0
+[17:32:13 INF] Executed DbCommand (1ms) [Parameters=[@__normalizedName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+FROM [AspNetRoles] AS [a]
+WHERE [a].[NormalizedName] = @__normalizedName_0
+[17:32:13 INF] Executed DbCommand (1ms) [Parameters=[@__normalizedName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+FROM [AspNetRoles] AS [a]
+WHERE [a].[NormalizedName] = @__normalizedName_0
+[17:32:13 INF] Executed DbCommand (0ms) [Parameters=[@__normalizedName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+FROM [AspNetRoles] AS [a]
+WHERE [a].[NormalizedName] = @__normalizedName_0
+[17:32:13 INF] Executed DbCommand (6ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AssignedDoctorId], [a].[ClinicId], [a].[ConcurrencyStamp], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsSoftDeleted], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+FROM [AspNetUsers] AS [a]
+WHERE [a].[IsSoftDeleted] = CAST(0 AS bit) AND [a].[NormalizedEmail] = @__normalizedEmail_0
+[17:32:13 INF] Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AssignedDoctorId], [a].[ClinicId], [a].[ConcurrencyStamp], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsSoftDeleted], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+FROM [AspNetUsers] AS [a]
+WHERE [a].[IsSoftDeleted] = CAST(0 AS bit) AND [a].[NormalizedEmail] = @__normalizedEmail_0
+[17:32:13 INF] Executed DbCommand (3ms) [Parameters=[@__normalizedRoleName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(2) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+FROM [AspNetRoles] AS [a]
+WHERE [a].[NormalizedName] = @__normalizedRoleName_0
+[17:32:13 INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (Size = 450), @__p_1='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[UserId], [a].[RoleId]
+FROM [AspNetUserRoles] AS [a]
+WHERE [a].[UserId] = @__p_0 AND [a].[RoleId] = @__p_1
+[17:32:13 INF] Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AssignedDoctorId], [a].[ClinicId], [a].[ConcurrencyStamp], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsSoftDeleted], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+FROM [AspNetUsers] AS [a]
+WHERE [a].[IsSoftDeleted] = CAST(0 AS bit) AND [a].[NormalizedEmail] = @__normalizedEmail_0
+[17:32:13 INF] Executed DbCommand (1ms) [Parameters=[@__normalizedRoleName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(2) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+FROM [AspNetRoles] AS [a]
+WHERE [a].[NormalizedName] = @__normalizedRoleName_0
+[17:32:13 INF] Executed DbCommand (0ms) [Parameters=[@__p_0='?' (Size = 450), @__p_1='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[UserId], [a].[RoleId]
+FROM [AspNetUserRoles] AS [a]
+WHERE [a].[UserId] = @__p_0 AND [a].[RoleId] = @__p_1
+[17:32:13 INF] Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AssignedDoctorId], [a].[ClinicId], [a].[ConcurrencyStamp], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsSoftDeleted], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+FROM [AspNetUsers] AS [a]
+WHERE [a].[IsSoftDeleted] = CAST(0 AS bit) AND [a].[NormalizedEmail] = @__normalizedEmail_0
+[17:32:13 INF] Executed DbCommand (1ms) [Parameters=[@__normalizedRoleName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(2) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+FROM [AspNetRoles] AS [a]
+WHERE [a].[NormalizedName] = @__normalizedRoleName_0
+[17:32:13 INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (Size = 450), @__p_1='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[UserId], [a].[RoleId]
+FROM [AspNetUserRoles] AS [a]
+WHERE [a].[UserId] = @__p_0 AND [a].[RoleId] = @__p_1
+[17:32:13 INF] Executed DbCommand (0ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AssignedDoctorId], [a].[ClinicId], [a].[ConcurrencyStamp], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsSoftDeleted], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+FROM [AspNetUsers] AS [a]
+WHERE [a].[IsSoftDeleted] = CAST(0 AS bit) AND [a].[NormalizedEmail] = @__normalizedEmail_0
+[17:32:13 INF] Executed DbCommand (0ms) [Parameters=[@__normalizedRoleName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(2) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+FROM [AspNetRoles] AS [a]
+WHERE [a].[NormalizedName] = @__normalizedRoleName_0
+[17:32:13 INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (Size = 450), @__p_1='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[UserId], [a].[RoleId]
+FROM [AspNetUserRoles] AS [a]
+WHERE [a].[UserId] = @__p_0 AND [a].[RoleId] = @__p_1
+[17:32:13 INF] Executed DbCommand (4ms) [Parameters=[@__doctorUser_Id_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [d].[Id], [d].[Bio], [d].[City], [d].[Languages], [d].[LicenseNumber], [d].[OfficeAddress], [d].[ProfileImagePath], [d].[Specialty], [d].[UserId]
+FROM [Doctors] AS [d]
+WHERE [d].[UserId] = @__doctorUser_Id_0
+[17:32:13 INF] Executed DbCommand (4ms) [Parameters=[@__patientUser_Id_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [p].[Id], [p].[Address], [p].[DateOfBirth], [p].[NationalId], [p].[Phone], [p].[UserId], [p].[UserName]
+FROM [Patients] AS [p]
+WHERE [p].[UserId] = @__patientUser_Id_0
+[17:32:37 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/ - null null
+[17:32:37 INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+[17:32:37 INF] AuthenticationScheme: Identity.Application was challenged.
+[17:32:37 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/ - 302 0 null 4.3183ms
+[17:32:37 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/Identity/Account/Login?ReturnUrl=%2F - null null
+[17:32:37 INF] Executing endpoint '/Account/Login'
+[17:32:37 INF] Route matched with {page = "/Account/Login", area = "Identity"}. Executing page /Account/Login
+[17:32:37 INF] Executing handler method Licenta.Areas.Identity.Pages.Account.LoginModel.OnGetAsync - ModelState is Valid
+[17:32:37 INF] Executed handler method OnGetAsync, returned result .
+[17:32:37 INF] Executing an implicit handler method - ModelState is Valid
+[17:32:37 INF] Executed an implicit handler method, returned result Microsoft.AspNetCore.Mvc.RazorPages.PageResult.
+[17:32:37 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [s].[Id], [s].[ClinicName], [s].[LogoPath], [s].[MaxUploadMb], [s].[PasswordMinLength], [s].[RequireDigit], [s].[RequireSpecialChar], [s].[RequireUppercase]
+FROM [SystemSettings] AS [s]
+[17:32:37 INF] Executed page /Account/Login in 10.2403ms
+[17:32:37 INF] Executed endpoint '/Account/Login'
+[17:32:37 INF] HTTP GET /Identity/Account/Login responded 200 in 11 ms
+[17:32:37 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/Identity/Account/Login?ReturnUrl=%2F - 200 null text/html; charset=utf-8 12.9237ms
+[17:32:37 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/css/Login.css - null null
+[17:32:37 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/css/layout.css?v=UjJM-LlNvU20a3CuN-Xi9vc5FmKbwpuGTldUDF33aL4 - null null
+[17:32:37 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/js/layout.js?v=bwbwgPndcKJjJW5jZOItcosqm98Mo5bjB4-HkGHsAtA - null null
+[17:32:37 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/lib/bootstrap/dist/css/bootstrap.min.css - null null
+[17:32:37 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/lib/jquery/dist/jquery.min.js - null null
+[17:32:37 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/lib/jquery-validation/dist/jquery.validate.min.js - null null
+[17:32:37 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js - null null
+[17:32:37 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/lib/bootstrap/dist/js/bootstrap.bundle.min.js - null null
+[17:32:37 INF] Sending file. Request path: '/css/layout.css'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\css\layout.css'
+[17:32:37 INF] Sending file. Request path: '/js/layout.js'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\js\layout.js'
+[17:32:37 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/css/layout.css?v=UjJM-LlNvU20a3CuN-Xi9vc5FmKbwpuGTldUDF33aL4 - 200 9227 text/css 11.8519ms
+[17:32:37 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/js/layout.js?v=bwbwgPndcKJjJW5jZOItcosqm98Mo5bjB4-HkGHsAtA - 200 1415 text/javascript 11.6948ms
+[17:32:37 INF] Sending file. Request path: '/lib/jquery-validation/dist/jquery.validate.min.js'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\lib\jquery-validation\dist\jquery.validate.min.js'
+[17:32:37 INF] Sending file. Request path: '/lib/bootstrap/dist/js/bootstrap.bundle.min.js'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.min.js'
+[17:32:37 INF] Sending file. Request path: '/css/Login.css'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\css\Login.css'
+[17:32:37 INF] Sending file. Request path: '/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\lib\jquery-validation-unobtrusive\dist\jquery.validate.unobtrusive.min.js'
+[17:32:37 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/lib/bootstrap/dist/js/bootstrap.bundle.min.js - 200 80727 text/javascript 65.5455ms
+[17:32:37 INF] Sending file. Request path: '/lib/jquery/dist/jquery.min.js'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\lib\jquery\dist\jquery.min.js'
+[17:32:37 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/css/Login.css - 200 6022 text/css 73.5469ms
+[17:32:37 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/lib/jquery-validation/dist/jquery.validate.min.js - 200 25311 text/javascript 69.0257ms
+[17:32:37 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js - 200 5831 text/javascript 68.8518ms
+[17:32:37 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/lib/jquery/dist/jquery.min.js - 200 87535 text/javascript 70.2054ms
+[17:32:37 INF] Sending file. Request path: '/lib/bootstrap/dist/css/bootstrap.min.css'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\lib\bootstrap\dist\css\bootstrap.min.css'
+[17:32:37 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/lib/bootstrap/dist/css/bootstrap.min.css - 200 232808 text/css 73.4408ms
+[17:32:37 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/favicon.ico - null null
+[17:32:37 INF] Sending file. Request path: '/favicon.ico'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\favicon.ico'
+[17:32:37 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/favicon.ico - 200 5430 image/x-icon 62.243ms
+[17:32:46 INF] Request starting HTTP/1.1 POST http://kenneth-steady-agent-laptops.trycloudflare.com/Identity/Account/Login?ReturnUrl=%2F - application/x-www-form-urlencoded 265
+[17:32:46 INF] Executing endpoint '/Account/Login'
+[17:32:46 INF] Route matched with {page = "/Account/Login", area = "Identity"}. Executing page /Account/Login
+[17:32:46 INF] Executing handler method Licenta.Areas.Identity.Pages.Account.LoginModel.OnPostAsync - ModelState is Valid
+[17:32:46 INF] Executed DbCommand (4ms) [Parameters=[@__normalizedUserName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AccessFailedCount], [a].[AssignedDoctorId], [a].[ClinicId], [a].[ConcurrencyStamp], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsSoftDeleted], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+FROM [AspNetUsers] AS [a]
+WHERE [a].[IsSoftDeleted] = CAST(0 AS bit) AND [a].[NormalizedUserName] = @__normalizedUserName_0
+[17:32:46 INF] Executed DbCommand (2ms) [Parameters=[@__user_Id_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT [a].[Id], [a].[ClaimType], [a].[ClaimValue], [a].[UserId]
+FROM [AspNetUserClaims] AS [a]
+WHERE [a].[UserId] = @__user_Id_0
+[17:32:46 INF] Executed DbCommand (3ms) [Parameters=[@__userId_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT [a0].[Name]
+FROM [AspNetUserRoles] AS [a]
+INNER JOIN [AspNetRoles] AS [a0] ON [a].[RoleId] = [a0].[Id]
+WHERE [a].[UserId] = @__userId_0
+[17:32:46 INF] Executed DbCommand (1ms) [Parameters=[@__normalizedName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+FROM [AspNetRoles] AS [a]
+WHERE [a].[NormalizedName] = @__normalizedName_0
+[17:32:46 INF] Executed DbCommand (2ms) [Parameters=[@__role_Id_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT [a].[ClaimType], [a].[ClaimValue]
+FROM [AspNetRoleClaims] AS [a]
+WHERE [a].[RoleId] = @__role_Id_0
+[17:32:46 INF] AuthenticationScheme: Identity.Application signed in.
+[17:32:46 INF] User logged in.
+[17:32:46 INF] Executed DbCommand (1ms) [Parameters=[@__normalizedEmail_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(2) [a].[Id], [a].[AccessFailedCount], [a].[AssignedDoctorId], [a].[ClinicId], [a].[ConcurrencyStamp], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsSoftDeleted], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+FROM [AspNetUsers] AS [a]
+WHERE [a].[IsSoftDeleted] = CAST(0 AS bit) AND [a].[NormalizedEmail] = @__normalizedEmail_0
+[17:32:46 INF] Executed DbCommand (1ms) [Parameters=[@__normalizedRoleName_0='?' (Size = 256)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(2) [a].[Id], [a].[ConcurrencyStamp], [a].[Name], [a].[NormalizedName]
+FROM [AspNetRoles] AS [a]
+WHERE [a].[NormalizedName] = @__normalizedRoleName_0
+[17:32:46 INF] Executed DbCommand (6ms) [Parameters=[@__role_Id_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT [a1].[Id], [a1].[AccessFailedCount], [a1].[AssignedDoctorId], [a1].[ClinicId], [a1].[ConcurrencyStamp], [a1].[Email], [a1].[EmailConfirmed], [a1].[FullName], [a1].[IsSoftDeleted], [a1].[LockoutEnabled], [a1].[LockoutEnd], [a1].[NormalizedEmail], [a1].[NormalizedUserName], [a1].[PasswordHash], [a1].[PhoneNumber], [a1].[PhoneNumberConfirmed], [a1].[SecurityStamp], [a1].[TwoFactorEnabled], [a1].[UserName]
+FROM [AspNetUserRoles] AS [a]
+INNER JOIN (
+    SELECT [a0].[Id], [a0].[AccessFailedCount], [a0].[AssignedDoctorId], [a0].[ClinicId], [a0].[ConcurrencyStamp], [a0].[Email], [a0].[EmailConfirmed], [a0].[FullName], [a0].[IsSoftDeleted], [a0].[LockoutEnabled], [a0].[LockoutEnd], [a0].[NormalizedEmail], [a0].[NormalizedUserName], [a0].[PasswordHash], [a0].[PhoneNumber], [a0].[PhoneNumberConfirmed], [a0].[SecurityStamp], [a0].[TwoFactorEnabled], [a0].[UserName]
+    FROM [AspNetUsers] AS [a0]
+    WHERE [a0].[IsSoftDeleted] = CAST(0 AS bit)
+) AS [a1] ON [a].[UserId] = [a1].[Id]
+WHERE [a].[RoleId] = @__role_Id_0
+[17:32:46 INF] EF Added on UserNotification
+[17:32:46 INF] Executed DbCommand (7ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (Size = 80), @p2='?' (Size = 500), @p3='?' (DbType = DateTime2), @p4='?' (DbType = Boolean), @p5='?' (Size = 4000), @p6='?' (DbType = DateTime2), @p7='?' (Size = 4000), @p8='?' (Size = 4000), @p9='?' (Size = 4000), @p10='?' (DbType = Int32), @p11='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [UserNotifications] ([Id], [ActionText], [ActionUrl], [CreatedAtUtc], [IsRead], [Message], [ReadAtUtc], [RelatedEntity], [RelatedEntityId], [Title], [Type], [UserId])
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);
+[17:32:46 INF] Executed handler method OnPostAsync, returned result Microsoft.AspNetCore.Mvc.LocalRedirectResult.
+[17:32:46 INF] Executing LocalRedirectResult, redirecting to /.
+[17:32:46 INF] Executed page /Account/Login in 529.1891ms
+[17:32:46 INF] Executed endpoint '/Account/Login'
+[17:32:46 INF] HTTP POST /Identity/Account/Login responded 302 in 529 ms
+[17:32:46 INF] SignIn patient@gmail.com from 193.226.22.6 via Identity.Application
+[17:32:46 INF] Session started; Key:6e3f8dc7-bfb5-75ae-d4cb-24b1ac38488e, Id:07de9d22-fc20-fe37-3037-b281cfc41595
+[17:32:46 INF] Request finished HTTP/1.1 POST https://kenneth-steady-agent-laptops.trycloudflare.com/Identity/Account/Login?ReturnUrl=%2F - 302 0 null 534.5204ms
+[17:32:46 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/ - null null
+[17:32:46 INF] Executing endpoint '/Index'
+[17:32:46 INF] Route matched with {page = "/Index", area = ""}. Executing page /Index
+[17:32:46 INF] Executing handler method Licenta.Pages.IndexModel.OnGetAsync - ModelState is Valid
+[17:32:47 INF] Executed DbCommand (3ms) [Parameters=[@__p_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AccessFailedCount], [a].[AssignedDoctorId], [a].[ClinicId], [a].[ConcurrencyStamp], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsSoftDeleted], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+FROM [AspNetUsers] AS [a]
+WHERE [a].[IsSoftDeleted] = CAST(0 AS bit) AND [a].[Id] = @__p_0
+[17:32:47 INF] Executed DbCommand (1ms) [Parameters=[@__userId_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT [a0].[Name]
+FROM [AspNetUserRoles] AS [a]
+INNER JOIN [AspNetRoles] AS [a0] ON [a].[RoleId] = [a0].[Id]
+WHERE [a].[UserId] = @__userId_0
+[17:32:47 INF] Executed handler method OnGetAsync, returned result .
+[17:32:47 INF] Executing an implicit handler method - ModelState is Valid
+[17:32:47 INF] Executed an implicit handler method, returned result Microsoft.AspNetCore.Mvc.RazorPages.PageResult.
+[17:32:47 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [s].[Id], [s].[ClinicName], [s].[LogoPath], [s].[MaxUploadMb], [s].[PasswordMinLength], [s].[RequireDigit], [s].[RequireSpecialChar], [s].[RequireUppercase]
+FROM [SystemSettings] AS [s]
+[17:32:47 INF] Executed DbCommand (4ms) [Parameters=[@__8__locals1_currentUser_Id_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [p].[Id]
+FROM [Patients] AS [p]
+WHERE [p].[UserId] = @__8__locals1_currentUser_Id_0
+[17:32:47 INF] Executed DbCommand (4ms) [Parameters=[@__patientId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [m].[FilePath]
+FROM [MedicalAttachments] AS [m]
+WHERE [m].[PatientId] = @__patientId_0 AND [m].[Type] = N'ProfilePhoto'
+ORDER BY [m].[UploadedAt] DESC
+[17:32:47 INF] Executed DbCommand (6ms) [Parameters=[@__8__locals1_currentUser_Id_0='?' (Size = 450), @__sinceUtc_1='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [UserNotifications] AS [u]
+INNER JOIN (
+    SELECT [a].[Id], [a].[IsSoftDeleted]
+    FROM [AspNetUsers] AS [a]
+    WHERE [a].[IsSoftDeleted] = CAST(0 AS bit)
+) AS [a0] ON [u].[UserId] = [a0].[Id]
+WHERE [a0].[IsSoftDeleted] = CAST(0 AS bit) AND [u].[UserId] = @__8__locals1_currentUser_Id_0 AND [u].[IsRead] = CAST(0 AS bit) AND [u].[CreatedAtUtc] >= @__sinceUtc_1
+[17:32:47 INF] Executed DbCommand (7ms) [Parameters=[@__p_2='?' (DbType = Int32), @__8__locals1_currentUser_Id_0='?' (Size = 450), @__sinceUtc_1='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(@__p_2) [u].[Id], [u].[ActionText], [u].[ActionUrl], [u].[CreatedAtUtc], [u].[IsRead], [u].[Message], [u].[ReadAtUtc], [u].[RelatedEntity], [u].[RelatedEntityId], [u].[Title], [u].[Type], [u].[UserId]
+FROM [UserNotifications] AS [u]
+INNER JOIN (
+    SELECT [a].[Id], [a].[IsSoftDeleted]
+    FROM [AspNetUsers] AS [a]
+    WHERE [a].[IsSoftDeleted] = CAST(0 AS bit)
+) AS [a0] ON [u].[UserId] = [a0].[Id]
+WHERE [a0].[IsSoftDeleted] = CAST(0 AS bit) AND [u].[UserId] = @__8__locals1_currentUser_Id_0 AND [u].[CreatedAtUtc] >= @__sinceUtc_1
+ORDER BY [u].[CreatedAtUtc] DESC
+[17:32:47 INF] Executed page /Index in 290.4758ms
+[17:32:47 INF] Executed endpoint '/Index'
+[17:32:47 INF] HTTP GET / responded 200 in 294 ms
+[17:32:47 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/ - 200 null text/html; charset=utf-8 299.8562ms
+[17:32:48 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/js/Home.js?v=kgZfDRa9HrxgjF7h8TE0vNwbYOZLpt0M6CaA_kHz7Ts - null null
+[17:32:48 INF] Sending file. Request path: '/js/Home.js'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\js\Home.js'
+[17:32:48 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/js/Home.js?v=kgZfDRa9HrxgjF7h8TE0vNwbYOZLpt0M6CaA_kHz7Ts - 200 3712 text/javascript 1.0179ms
+[17:32:48 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/css/Home.css?v=H7SeQN0SYMVLhIhu4UD7LEt3LwyA38q8T4OcnAIQmBc - null null
+[17:32:48 INF] Sending file. Request path: '/css/Home.css'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\css\Home.css'
+[17:32:48 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/css/Home.css?v=H7SeQN0SYMVLhIhu4UD7LEt3LwyA38q8T4OcnAIQmBc - 200 12108 text/css 0.7057ms
+[17:33:28 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/Patient/Messages/Inbox - null null
+[17:33:28 INF] Executing endpoint '/Patient/Messages/Inbox'
+[17:33:28 INF] Route matched with {page = "/Patient/Messages/Inbox", area = ""}. Executing page /Patient/Messages/Inbox
+[17:33:28 INF] Executing handler method Licenta.Pages.Patient.Messages.InboxModel.OnGetAsync - ModelState is Valid
+[17:33:28 INF] Executed DbCommand (1ms) [Parameters=[@__p_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AccessFailedCount], [a].[AssignedDoctorId], [a].[ClinicId], [a].[ConcurrencyStamp], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsSoftDeleted], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+FROM [AspNetUsers] AS [a]
+WHERE [a].[IsSoftDeleted] = CAST(0 AS bit) AND [a].[Id] = @__p_0
+[17:33:28 INF] Executed DbCommand (2ms) [Parameters=[@__userId_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [p].[Id]
+FROM [Patients] AS [p]
+WHERE [p].[UserId] = @__userId_0
+[17:33:28 INF] Executed DbCommand (4ms) [Parameters=[@__userId_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT [u].[EntityId], [u].[Action], [u].[OccurredAtUtc]
+FROM [UserActivityLogs] AS [u]
+WHERE [u].[UserId] = @__userId_0 AND [u].[EntityName] = N'PatientConversation' AND [u].[Action] IN (N'HideConversationPatient', N'RevealConversationPatient') AND [u].[EntityId] IS NOT NULL AND [u].[EntityId] <> N''
+[17:33:28 INF] Executed DbCommand (12ms) [Parameters=[@__patientProfileId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+SELECT [p].[Id], [p].[AssistantId], [p].[AssistantNote], [p].[Body], [p].[CreatedAt], [p].[DoctorProfileId], [p].[EscalationReason], [p].[PatientId], [p].[Status], [p].[Subject], [p].[UpdatedAt]
+FROM [PatientMessageRequests] AS [p]
+LEFT JOIN (
+    SELECT [a].[Id], [a].[IsSoftDeleted]
+    FROM [AspNetUsers] AS [a]
+    WHERE [a].[IsSoftDeleted] = CAST(0 AS bit)
+) AS [a0] ON [p].[AssistantId] = [a0].[Id]
+WHERE ([p].[AssistantId] IS NULL OR [a0].[IsSoftDeleted] = CAST(0 AS bit)) AND [p].[PatientId] = @__patientProfileId_0 AND [p].[Status] IN (3, 1, 0, 5)
+ORDER BY COALESCE([p].[UpdatedAt], [p].[CreatedAt]) DESC
+[17:33:28 INF] Executed DbCommand (106ms) [Parameters=[@__requestIds_0='?' (Size = 4000)], CommandType='Text', CommandTimeout='30']
+SELECT [s].[Subject], [s1].[Id], [s1].[Body], [s1].[IsRead], [s1].[RecipientId], [s1].[SenderId], [s1].[SentAt], [s1].[Subject]
+FROM (
+    SELECT [i].[Subject]
+    FROM [InternalMessages] AS [i]
+    INNER JOIN (
+        SELECT [a].[Id], [a].[IsSoftDeleted]
+        FROM [AspNetUsers] AS [a]
+        WHERE [a].[IsSoftDeleted] = CAST(0 AS bit)
+    ) AS [a0] ON [i].[SenderId] = [a0].[Id]
+    INNER JOIN (
+        SELECT [a1].[Id], [a1].[IsSoftDeleted]
+        FROM [AspNetUsers] AS [a1]
+        WHERE [a1].[IsSoftDeleted] = CAST(0 AS bit)
+    ) AS [a2] ON [i].[RecipientId] = [a2].[Id]
+    WHERE [a0].[IsSoftDeleted] = CAST(0 AS bit) AND [a2].[IsSoftDeleted] = CAST(0 AS bit) AND [i].[Subject] IN (
+        SELECT [r].[value]
+        FROM OPENJSON(@__requestIds_0) WITH ([value] nvarchar(max) '$') AS [r]
+    )
+    GROUP BY [i].[Subject]
+) AS [s]
+LEFT JOIN (
+    SELECT [s0].[Id], [s0].[Body], [s0].[IsRead], [s0].[RecipientId], [s0].[SenderId], [s0].[SentAt], [s0].[Subject]
+    FROM (
+        SELECT [i0].[Id], [i0].[Body], [i0].[IsRead], [i0].[RecipientId], [i0].[SenderId], [i0].[SentAt], [i0].[Subject], ROW_NUMBER() OVER(PARTITION BY [i0].[Subject] ORDER BY [i0].[SentAt] DESC) AS [row]
+        FROM [InternalMessages] AS [i0]
+        INNER JOIN (
+            SELECT [a4].[Id], [a4].[IsSoftDeleted]
+            FROM [AspNetUsers] AS [a4]
+            WHERE [a4].[IsSoftDeleted] = CAST(0 AS bit)
+        ) AS [a3] ON [i0].[SenderId] = [a3].[Id]
+        INNER JOIN (
+            SELECT [a6].[Id], [a6].[IsSoftDeleted]
+            FROM [AspNetUsers] AS [a6]
+            WHERE [a6].[IsSoftDeleted] = CAST(0 AS bit)
+        ) AS [a5] ON [i0].[RecipientId] = [a5].[Id]
+        WHERE [a3].[IsSoftDeleted] = CAST(0 AS bit) AND [a5].[IsSoftDeleted] = CAST(0 AS bit) AND [i0].[Subject] IN (
+            SELECT [r0].[value]
+            FROM OPENJSON(@__requestIds_0) WITH ([value] nvarchar(max) '$') AS [r0]
+        )
+    ) AS [s0]
+    WHERE [s0].[row] <= 1
+) AS [s1] ON [s].[Subject] = [s1].[Subject]
+[17:33:28 INF] Executed DbCommand (2ms) [Parameters=[@__r_AssistantId_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AccessFailedCount], [a].[AssignedDoctorId], [a].[ClinicId], [a].[ConcurrencyStamp], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsSoftDeleted], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+FROM [AspNetUsers] AS [a]
+WHERE [a].[IsSoftDeleted] = CAST(0 AS bit) AND [a].[Id] = @__r_AssistantId_0
+[17:33:28 INF] Executed DbCommand (2ms) [Parameters=[@__doctorProfileId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [d].[UserId]
+FROM [Doctors] AS [d]
+WHERE [d].[Id] = @__doctorProfileId_0
+[17:33:28 INF] Executed DbCommand (3ms) [Parameters=[@__doctorUserId_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [a].[Id], [a].[AccessFailedCount], [a].[AssignedDoctorId], [a].[ClinicId], [a].[ConcurrencyStamp], [a].[Email], [a].[EmailConfirmed], [a].[FullName], [a].[IsSoftDeleted], [a].[LockoutEnabled], [a].[LockoutEnd], [a].[NormalizedEmail], [a].[NormalizedUserName], [a].[PasswordHash], [a].[PhoneNumber], [a].[PhoneNumberConfirmed], [a].[SecurityStamp], [a].[TwoFactorEnabled], [a].[UserName]
+FROM [AspNetUsers] AS [a]
+WHERE [a].[IsSoftDeleted] = CAST(0 AS bit) AND [a].[Id] = @__doctorUserId_0
+[17:33:28 INF] Executed handler method OnGetAsync, returned result Microsoft.AspNetCore.Mvc.RazorPages.PageResult.
+[17:33:28 INF] Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [s].[Id], [s].[ClinicName], [s].[LogoPath], [s].[MaxUploadMb], [s].[PasswordMinLength], [s].[RequireDigit], [s].[RequireSpecialChar], [s].[RequireUppercase]
+FROM [SystemSettings] AS [s]
+[17:33:28 INF] Executed DbCommand (0ms) [Parameters=[@__8__locals1_currentUser_Id_0='?' (Size = 450)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [p].[Id]
+FROM [Patients] AS [p]
+WHERE [p].[UserId] = @__8__locals1_currentUser_Id_0
+[17:33:28 INF] Executed DbCommand (0ms) [Parameters=[@__patientId_0='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(1) [m].[FilePath]
+FROM [MedicalAttachments] AS [m]
+WHERE [m].[PatientId] = @__patientId_0 AND [m].[Type] = N'ProfilePhoto'
+ORDER BY [m].[UploadedAt] DESC
+[17:33:28 INF] Executed DbCommand (0ms) [Parameters=[@__8__locals1_currentUser_Id_0='?' (Size = 450), @__sinceUtc_1='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+SELECT COUNT(*)
+FROM [UserNotifications] AS [u]
+INNER JOIN (
+    SELECT [a].[Id], [a].[IsSoftDeleted]
+    FROM [AspNetUsers] AS [a]
+    WHERE [a].[IsSoftDeleted] = CAST(0 AS bit)
+) AS [a0] ON [u].[UserId] = [a0].[Id]
+WHERE [a0].[IsSoftDeleted] = CAST(0 AS bit) AND [u].[UserId] = @__8__locals1_currentUser_Id_0 AND [u].[IsRead] = CAST(0 AS bit) AND [u].[CreatedAtUtc] >= @__sinceUtc_1
+[17:33:28 INF] Executed DbCommand (1ms) [Parameters=[@__p_2='?' (DbType = Int32), @__8__locals1_currentUser_Id_0='?' (Size = 450), @__sinceUtc_1='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+SELECT TOP(@__p_2) [u].[Id], [u].[ActionText], [u].[ActionUrl], [u].[CreatedAtUtc], [u].[IsRead], [u].[Message], [u].[ReadAtUtc], [u].[RelatedEntity], [u].[RelatedEntityId], [u].[Title], [u].[Type], [u].[UserId]
+FROM [UserNotifications] AS [u]
+INNER JOIN (
+    SELECT [a].[Id], [a].[IsSoftDeleted]
+    FROM [AspNetUsers] AS [a]
+    WHERE [a].[IsSoftDeleted] = CAST(0 AS bit)
+) AS [a0] ON [u].[UserId] = [a0].[Id]
+WHERE [a0].[IsSoftDeleted] = CAST(0 AS bit) AND [u].[UserId] = @__8__locals1_currentUser_Id_0 AND [u].[CreatedAtUtc] >= @__sinceUtc_1
+ORDER BY [u].[CreatedAtUtc] DESC
+[17:33:28 INF] Executed page /Patient/Messages/Inbox in 440.7124ms
+[17:33:28 INF] Executed endpoint '/Patient/Messages/Inbox'
+[17:33:28 INF] HTTP GET /Patient/Messages/Inbox responded 200 in 446 ms
+[17:33:28 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/Patient/Messages/Inbox - 200 null text/html; charset=utf-8 449.6762ms
+[17:33:28 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/css/messages.css?v=B2GHwM6WVEEnd5TEfrUtSiC5vjHQtUkLeKSySGuNa60 - null null
+[17:33:28 INF] Sending file. Request path: '/css/messages.css'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\css\messages.css'
+[17:33:28 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/css/messages.css?v=B2GHwM6WVEEnd5TEfrUtSiC5vjHQtUkLeKSySGuNa60 - 200 10199 text/css 0.7849ms
+[17:33:28 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/js/chat-inbox.js?v=g9sfEj53ghTXv0wApIII_dM49rcNNXNVDcHUvpwwlio - null null
+[17:33:28 INF] Sending file. Request path: '/js/chat-inbox.js'. Physical path: 'E:\Facultate\Licenta\Licenta\Licenta\wwwroot\js\chat-inbox.js'
+[17:33:28 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/js/chat-inbox.js?v=g9sfEj53ghTXv0wApIII_dM49rcNNXNVDcHUvpwwlio - 200 8823 text/javascript 0.5093ms
+[17:33:28 INF] Request starting HTTP/1.1 GET http://kenneth-steady-agent-laptops.trycloudflare.com/lib/microsoft/signalr/dist/browser/signalr.min.js - null null
+[17:33:28 INF] Request finished HTTP/1.1 GET https://kenneth-steady-agent-laptops.trycloudflare.com/lib/microsoft/signalr/dist/browser/signalr.min.js - 404 0 null 3.2369ms
+[17:33:28 INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://kenneth-steady-agent-laptops.trycloudflare.com/lib/microsoft/signalr/dist/browser/signalr.min.js, Response status code: 404

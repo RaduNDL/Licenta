@@ -1,11 +1,29 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
-    const hour = new Date().getHours();
-    const greetingEl = document.getElementById('greeting-text');
-    if (greetingEl) {
-        let msg = 'Welcome';
-        if (hour < 12) msg = 'Good Morning';
-        else if (hour < 18) msg = 'Good Afternoon';
-        else msg = 'Good Evening';
-        greetingEl.textContent = msg;
+﻿document.addEventListener('DOMContentLoaded', () => {
+    const refreshBtn = document.querySelector('.btn-modern-refresh');
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            const originalHtml = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise fa-spin"></i> Refreshing...';
+            refreshBtn.style.pointerEvents = 'none';
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        });
     }
+
+    const rows = document.querySelectorAll('.table-row-hover');
+
+    rows.forEach(row => {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) {
+                const actionBtn = row.querySelector('.btn-modern-action');
+                if (actionBtn) {
+                    actionBtn.click();
+                }
+            }
+        });
+    });
 });

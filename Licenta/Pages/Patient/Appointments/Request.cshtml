@@ -14,7 +14,8 @@
             <h2 class="mb-1 fw-bold" style="color: var(--text-main);">Online Appointment</h2>
             <p class="text-muted mb-0">Book quickly and simply in 3 steps.</p>
         </div>
-        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">
+        <a asp-page="/Patient/Appointments/Index"
+               class="btn btn-outline-secondary exit-guard-link">
             My Appointments
         </a>
     </div>
@@ -24,7 +25,7 @@
         <div class="alert alert-info border-0 shadow-sm">@status</div>
     }
 
-    <form method="post" id="bookingForm">
+    <form method="post" id="bookingForm" novalidate>
         <input type="hidden" asp-for="Input.SelectedSlotKey" id="hiddenSlotKey" />
 
         <div class="row g-4">
@@ -35,8 +36,7 @@
                         <div class="step-number">1</div>
                         <h5 class="mb-0">Choose Doctor</h5>
                     </div>
-                    <div id="doctorsContainer">
-                    </div>
+                    <div id="doctorsContainer"></div>
                 </div>
             </div>
 
@@ -49,11 +49,8 @@
 
                     <div class="mb-3 fw-bold" id="selectedDoctorName"></div>
 
-                    <div id="datesContainer" class="d-flex flex-wrap mb-3">
-                    </div>
-
-                    <div id="timesContainer" class="d-flex flex-wrap">
-                    </div>
+                    <div id="datesContainer" class="d-flex flex-wrap mb-3"></div>
+                    <div id="timesContainer" class="d-flex flex-wrap"></div>
                 </div>
             </div>
 
@@ -69,22 +66,43 @@
                             <i class="bi bi-calendar-check me-2"></i>
                             <span id="finalSelectionText">No time selected</span>
                         </div>
+                        <span class="text-danger small mt-2 d-block"
+                              asp-validation-for="Input.SelectedSlotKey"></span>
                     </div>
 
                     <div class="mb-4">
                         <label class="form-label">Reason for Visit <span class="text-danger">*</span></label>
-                        <textarea class="form-control" asp-for="Input.Reason" placeholder="Briefly describe your symptoms or reason for the appointment..."></textarea>
+                        <textarea class="form-control"
+                                  asp-for="Input.Reason"
+                                  rows="4"
+                                  placeholder="Briefly describe your symptoms or reason for the appointment..."></textarea>
                         <span class="text-danger" asp-validation-for="Input.Reason"></span>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 fs-6">
-                        Confirm Appointment
+                    <button type="submit" class="btn btn-primary w-100 fs-6" id="submitAppointmentBtn">
+                        <span class="spinner"></span>
+                        <span class="btn-label">Confirm Appointment</span>
                     </button>
                 </div>
             </div>
 
         </div>
     </form>
+</div>
+
+<div id="exitConfirmModal" class="exit-modal-backdrop" aria-hidden="true">
+    <div class="exit-modal-card" role="dialog" aria-modal="true" aria-labelledby="exitModalTitle">
+        <div class="exit-modal-header">
+            <h3 class="exit-modal-title" id="exitModalTitle">Leave this page?</h3>
+        </div>
+        <div class="exit-modal-body">
+            You have an unfinished appointment request. Are you sure you want to exit this page?
+        </div>
+        <div class="exit-modal-actions">
+            <button type="button" class="btn-exit-cancel" id="stayOnPageBtn">No</button>
+            <button type="button" class="btn-exit-confirm" id="leavePageBtn">Yes</button>
+        </div>
+    </div>
 </div>
 
 @section Scripts {

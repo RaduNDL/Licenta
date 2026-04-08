@@ -1,438 +1,297 @@
 ﻿(() => {
-    "use strict";
+    const form = document.querySelector('form[data-chat-form="1"]');
+    const chatBody = document.getElementById('chatBody');
 
-    if (window.__chatInboxInitialized) return;
-    window.__chatInboxInitialized = true;
+    if (!form || !chatBody) return;
 
-    const SEL = {
-        form: "form[data-chat-form='1']",
-        body: "#chatBody",
-        input: ".chat-input",
-        err: ".chat-send-error",
-        token: "input[name='__RequestVerificationToken']"
-    };
+    const textarea = form.querySelector('.chat-input');
+    const sendButton = form.querySelector('.btn-send');
+    const errorBox = document.querySelector('.chat-send-error');
 
-    const state = {
-        sending: false,
-        queue: [],
-        seen: new Set(),
-        conn: null,
-        conversationKey: null,
-        userId: null,
-        lastSyncUtc: null,
-        syncTimer: null,
-        pollTimer: null
-    };
+    const currentUserId = form.dataset.userId || "";
+    const currentConversationKey = form.dataset.conversationKey || "";
 
-    const qs = (s, r = document) => r.querySelector(s);
+    let isSending = false;
+    let isSyncing = false;
 
-    const getForm = () => qs(SEL.form);
-    const getBody = () => qs(SEL.body);
-    const getInput = f => qs(SEL.input, f);
+    const knownIds = new Set(
+        Array.from(chatBody.querySelectorAll('.message-row[data-id]'))
+            .map(x => x.dataset.id)
+            .filter(Boolean)
+    );
 
-    function getToken(form) {
-        return qs(SEL.token, form)?.value || qs(SEL.token)?.value || "";
+    function escapeHtml(value) {
+        return String(value ?? "")
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
     }
 
-    function showError(form, msg) {
-        const el = qs(SEL.err, form);
-        if (!el) return;
-        el.textContent = msg || "";
-        el.classList.toggle("d-none", !msg);
-    }
+    function formatTime(value) {
+        if (!value) return "";
 
-    function nearBottom(body) {
-        return body.scrollHeight - body.scrollTop - body.clientHeight < 200;
-    }
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return "";
 
-    function scrollBottom(body, smooth) {
-        if (!body) return;
-        body.scrollTo({
-            top: body.scrollHeight,
-            behavior: smooth ? "smooth" : "auto"
-        });
-    }
-
-    function escapeText(s) {
-        return (s ?? "").replace(/[&<>"']/g, c => ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            "\"": "&quot;",
-            "'": "&#39;"
-        }[c]));
-    }
-
-    function formatHHmm(iso) {
-        const d = new Date(iso);
-        if (isNaN(d)) return "";
         return d.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
+            hour: '2-digit',
+            minute: '2-digit',
             hour12: false
         });
     }
 
-    function bootstrapSeenFromDom() {
-        const wrap = getBody();
-        if (!wrap) return;
-
-        let maxUtc = null;
-
-        wrap.querySelectorAll(".message-row[data-id]").forEach(el => {
-            const id = el.getAttribute("data-id");
-            if (id) state.seen.add(String(id));
-
-            const utc = el.getAttribute("data-utc");
-            if (utc) {
-                const d = new Date(utc);
-                if (!isNaN(d)) {
-                    if (!maxUtc || d > maxUtc) maxUtc = d;
-                }
-            }
-        });
-
-        if (maxUtc) state.lastSyncUtc = maxUtc.toISOString();
+    function getLastUtc() {
+        const rows = chatBody.querySelectorAll('.message-row[data-utc]');
+        if (!rows.length) return "";
+        return rows[rows.length - 1].dataset.utc || "";
     }
 
-    function appendMessage({ id, body, sentAtUtc, mine, pending }) {
-        const wrap = getBody();
-        if (!wrap) return;
-
-        const sid = id ? String(id) : "";
-
-        if (sid && state.seen.has(sid)) return;
-        if (sid) state.seen.add(sid);
-
-        const stick = nearBottom(wrap);
-
-        const row = document.createElement("div");
-        row.className = `message-row ${mine ? "mine" : "other"}`;
-        if (sid) row.dataset.id = sid;
-        if (sentAtUtc) row.dataset.utc = String(sentAtUtc);
-        if (pending) row.dataset.pending = "1";
-
-        row.innerHTML = `
-            <div class="message-bubble">
-                <span class="message-text">${escapeText(body)}</span>
-                <span class="message-time">${pending ? "..." : formatHHmm(sentAtUtc)}</span>
-            </div>
-        `;
-
-        wrap.appendChild(row);
-
-        if (stick || mine) scrollBottom(wrap, true);
+    function isNearBottom() {
+        const threshold = 120;
+        return chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight < threshold;
     }
 
-    function tryReconcilePendingByBody(realId, sentAtUtc, body) {
-        const wrap = getBody();
-        if (!wrap) return false;
-
-        const pending = Array.from(wrap.querySelectorAll(".message-row.mine[data-pending='1']"));
-        if (!pending.length) return false;
-
-        const incomingBody = String(body ?? "").trim();
-        const incomingTime = new Date(sentAtUtc);
-        const incomingMs = isNaN(incomingTime) ? null : incomingTime.getTime();
-
-        for (let i = pending.length - 1; i >= 0; i--) {
-            const row = pending[i];
-            const txt = row.querySelector(".message-text")?.textContent ?? "";
-            const localBody = txt.trim();
-
-            if (localBody !== incomingBody) continue;
-
-            const rowUtc = row.getAttribute("data-utc");
-            if (incomingMs && rowUtc) {
-                const rowTime = new Date(rowUtc);
-                if (!isNaN(rowTime)) {
-                    const diff = Math.abs(incomingMs - rowTime.getTime());
-                    if (diff > 120000) continue;
-                }
-            }
-
-            row.dataset.id = String(realId);
-            row.dataset.utc = String(sentAtUtc);
-            row.removeAttribute("data-pending");
-
-            const t = row.querySelector(".message-time");
-            if (t) t.textContent = formatHHmm(sentAtUtc);
-
-            state.seen.add(String(realId));
-            state.lastSyncUtc = String(sentAtUtc);
-            return true;
+    function scrollToBottom(force = false) {
+        if (force || isNearBottom()) {
+            chatBody.scrollTop = chatBody.scrollHeight;
         }
-
-        return false;
     }
 
-    function reconcilePending(tempId, realId, sentAtUtc) {
-        const wrap = getBody();
-        if (!wrap) return;
+    function setError(message) {
+        if (!errorBox) return;
 
-        const el = wrap.querySelector(`[data-id="${tempId}"]`);
-        if (!el) return;
-
-        el.dataset.id = String(realId);
-        el.dataset.utc = String(sentAtUtc);
-        el.removeAttribute("data-pending");
-
-        const t = el.querySelector(".message-time");
-        if (t) t.textContent = formatHHmm(sentAtUtc);
-
-        state.seen.add(String(realId));
-        state.lastSyncUtc = String(sentAtUtc);
-    }
-
-    function markFailed(tempId) {
-        getBody()
-            ?.querySelector(`[data-id="${tempId}"]`)
-            ?.classList.add("send-failed");
-    }
-
-    async function postMessage(form, text) {
-        const fd = new FormData(form);
-        fd.set("Input.NewMessageBody", text);
-
-        const headers = {
-            "X-Requested-With": "XMLHttpRequest",
-            "Accept": "application/json"
-        };
-
-        const tok = getToken(form);
-        if (tok) headers["RequestVerificationToken"] = tok;
-
-        const res = await fetch(form.action, {
-            method: "POST",
-            body: fd,
-            headers,
-            credentials: "same-origin"
-        });
-
-        const data = await res.json().catch(() => null);
-
-        if (!res.ok || !data?.ok) throw new Error("Send failed");
-        return data;
-    }
-
-    async function drainQueue(form) {
-        if (state.sending) return;
-        state.sending = true;
-
-        while (state.queue.length) {
-            const item = state.queue.shift();
-
-            try {
-                const data = await postMessage(form, item.text);
-
-                reconcilePending(
-                    item.tempId,
-                    data.messageId,
-                    data.sentAtUtc
-                );
-
-                showError(form, "");
-            } catch {
-                markFailed(item.tempId);
-                showError(form, "Message was not sent");
-                state.queue.unshift(item);
-                await new Promise(r => setTimeout(r, 2000));
-            }
-        }
-
-        state.sending = false;
-    }
-
-    function enqueue(form) {
-        const ta = getInput(form);
-        if (!ta) return;
-
-        const text = ta.value.trim();
-        if (!text) return;
-
-        ta.value = "";
-        ta.style.height = "auto";
-
-        const tempId = "tmp_" + Date.now();
-
-        appendMessage({
-            id: tempId,
-            body: text,
-            sentAtUtc: new Date().toISOString(),
-            mine: true,
-            pending: true
-        });
-
-        state.queue.push({ text, tempId });
-        drainQueue(form);
-    }
-
-    function buildSyncUrl() {
-        const base = window.location.pathname;
-        const params = new URLSearchParams();
-        params.set("handler", "Sync");
-        params.set("conversationKey", state.conversationKey || "");
-        if (state.lastSyncUtc) params.set("after", state.lastSyncUtc);
-        return `${base}?${params.toString()}`;
-    }
-
-    async function syncMessages() {
-        if (!state.conversationKey) return;
-
-        try {
-            const url = buildSyncUrl();
-
-            const res = await fetch(url, {
-                headers: { "X-Requested-With": "XMLHttpRequest" },
-                credentials: "same-origin"
-            });
-
-            const data = await res.json().catch(() => null);
-            const list = data?.messages;
-            if (!Array.isArray(list) || !list.length) return;
-
-            for (const m of list) {
-                const mine = String(m.senderId) === String(state.userId);
-
-                appendMessage({
-                    id: m.messageId,
-                    body: m.body,
-                    sentAtUtc: m.sentAtUtc,
-                    mine,
-                    pending: false
-                });
-
-                state.lastSyncUtc = String(m.sentAtUtc);
-            }
-        } catch { }
-    }
-
-    function stopTimers() {
-        if (state.syncTimer) clearInterval(state.syncTimer);
-        if (state.pollTimer) clearInterval(state.pollTimer);
-        state.syncTimer = null;
-        state.pollTimer = null;
-    }
-
-    function startPeriodicSync() {
-        if (state.syncTimer) clearInterval(state.syncTimer);
-        state.syncTimer = setInterval(() => {
-            syncMessages();
-        }, 15000);
-    }
-
-    function startPollingSync() {
-        if (state.pollTimer) return;
-        state.pollTimer = setInterval(() => {
-            syncMessages();
-        }, 3000);
-    }
-
-    function stopPollingSync() {
-        if (!state.pollTimer) return;
-        clearInterval(state.pollTimer);
-        state.pollTimer = null;
-    }
-
-    function initSignalR(form) {
-        state.userId = form?.dataset?.userId || "";
-        state.conversationKey = form?.dataset?.conversationKey || "";
-
-        if (!state.userId || !state.conversationKey) return;
-
-        if (typeof signalR === "undefined") {
-            startPollingSync();
-            startPeriodicSync();
+        if (!message) {
+            errorBox.classList.add('d-none');
+            errorBox.textContent = "";
             return;
         }
 
-        state.conn = new signalR.HubConnectionBuilder()
-            .withUrl("/notificationHub")
-            .withAutomaticReconnect([0, 2000, 5000, 10000])
-            .build();
+        errorBox.textContent = message;
+        errorBox.classList.remove('d-none');
+    }
 
-        state.conn.on("message:new", p => {
-            if (!p) return;
-            if (String(p.conversationKey) !== String(state.conversationKey)) return;
+    function autosizeTextarea() {
+        if (!textarea) return;
+        textarea.style.height = 'auto';
+        textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
+    }
 
-            const mine = String(p.senderId) === String(state.userId);
+    function isMineMessage(msg) {
+        const senderId = String(msg?.senderId || "");
+        return senderId && senderId === String(currentUserId);
+    }
 
-            if (mine) {
-                const reconciled = tryReconcilePendingByBody(p.messageId, p.sentAtUtc, p.body);
-                if (reconciled) return;
+    function appendMessage(msg) {
+        if (!msg || !msg.id) return;
+
+        const id = String(msg.id);
+        if (knownIds.has(id)) return;
+
+        knownIds.add(id);
+
+        const mine = isMineMessage(msg);
+
+        const row = document.createElement('div');
+        row.className = `message-row ${mine ? 'mine' : 'other'}`;
+        row.dataset.id = id;
+        row.dataset.utc = msg.sentAtUtc || "";
+
+        row.innerHTML = `
+            <div class="message-bubble">
+                <span class="message-text">${escapeHtml(msg.body || "")}</span>
+                <span class="message-time">${escapeHtml(formatTime(msg.sentAtLocal || msg.sentAtUtc))}</span>
+            </div>
+        `;
+
+        const shouldStick = mine || isNearBottom();
+        chatBody.appendChild(row);
+
+        if (shouldStick) {
+            scrollToBottom(true);
+        }
+    }
+
+    async function readJsonSafely(response) {
+        const contentType = response.headers.get('content-type') || "";
+
+        if (!contentType.includes('application/json')) {
+            return null;
+        }
+
+        try {
+            return await response.json();
+        } catch {
+            return null;
+        }
+    }
+
+    async function submitMessage() {
+        if (isSending) return;
+        if (!textarea) return;
+
+        const text = textarea.value.trim();
+        if (!text) return;
+
+        isSending = true;
+        setError("");
+
+        const formData = new FormData(form);
+
+        if (!formData.get("Input.NewMessageBody")) {
+            formData.set("Input.NewMessageBody", text);
+        }
+
+        if (sendButton) sendButton.disabled = true;
+        textarea.readOnly = true;
+
+        try {
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                throw new Error('Session expired or wrong account is active in this browser window.');
+            }
+
+            if (response.redirected) {
+                throw new Error('Request was redirected. Most likely this window is no longer authenticated as the current user.');
+            }
+
+            const data = await readJsonSafely(response);
+
+            if (!response.ok) {
+                throw new Error(data?.error || `Message could not be sent. (${response.status})`);
+            }
+
+            if (!data || !data.ok) {
+                throw new Error(data?.error || 'Message could not be sent.');
             }
 
             appendMessage({
-                id: p.messageId,
-                body: p.body,
-                sentAtUtc: p.sentAtUtc,
-                mine,
-                pending: false
+                id: data.id,
+                body: data.body || text,
+                senderId: data.senderId || currentUserId,
+                sentAtUtc: data.sentAtUtc,
+                sentAtLocal: data.sentAtLocal
             });
 
-            state.lastSyncUtc = String(p.sentAtUtc);
+            textarea.value = "";
+            autosizeTextarea();
+            scrollToBottom(true);
+        } catch (err) {
+            setError(err?.message || 'Message could not be sent.');
+        } finally {
+            isSending = false;
+            if (sendButton) sendButton.disabled = false;
+            textarea.readOnly = false;
+            textarea.focus();
+        }
+    }
+
+    async function syncMessages() {
+        if (isSyncing || !currentConversationKey) return;
+
+        isSyncing = true;
+
+        try {
+            const url = new URL(window.location.href, window.location.origin);
+            url.searchParams.set('handler', 'Sync');
+            url.searchParams.set('conversationKey', currentConversationKey);
+
+            const after = getLastUtc();
+            if (after) {
+                url.searchParams.set('after', after);
+            } else {
+                url.searchParams.delete('after');
+            }
+
+            const response = await fetch(url.toString(), {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                setError('Session expired or wrong account is active in this browser window.');
+                return;
+            }
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+
+            if (data?.reloadRequired === true) {
+                window.location.reload();
+                return;
+            }
+
+            const messages = Array.isArray(data?.messages) ? data.messages : [];
+
+            for (const msg of messages) {
+                appendMessage(msg);
+            }
+        } catch {
+        } finally {
+            isSyncing = false;
+        }
+    }
+
+    async function startRealtime() {
+        if (!window.signalR || !currentConversationKey) return;
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl('/hubs/notifications')
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on('message:new', (msg) => {
+            if (!msg) return;
+            if ((msg.conversationKey || '') !== currentConversationKey) return;
+            appendMessage(msg);
         });
 
-        state.conn.onreconnecting(() => {
-            startPollingSync();
-        });
-
-        state.conn.onreconnected(() => {
-            stopPollingSync();
+        connection.onreconnected(() => {
             syncMessages();
         });
 
-        state.conn.onclose(() => {
-            startPollingSync();
+        connection.onclose(() => {
+            syncMessages();
         });
 
-        const start = async () => {
-            try {
-                await state.conn.start();
-                stopPollingSync();
-                await syncMessages();
-                startPeriodicSync();
-            } catch {
-                startPollingSync();
-                startPeriodicSync();
-                setTimeout(start, 5000);
-            }
-        };
-
-        start();
+        try {
+            await connection.start();
+        } catch {
+        }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        const form = getForm();
-        if (!form) return;
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await submitMessage();
+    });
 
-        const ta = getInput(form);
-        if (!ta) return;
-
-        ta.addEventListener("keydown", e => {
-            if (e.key === "Enter" && !e.shiftKey) {
+    if (textarea) {
+        textarea.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                enqueue(form);
+                await submitMessage();
             }
         });
 
-        ta.addEventListener("input", function () {
-            this.style.height = "auto";
-            this.style.height = Math.min(this.scrollHeight, 150) + "px";
-        });
+        textarea.addEventListener('input', autosizeTextarea);
+        autosizeTextarea();
+    }
 
-        form.addEventListener("submit", e => {
-            e.preventDefault();
-            enqueue(form);
-        });
-
-        bootstrapSeenFromDom();
-        scrollBottom(getBody(), false);
-        initSignalR(form);
-    });
-
-    window.addEventListener("beforeunload", () => {
-        stopTimers();
-        state.conn?.stop();
-    });
+    scrollToBottom(true);
+    startRealtime();
+    syncMessages();
+    setInterval(syncMessages, 2000);
 })();

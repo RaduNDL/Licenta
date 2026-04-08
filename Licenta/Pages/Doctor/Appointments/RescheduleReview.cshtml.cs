@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
@@ -47,6 +48,51 @@ namespace Licenta.Pages.Doctor.Appointments
             return Page();
         }
 
+        private async Task LoadAsync()
+        {
+            CanView = false;
+            PatientName = "Patient";
+            OldTime = "";
+            SelectedTime = "";
+            Location = "Clinic";
+            Reason = "";
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return;
+
+            var doctor = await _db.Set<Licenta.Models.DoctorProfile>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.UserId == user.Id);
+
+            if (doctor == null) return;
+
+            var req = await _db.Set<AppointmentRescheduleRequest>()
+                .AsNoTracking()
+                .Include(r => r.Appointment)
+                .Include(r => r.Patient).ThenInclude(p => p.User)
+                .FirstOrDefaultAsync(r => r.Id == RequestId && r.DoctorId == doctor.Id);
+
+            if (req == null) return;
+
+            CanView = true;
+            PatientName = req.Patient?.User?.FullName ?? req.Patient?.User?.Email ?? "Patient";
+            Reason = string.IsNullOrWhiteSpace(req.Reason) ? "-" : req.Reason;
+            OldTime = req.OldScheduledAtUtc == default
+                ? "-"
+                : req.OldScheduledAtUtc.ToLocalTime().ToString("ddd dd MMM HH:mm");
+
+            if (req.NewScheduledAtUtc.HasValue)
+            {
+                SelectedTime = req.NewScheduledAtUtc.Value.ToLocalTime().ToString("ddd dd MMM HH:mm");
+            }
+            else
+            {
+                SelectedTime = FormatLocalIsoForDisplay(req.PreferredWindows);
+            }
+
+            Location = string.IsNullOrWhiteSpace(req.Appointment?.Location) ? "Clinic" : req.Appointment!.Location;
+        }
+
         public async Task<IActionResult> OnPostApproveAsync()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -60,19 +106,35 @@ namespace Licenta.Pages.Doctor.Appointments
 
             var req = await _db.Set<AppointmentRescheduleRequest>()
                 .Include(r => r.Appointment)
-                .Include(r => r.SelectedOption)
                 .Include(r => r.Patient).ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(r => r.Id == RequestId && r.DoctorId == doctor.Id);
 
             if (req == null) return NotFound();
 
-            if (req.Status != AppointmentRescheduleStatus.PatientSelected || req.SelectedOptionId == null || req.SelectedOption == null)
+            if (req.Status != AppointmentRescheduleStatus.Requested)
             {
                 TempData["StatusMessage"] = "This request cannot be approved.";
                 return RedirectToPage(new { requestId = RequestId });
             }
 
-            var opt = req.SelectedOption;
+            DateTime proposedStartUtc;
+            if (req.NewScheduledAtUtc.HasValue)
+            {
+                proposedStartUtc = DateTime.SpecifyKind(req.NewScheduledAtUtc.Value, DateTimeKind.Utc);
+            }
+            else
+            {
+                var parsed = ParsePreferredWindowsToUtc(req.PreferredWindows);
+                if (!parsed.HasValue)
+                {
+                    TempData["StatusMessage"] = "Invalid requested reschedule time.";
+                    return RedirectToPage(new { requestId = RequestId });
+                }
+
+                proposedStartUtc = parsed.Value;
+            }
+
+            var proposedEndUtc = proposedStartUtc.AddMinutes(30);
 
             var conflict = await _db.Set<Appointment>()
                 .AnyAsync(a =>
@@ -80,8 +142,9 @@ namespace Licenta.Pages.Doctor.Appointments
                     a.Id != req.AppointmentId &&
                     a.Status != AppointmentStatus.Cancelled &&
                     a.Status != AppointmentStatus.Completed &&
-                    a.StartTimeUtc < opt.ProposedEndUtc &&
-                    opt.ProposedStartUtc < a.StartTimeUtc.AddMinutes(30));
+                    a.Status != AppointmentStatus.Rejected &&
+                    a.ScheduledAt < proposedEndUtc &&
+                    proposedStartUtc < a.ScheduledAt.AddMinutes(30));
 
             if (conflict)
             {
@@ -90,15 +153,20 @@ namespace Licenta.Pages.Doctor.Appointments
             }
 
             var appt = req.Appointment;
+            if (appt == null)
+            {
+                TempData["StatusMessage"] = "Associated appointment not found.";
+                return RedirectToPage(new { requestId = RequestId });
+            }
 
-            appt.ScheduledAt = opt.ProposedStartUtc;
-            appt.StartTimeUtc = opt.ProposedStartUtc;
-            appt.Location = string.IsNullOrWhiteSpace(opt.Location) ? appt.Location : opt.Location;
+            appt.ScheduledAt = DateTime.SpecifyKind(proposedStartUtc, DateTimeKind.Utc);
+            appt.StartTimeUtc = DateTime.SpecifyKind(proposedStartUtc, DateTimeKind.Utc);
             appt.RescheduleReason = req.Reason;
             appt.Status = AppointmentStatus.Rescheduled;
+            appt.VisitStage = VisitStage.NotArrived;
             appt.UpdatedAtUtc = DateTime.UtcNow;
 
-            req.NewScheduledAtUtc = opt.ProposedStartUtc;
+            req.NewScheduledAtUtc = DateTime.SpecifyKind(proposedStartUtc, DateTimeKind.Utc);
             req.DoctorDecisionNote = string.IsNullOrWhiteSpace(DecisionNote) ? null : DecisionNote.Trim();
             req.Status = AppointmentRescheduleStatus.Approved;
             req.ApprovedAtUtc = DateTime.UtcNow;
@@ -113,7 +181,7 @@ namespace Licenta.Pages.Doctor.Appointments
                     patientUser,
                     NotificationType.Appointment,
                     "Reschedule Approved",
-                    $"Your request to reschedule with Dr. {doctor.User?.FullName} was approved. New time: <b>{opt.ProposedStartUtc.ToLocalTime():ddd dd MMM HH:mm}</b>.",
+                    $"Your request to reschedule with Dr. {doctor.User?.FullName} was approved. New time: <b>{proposedStartUtc.ToLocalTime():ddd dd MMM HH:mm}</b>.",
                     actionUrl: "/Patient/Appointments/Index",
                     actionText: "View Appointments",
                     relatedEntity: "Appointment",
@@ -141,16 +209,22 @@ namespace Licenta.Pages.Doctor.Appointments
                 .Include(r => r.Patient).ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(r => r.Id == RequestId && r.DoctorId == doctor.Id);
 
-            if (req == null) return NotFound();
+            if (req == null)
+            {
+                TempData["StatusMessage"] = "Request not found.";
+                return RedirectToPage("/Doctor/Appointments/RescheduleApprovals");
+            }
 
-            if (req.Status != AppointmentRescheduleStatus.PatientSelected)
+            if (req.Status == AppointmentRescheduleStatus.Approved ||
+                req.Status == AppointmentRescheduleStatus.Rejected ||
+                req.Status == AppointmentRescheduleStatus.Cancelled)
             {
                 TempData["StatusMessage"] = "This request cannot be rejected.";
                 return RedirectToPage(new { requestId = RequestId });
             }
 
-            req.DoctorDecisionNote = string.IsNullOrWhiteSpace(DecisionNote) ? "Rejected by doctor." : DecisionNote.Trim();
             req.Status = AppointmentRescheduleStatus.Rejected;
+            req.DoctorDecisionNote = string.IsNullOrWhiteSpace(DecisionNote) ? null : DecisionNote.Trim();
             req.RejectedAtUtc = DateTime.UtcNow;
             req.UpdatedAtUtc = DateTime.UtcNow;
 
@@ -163,7 +237,7 @@ namespace Licenta.Pages.Doctor.Appointments
                     patientUser,
                     NotificationType.Appointment,
                     "Reschedule Rejected",
-                    $"Your reschedule request with Dr. {doctor.User?.FullName} was rejected. Your appointment remains at the original time.",
+                    $"Your reschedule request with Dr. {doctor.User?.FullName} was rejected.",
                     actionUrl: "/Patient/Appointments/Index",
                     actionText: "View Appointments",
                     relatedEntity: "AppointmentRescheduleRequest",
@@ -176,39 +250,36 @@ namespace Licenta.Pages.Doctor.Appointments
             return RedirectToPage("/Doctor/Appointments/RescheduleApprovals");
         }
 
-        private async Task LoadAsync()
+        private static DateTime? ParsePreferredWindowsToUtc(string? localIso)
         {
-            CanView = false;
+            if (string.IsNullOrWhiteSpace(localIso))
+                return null;
 
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null) return;
+            if (!DateTime.TryParseExact(
+                    localIso,
+                    new[] { "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss" },
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var dt))
+                return null;
 
-            var doctor = await _db.Set<Licenta.Models.DoctorProfile>()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.UserId == user.Id);
+            return DateTime.SpecifyKind(dt, DateTimeKind.Local).ToUniversalTime();
+        }
 
-            if (doctor == null) return;
+        private static string FormatLocalIsoForDisplay(string? localIso)
+        {
+            if (string.IsNullOrWhiteSpace(localIso))
+                return "-";
 
-            var req = await _db.Set<AppointmentRescheduleRequest>()
-                .AsNoTracking()
-                .Include(r => r.Patient).ThenInclude(p => p.User)
-                .Include(r => r.SelectedOption)
-                .FirstOrDefaultAsync(r => r.Id == RequestId && r.DoctorId == doctor.Id);
+            if (!DateTime.TryParseExact(
+                    localIso,
+                    new[] { "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss" },
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var dt))
+                return localIso;
 
-            if (req == null) return;
-
-            CanView = true;
-
-            PatientName = req.Patient?.User?.FullName ?? req.Patient?.User?.Email ?? "Patient";
-            OldTime = req.OldScheduledAtUtc.ToString("yyyy-MM-dd HH:mm");
-            Reason = req.Reason;
-            DecisionNote = req.DoctorDecisionNote;
-
-            if (req.SelectedOption != null)
-            {
-                SelectedTime = $"{req.SelectedOption.ProposedStartUtc:yyyy-MM-dd HH:mm} - {req.SelectedOption.ProposedEndUtc:HH:mm}";
-                Location = req.SelectedOption.Location;
-            }
+            return DateTime.SpecifyKind(dt, DateTimeKind.Local).ToString("ddd dd MMM HH:mm");
         }
     }
 }

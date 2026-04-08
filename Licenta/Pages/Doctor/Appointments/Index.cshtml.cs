@@ -53,40 +53,56 @@ namespace Licenta.Pages.Doctor.Appointments
             if (user == null)
                 return Challenge();
 
-            var doctor = await _db.Doctors.AsNoTracking().FirstOrDefaultAsync(d2 => d2.UserId == user.Id);
+            var doctor = await _db.Doctors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d2 => d2.UserId == user.Id);
+
             if (doctor == null)
                 return Forbid();
 
-            var dayStartUtc = DateTime.SpecifyKind(SelectedDate.Date, DateTimeKind.Local).ToUniversalTime();
-            var dayEndUtc = DateTime.SpecifyKind(SelectedDate.Date.AddDays(1), DateTimeKind.Local).ToUniversalTime();
+            var selectedDateLocal = SelectedDate.Date;
+            var nextDayLocal = selectedDateLocal.AddDays(1);
+
+            var dayStartUtc = DateTime.SpecifyKind(selectedDateLocal, DateTimeKind.Local).ToUniversalTime();
+            var dayEndUtc = DateTime.SpecifyKind(nextDayLocal, DateTimeKind.Local).ToUniversalTime();
 
             var list = await _db.Appointments
                 .AsNoTracking()
                 .Include(a => a.Patient).ThenInclude(p => p.User)
-                .Where(a => a.DoctorId == doctor.Id && a.ScheduledAt >= dayStartUtc && a.ScheduledAt < dayEndUtc)
+                .Where(a =>
+                    a.DoctorId == doctor.Id &&
+                    a.ScheduledAt >= dayStartUtc &&
+                    a.ScheduledAt < dayEndUtc)
                 .OrderBy(a => a.ScheduledAt)
                 .ToListAsync();
 
             Items = list.Select(a =>
             {
                 var (label, css) = MapStage(a.VisitStage, a.Status);
-                var canStart = a.Status != AppointmentStatus.Cancelled
-                               && a.Status != AppointmentStatus.Completed
-                               && a.Status != AppointmentStatus.NoShow
-                               && (a.VisitStage == VisitStage.CheckedIn || a.VisitStage == VisitStage.WaitingDoctor || a.VisitStage == VisitStage.InTriage)
-                               && a.ScheduledAt.ToLocalTime().Date == DateTime.Today;
 
-                var canFinish = a.Status != AppointmentStatus.Cancelled
-                                && a.Status != AppointmentStatus.Completed
-                                && a.Status != AppointmentStatus.NoShow
-                                && a.VisitStage == VisitStage.InConsultation
-                                && a.ScheduledAt.ToLocalTime().Date == DateTime.Today;
+                var scheduledUtc = DateTime.SpecifyKind(a.ScheduledAt, DateTimeKind.Utc);
+                var timeLocal = scheduledUtc.ToLocalTime();
+
+                var canStart =
+                    a.Status != AppointmentStatus.Cancelled &&
+                    a.Status != AppointmentStatus.Completed &&
+                    a.Status != AppointmentStatus.NoShow &&
+                    a.VisitStage != VisitStage.InConsultation &&
+                    a.VisitStage != VisitStage.Finished &&
+                    timeLocal.Date == DateTime.Today;
+
+                var canFinish =
+                    a.Status != AppointmentStatus.Cancelled &&
+                    a.Status != AppointmentStatus.Completed &&
+                    a.Status != AppointmentStatus.NoShow &&
+                    a.VisitStage == VisitStage.InConsultation &&
+                    timeLocal.Date == DateTime.Today;
 
                 return new ApptVm
                 {
                     Id = a.Id,
-                    ScheduledAtUtc = a.ScheduledAt,
-                    TimeLocal = a.ScheduledAt.ToLocalTime().ToString("HH:mm"),
+                    ScheduledAtUtc = scheduledUtc,
+                    TimeLocal = timeLocal.ToString("HH:mm"),
                     PatientName = a.Patient?.User?.FullName ?? a.Patient?.User?.Email ?? "Unknown",
                     Reason = string.IsNullOrWhiteSpace(a.Reason) ? "-" : a.Reason,
                     Status = a.Status,
@@ -107,7 +123,7 @@ namespace Licenta.Pages.Doctor.Appointments
             if (user == null)
                 return Challenge();
 
-            var doctor = await _db.Doctors.FirstOrDefaultAsync(d2 => d2.UserId == user.Id);
+            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
             if (doctor == null)
                 return Forbid();
 
@@ -116,43 +132,23 @@ namespace Licenta.Pages.Doctor.Appointments
                 .FirstOrDefaultAsync(a => a.Id == id && a.DoctorId == doctor.Id);
 
             if (appt == null)
-                return NotFound();
-
-            if (appt.Status == AppointmentStatus.Cancelled || appt.Status == AppointmentStatus.Completed || appt.Status == AppointmentStatus.NoShow)
             {
-                TempData["StatusMessage"] = "This appointment cannot be started.";
+                TempData["StatusMessage"] = "Appointment not found.";
                 return RedirectToPage(new { date });
             }
 
-            if (!(appt.VisitStage == VisitStage.CheckedIn || appt.VisitStage == VisitStage.WaitingDoctor || appt.VisitStage == VisitStage.InTriage))
+            if (appt.Status == AppointmentStatus.Cancelled ||
+                appt.Status == AppointmentStatus.Completed ||
+                appt.Status == AppointmentStatus.NoShow)
             {
-                TempData["StatusMessage"] = "Patient must be checked in before starting.";
+                TempData["StatusMessage"] = "This appointment cannot be started.";
                 return RedirectToPage(new { date });
             }
 
             appt.VisitStage = VisitStage.InConsultation;
             appt.UpdatedAtUtc = DateTime.UtcNow;
 
-            if (appt.Status == AppointmentStatus.Approved || appt.Status == AppointmentStatus.Pending)
-                appt.Status = AppointmentStatus.Confirmed;
-
             await _db.SaveChangesAsync();
-
-            var patientUser = appt.Patient?.User;
-            if (patientUser != null)
-            {
-                await _notifier.NotifyAsync(
-                    patientUser,
-                    NotificationType.Appointment,
-                    "Consultation started",
-                    $"Your consultation with Dr. {user.FullName} has started.",
-                    actionUrl: "/Patient/Appointments/Index",
-                    actionText: "View Appointments",
-                    relatedEntity: "Appointment",
-                    relatedEntityId: appt.Id.ToString(),
-                    sendEmail: false
-                );
-            }
 
             TempData["StatusMessage"] = "Consultation started.";
             return RedirectToPage(new { date });
@@ -164,7 +160,10 @@ namespace Licenta.Pages.Doctor.Appointments
             if (user == null)
                 return Challenge();
 
-            var doctor = await _db.Doctors.FirstOrDefaultAsync(d2 => d2.UserId == user.Id);
+            var doctor = await _db.Doctors
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d => d.UserId == user.Id);
+
             if (doctor == null)
                 return Forbid();
 
@@ -173,17 +172,16 @@ namespace Licenta.Pages.Doctor.Appointments
                 .FirstOrDefaultAsync(a => a.Id == id && a.DoctorId == doctor.Id);
 
             if (appt == null)
-                return NotFound();
-
-            if (appt.Status == AppointmentStatus.Cancelled || appt.Status == AppointmentStatus.Completed || appt.Status == AppointmentStatus.NoShow)
             {
-                TempData["StatusMessage"] = "This appointment cannot be finished.";
+                TempData["StatusMessage"] = "Appointment not found.";
                 return RedirectToPage(new { date });
             }
 
-            if (appt.VisitStage != VisitStage.InConsultation)
+            if (appt.Status == AppointmentStatus.Cancelled ||
+                appt.Status == AppointmentStatus.Completed ||
+                appt.Status == AppointmentStatus.NoShow)
             {
-                TempData["StatusMessage"] = "Start the consultation first.";
+                TempData["StatusMessage"] = "This appointment cannot be finished.";
                 return RedirectToPage(new { date });
             }
 
@@ -199,17 +197,17 @@ namespace Licenta.Pages.Doctor.Appointments
                 await _notifier.NotifyAsync(
                     patientUser,
                     NotificationType.Appointment,
-                    "Appointment completed",
-                    $"Your appointment with Dr. {user.FullName} was marked as completed.",
-                    actionUrl: "/Patient/Visits/History",
-                    actionText: "View History",
+                    "Appointment Completed",
+                    $"Your appointment with Dr. {doctor.User?.FullName} has been marked as completed.",
+                    actionUrl: "/Patient/Appointments/Index",
+                    actionText: "View Appointments",
                     relatedEntity: "Appointment",
                     relatedEntityId: appt.Id.ToString(),
                     sendEmail: false
                 );
             }
 
-            TempData["StatusMessage"] = "Appointment completed.";
+            TempData["StatusMessage"] = "Appointment finished.";
             return RedirectToPage(new { date });
         }
 
@@ -223,6 +221,9 @@ namespace Licenta.Pages.Doctor.Appointments
 
             if (status == AppointmentStatus.Completed)
                 return ("Completed", "success");
+
+            if (status == AppointmentStatus.Rescheduled)
+                return ("Rescheduled", "warning");
 
             return stage switch
             {

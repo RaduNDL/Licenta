@@ -23,22 +23,43 @@ def _setenv(k: str, v: str | int | float | bool | Path) -> None:
     os.environ[str(k)] = str(v)
 
 
-def _gpu_info():
-    try:
-        ok = mm.torch.cuda.is_available()
-        dev = str(mm._device())
-        print("torch_cuda_available:", ok, "device:", dev, flush=True)
-        if ok:
-            p = mm.torch.cuda.get_device_properties(0)
-            print("gpu:", p.name, "vram_gb:", round(p.total_memory / (1024**3), 2), flush=True)
-    except Exception:
-        pass
+def _gpu_info_or_fail() -> None:
+    ok = mm.torch.cuda.is_available()
+    print("torch_cuda_available:", ok, flush=True)
+
+    if not ok:
+        raise RuntimeError(
+            "GPU-only mode is enabled, but CUDA is not available. "
+            "PyTorch with CUDA is not configured correctly on this machine."
+        )
+
+    dev = mm._device()
+    print("device:", dev, flush=True)
+
+    p = mm.torch.cuda.get_device_properties(0)
+    print("gpu:", p.name, "vram_gb:", round(p.total_memory / (1024 ** 3), 2), flush=True)
 
 
 def parse_args():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset-dir", type=str, default=r"D:\Facultate\Licenta\Python\dataset\Breast Cancer Detection and Medical Education\Mammogram Mastery A Robust Dataset for Breast Cancer Detection and Medical Education\Breast Cancer Dataset")
-    ap.add_argument("--artifact-dir", type=str, default=str(PROJECT_ROOT / "artifacts" / "mammogram_mastery_images"))
+
+    ap.add_argument(
+        "--dataset-dir",
+        type=str,
+        default=(
+            r"E:\Facultate\Licenta\Licenta\Python\dataset\dataset\Mammogram"
+            r"\Mammogram Mastery A Robust Dataset for Breast Cancer Detection and Medical Education"
+            r"\Breast Cancer Dataset"
+        )
+    )
+
+    ap.add_argument(
+        "--artifact-dir",
+        type=str,
+        default=str(PROJECT_ROOT / "artifacts" / "mammogram_mastery_images")
+    )
+
+    ap.add_argument("--dataset-kind", type=str, default="mammogram_mastery")
     ap.add_argument("--preset", type=str, default=os.getenv("CBIS_PRESET", "best"))
     ap.add_argument("--epochs-cap", type=int, default=int(os.getenv("CBIS_EPOCHS_CAP", "12")))
     ap.add_argument("--batch-size", type=int, default=int(os.getenv("CBIS_BATCH_SIZE", "32")))
@@ -51,27 +72,69 @@ def parse_args():
     ap.add_argument("--max-val-batches", type=int, default=int(os.getenv("CBIS_MAX_VAL_BATCHES", "0")))
     ap.add_argument("--label-smoothing", type=float, default=float(os.getenv("CBIS_LABEL_SMOOTHING", "0.01")))
     ap.add_argument("--dl-prefetch", type=int, default=int(os.getenv("DL_PREFETCH", "2")))
+
     ap.add_argument("--mm-use-cache", type=str, default=os.getenv("MM_USE_CACHE", "0"))
     ap.add_argument("--mm-cache-dir-name", type=str, default=os.getenv("MM_CACHE_DIR_NAME", "Cache224"))
     ap.add_argument("--mm-use-augmented", type=str, default=os.getenv("MM_USE_AUGMENTED", "1"))
-    ap.add_argument("--mm-val-from-original-only", type=str, default=os.getenv("MM_VAL_FROM_ORIGINAL_ONLY", "0"))
+    ap.add_argument("--mm-val-from-original-only", type=str, default=os.getenv("MM_VAL_FROM_ORIGINAL_ONLY", "1"))
+
     ap.add_argument("--build-path-map", type=str, default=os.getenv("MM_BUILD_PATH_MAP", "1"))
     ap.add_argument("--build-name-map", type=str, default=os.getenv("MM_BUILD_NAME_MAP", "1"))
     ap.add_argument("--build-hash-map", type=str, default=os.getenv("MM_BUILD_HASH_MAP", "0"))
+
     ap.add_argument("--no-pretrain", type=str, default=os.getenv("ML_NO_PRETRAIN", "0"))
     ap.add_argument("--cuda-alloc", type=str, default=os.getenv("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:256"))
+
     return ap.parse_args()
+
+
+def _validate_mm_structure(dataset_dir: Path) -> None:
+    original_dir = dataset_dir / "Original Dataset"
+    augmented_dir = dataset_dir / "Augmented Dataset"
+
+    if not dataset_dir.exists():
+        raise FileNotFoundError(f"Dataset folder not found: {dataset_dir}")
+
+    if not original_dir.exists():
+        raise FileNotFoundError(
+            f"Missing folder: {original_dir}\n"
+            f"dataset_dir must point to the root 'Breast Cancer Dataset' folder."
+        )
+
+    if not augmented_dir.exists():
+        raise FileNotFoundError(
+            f"Missing folder: {augmented_dir}\n"
+            f"dataset_dir must point to the root 'Breast Cancer Dataset' folder."
+        )
 
 
 def main():
     args = parse_args()
 
-    dataset_dir = Path(args.dataset_dir)
-    artifact_dir = Path(args.artifact_dir)
+    dataset_dir = Path(args.dataset_dir).resolve()
+    artifact_dir = Path(args.artifact_dir).resolve()
 
-    _setenv("ML_DATASET", "mammogram_mastery")
+    dataset_kind = (args.dataset_kind or "mammogram_mastery").strip().lower()
+    if dataset_kind not in ("folder_binary", "mammogram_mastery"):
+        raise ValueError(f"Unsupported dataset_kind: {dataset_kind}")
+
+    if dataset_kind == "mammogram_mastery":
+        _validate_mm_structure(dataset_dir)
+    else:
+        if not dataset_dir.exists():
+            raise FileNotFoundError(f"Dataset folder not found: {dataset_dir}")
+
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+
+    model_id = (
+        "mammogram_mastery_images:torch_cnn"
+        if dataset_kind == "mammogram_mastery"
+        else "folder_binary_images:torch_cnn"
+    )
+
+    _setenv("ML_DATASET", dataset_kind)
     _setenv("ML_DATASET_DIR", dataset_dir)
-    _setenv("ML_MODEL_ID", "mammogram_mastery_images:torch_cnn")
+    _setenv("ML_MODEL_ID", model_id)
     _setenv("ML_ARTIFACT_DIR", artifact_dir)
 
     _setenv("PYTORCH_CUDA_ALLOC_CONF", args.cuda_alloc)
@@ -102,7 +165,15 @@ def main():
 
     t0 = time.time()
     print("train_mm: start", flush=True)
-    _gpu_info()
+    print("dataset_kind:", dataset_kind, flush=True)
+    print("dataset_dir:", dataset_dir, flush=True)
+    print("artifact_dir:", artifact_dir, flush=True)
+
+    if dataset_kind == "mammogram_mastery":
+        print("original_dir:", dataset_dir / "Original Dataset", flush=True)
+        print("augmented_dir:", dataset_dir / "Augmented Dataset", flush=True)
+
+    _gpu_info_or_fail()
 
     cfg = mm.CbisDdsmConfig(
         preset=os.getenv("CBIS_PRESET", "best"),
@@ -115,15 +186,15 @@ def main():
         max_val_batches=int(os.getenv("CBIS_MAX_VAL_BATCHES", "0")),
         max_samples=int(os.getenv("CBIS_MAX_SAMPLES", "0")),
         mm_use_augmented=_b(os.getenv("MM_USE_AUGMENTED", "1")),
-        mm_val_from_original_only=_b(os.getenv("MM_VAL_FROM_ORIGINAL_ONLY", "0")),
+        mm_val_from_original_only=_b(os.getenv("MM_VAL_FROM_ORIGINAL_ONLY", "1")),
         mm_use_cache=_b(os.getenv("MM_USE_CACHE", "0")),
         mm_cache_dir_name=os.getenv("MM_CACHE_DIR_NAME", "Cache224"),
         build_path_map=_b(os.getenv("MM_BUILD_PATH_MAP", "1")),
         build_name_map=_b(os.getenv("MM_BUILD_NAME_MAP", "1")),
         build_hash_map=_b(os.getenv("MM_BUILD_HASH_MAP", "0")),
-        dataset_kind=os.getenv("ML_DATASET", "mammogram_mastery"),
-        dataset_dir=Path(os.environ["ML_DATASET_DIR"]),
-        artifact_dir=Path(os.environ["ML_ARTIFACT_DIR"]),
+        dataset_kind=dataset_kind,
+        dataset_dir=dataset_dir,
+        artifact_dir=artifact_dir,
     )
 
     try:
@@ -139,7 +210,12 @@ def main():
 
     if isinstance(meta, dict):
         print("artifact:", meta.get("artifact_path"), flush=True)
-        print("arch:", meta.get("arch"), "image_size:", meta.get("image_size"), "batch_size:", meta.get("batch_size"), flush=True)
+        print(
+            "arch:", meta.get("arch"),
+            "image_size:", meta.get("image_size"),
+            "batch_size:", meta.get("batch_size"),
+            flush=True
+        )
         bi = meta.get("best_info") or {}
         if isinstance(bi, dict) and bi:
             print("best_info:", bi, flush=True)

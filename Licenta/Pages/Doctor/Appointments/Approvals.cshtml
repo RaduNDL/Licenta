@@ -5,90 +5,101 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="~/css/doctorpanel.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/approvalsdr.css" asp-append-version="true" />
 }
 
-<div class="page-container">
-    <div class="page-header">
-        <div>
-            <h2 class="page-title">
-                <i class="bi bi-calendar-check text-success me-2"></i>Appointment Approvals
-            </h2>
-            <div class="text-muted">Review and decide patient appointment requests.</div>
+<div class="approvals-wrapper">
+    <div class="approvals-container fade-in">
+        <div class="approvals-header">
+            <div class="header-titles">
+                <h2 class="title-main">
+                    <i class="bi bi-calendar2-check-fill text-primary"></i>
+                    Appointment Approvals
+                </h2>
+                <p class="subtitle">Review and decide patient appointment requests.</p>
+            </div>
+            <a asp-page="/Doctor/Index" class="btn btn-back">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
         </div>
-        <a asp-page="/Doctor/Index" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Back
-        </a>
-    </div>
 
-    @if (TempData["StatusMessage"] is string status)
-    {
-        <div class="alert alert-info border-0 shadow-sm">@status</div>
-    }
+        @if (TempData["StatusMessage"] is string status)
+        {
+            <div class="alert alert-success alert-modern">
+                <i class="bi bi-check-circle-fill"></i> @status
+            </div>
+        }
 
-    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
-    {
-        <div class="alert alert-danger border-0 shadow-sm">@Model.ErrorMessage</div>
-    }
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-modern">
+                <i class="bi bi-exclamation-triangle-fill"></i> @Model.ErrorMessage
+            </div>
+        }
 
-    <div class="card border-0 shadow-sm">
-        <div class="card-body">
+        <div class="approvals-card">
             @if (Model.Items == null || !Model.Items.Any())
             {
                 <div class="empty-state">
-                    <i class="bi bi-check2-circle"></i>
-                    <h5>No pending approvals</h5>
-                    <p class="mb-0">There are no appointment requests awaiting your decision.</p>
+                    <div class="empty-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+                    <h3>No pending approvals</h3>
+                    <p>There are no appointment requests awaiting your decision.</p>
                 </div>
             }
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                    <table class="table approvals-table">
+                        <thead>
                             <tr>
-                                <th style="min-width:240px;">Patient</th>
-                                <th style="min-width:220px;">Request</th>
-                                <th style="min-width:160px;">Uploaded</th>
-                                <th class="text-end" style="min-width:260px;">Actions</th>
+                                <th>Patient</th>
+                                <th>Request Details</th>
+                                <th>Submitted</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var a in Model.Items)
                             {
-                                <tr>
+                                <tr class="table-row-hover" data-filename="@a.FileName" data-type="@a.Type">
                                     <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-sm bg-light text-primary rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                        <div class="patient-info">
+                                            <div class="patient-avatar">
                                                 <i class="bi bi-person-fill"></i>
                                             </div>
-                                            <div>
-                                                <div class="fw-semibold">@(a.Patient?.User?.FullName ?? a.Patient?.User?.Email ?? "Patient")</div>
-                                                <div class="text-muted small">@a.PatientId</div>
+                                            <div class="patient-details">
+                                                <span class="patient-name">@(a.Patient?.User?.FullName ?? a.Patient?.User?.Email ?? "Unknown Patient")</span>
+                                                <span class="patient-specialty" title="Patient ID">@a.PatientId</span>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold">@(!string.IsNullOrWhiteSpace(a.FileName) ? a.FileName : "Appointment request")</div>
-                                        <div class="text-muted small">Type: @(!string.IsNullOrWhiteSpace(a.Type) ? a.Type : "-")</div>
+                                        <div class="request-info">
+                                            <span class="request-name" data-original="@a.FileName">Appointment Request</span>
+                                            @if (!string.IsNullOrWhiteSpace(a.Type))
+                                            {
+                                                <span class="request-type">@a.Type</span>
+                                            }
+                                        </div>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold">@a.UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
-                                        <div class="text-muted small">Status: @a.Status</div>
+                                        <div class="date-info">
+                                            <span class="date-text">@a.UploadedAt.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                                            <span class="time-text">@a.UploadedAt.ToLocalTime().ToString("HH:mm")</span>
+                                            <span class="status-badge @(a.Status.ToString().ToLower() == "pending" ? "status-pending" : "status-default")">
+                                                <i class="bi bi-clock-fill"></i> @a.Status
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td class="text-end">
-                                        <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                            <a class="btn btn-sm btn-outline-secondary"
-                                               asp-page="/Files/Attachment"
-                                               asp-route-id="@a.Id"
-                                               target="_blank">
-                                                <i class="bi bi-download me-1"></i>View
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a class="btn btn-action btn-view" asp-page="/Files/Attachment" asp-route-id="@a.Id" title="Download attachment">
+                                                <i class="bi bi-download"></i> <span class="btn-text">Download</span>
                                             </a>
-
-                                            <a class="btn btn-sm btn-primary"
-                                               asp-page="/Doctor/Appointments/ApprovalDetails"
-                                               asp-route-attachmentId="@a.Id">
-                                                <i class="bi bi-eye me-1"></i>Open
+                                            <a class="btn btn-action btn-open" asp-page="/Doctor/Appointments/ApprovalDetails" asp-route-attachmentId="@a.Id" title="Review details">
+                                                <i class="bi bi-eye"></i> <span class="btn-text">Review</span>
                                             </a>
                                         </div>
                                     </td>
@@ -101,3 +112,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/approvalsdr.js" asp-append-version="true"></script>
+}

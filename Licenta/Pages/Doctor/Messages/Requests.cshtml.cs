@@ -38,29 +38,48 @@ public class RequestsModel : PageModel
             .Include(d => d.Assistants)
             .FirstOrDefaultAsync(d => d.UserId == doctorUser.Id);
 
-        if (doctorProfile != null)
-        {
-            Assistants = doctorProfile.Assistants
-                .Where(a => !a.IsSoftDeleted)
-                .Select(a => new AssistantVm(a.Id, a.FullName ?? a.Email ?? "Assistant"))
-                .ToList();
-        }
-
         if (doctorProfile == null) return;
+
+        Assistants = (doctorProfile.Assistants ?? new List<ApplicationUser>())
+            .Where(a => !a.IsSoftDeleted)
+            .Select(a => new AssistantVm(
+                a.Id,
+                string.IsNullOrWhiteSpace(a.FullName) ? (a.Email ?? "Assistant") : a.FullName))
+            .ToList();
 
         Requests = await _db.PatientMessageRequests
             .AsNoTracking()
-            .Include(r => r.Patient).ThenInclude(p => p.User)
-            .Where(r => r.DoctorProfileId == doctorProfile.Id && r.Status == PatientMessageRequestStatus.WaitingDoctorApproval)
+            .Include(r => r.Patient)
+            .Where(r =>
+                r.DoctorProfileId == doctorProfile.Id &&
+                r.Status == PatientMessageRequestStatus.WaitingDoctorApproval)
             .OrderByDescending(r => r.CreatedAt)
             .Select(r => new RequestVm(
                 r.Id,
-                r.Patient.FullName ?? r.Patient.Email ?? "Patient",
-                r.Subject,
-                r.AssistantNote ?? r.EscalationReason ?? r.Body ?? "-",
+                string.IsNullOrWhiteSpace(r.Patient.FullName)
+                    ? (r.Patient.Email ?? "Patient")
+                    : r.Patient.FullName,
+                string.IsNullOrWhiteSpace(r.Subject)
+                    ? "No subject"
+                    : r.Subject,
+                string.IsNullOrWhiteSpace(r.AssistantNote)
+                    ? (string.IsNullOrWhiteSpace(r.EscalationReason)
+                        ? (string.IsNullOrWhiteSpace(r.Body) ? "-" : r.Body)
+                        : r.EscalationReason)
+                    : r.AssistantNote,
                 r.CreatedAt.ToLocalTime()
             ))
             .ToListAsync();
+
+        Requests = Requests
+            .Select(r => new RequestVm(
+                r.Id,
+                string.IsNullOrWhiteSpace(r.PatientName) ? "Patient" : r.PatientName.Trim(),
+                string.IsNullOrWhiteSpace(r.Subject) ? "No subject" : r.Subject.Trim(),
+                string.IsNullOrWhiteSpace(r.Details) ? "-" : r.Details.Trim(),
+                r.CreatedAtLocal
+            ))
+            .ToList();
     }
 
     public async Task<IActionResult> OnPostAcceptAsync(Guid id)
@@ -155,7 +174,17 @@ public class RequestsModel : PageModel
             .Include(d => d.Assistants)
             .FirstOrDefaultAsync(d => d.UserId == doctorUser.Id);
 
-        if (doctorProfile == null || !doctorProfile.Assistants.Any(a => !a.IsSoftDeleted))
+        if (doctorProfile == null)
+        {
+            TempData["StatusMessage"] = "Doctor profile not found.";
+            return RedirectToPage();
+        }
+
+        var availableAssistants = (doctorProfile.Assistants ?? new List<ApplicationUser>())
+            .Where(a => !a.IsSoftDeleted)
+            .ToList();
+
+        if (!availableAssistants.Any())
         {
             TempData["StatusMessage"] = "You have no assistants assigned.";
             return RedirectToPage();
@@ -167,7 +196,7 @@ public class RequestsModel : PageModel
             return RedirectToPage();
         }
 
-        var chosen = doctorProfile.Assistants.FirstOrDefault(a => a.Id == assistantId && !a.IsSoftDeleted);
+        var chosen = availableAssistants.FirstOrDefault(a => a.Id == assistantId);
         if (chosen == null)
         {
             TempData["StatusMessage"] = "Invalid assistant selection.";

@@ -1,16 +1,22 @@
-﻿@page
+﻿@page "{attachmentId:guid}"
 @model Licenta.Pages.Doctor.Appointments.ApprovalDetailsModel
 @{
-    ViewData["Title"] = "Approval Details";
+    ViewData["Title"] = "Review Appointment Request";
 }
 
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+@section Styles {
+    <link rel="stylesheet" href="~/css/approvalsdr.css" asp-append-version="true" />
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="mb-1 fw-bold">Approval Details</h2>
-            <div class="text-muted">Confirm or reject the patient's appointment request</div>
+            <h3 class="fw-bold mb-1">Review Appointment Request</h3>
+            <p class="text-muted mb-0">Approve or reject the patient's appointment request.</p>
         </div>
-        <a asp-page="/Doctor/Appointments/Approvals" class="btn btn-outline-secondary">Back</a>
+        <a asp-page="/Doctor/Appointments/Approvals" class="btn btn-outline-secondary">
+            Back
+        </a>
     </div>
 
     @if (TempData["StatusMessage"] is string status)
@@ -18,47 +24,78 @@
         <div class="alert alert-info border-0 shadow-sm">@status</div>
     }
 
-    @if (Model.Item == null)
+    @if (!Model.CanView)
     {
-        <div class="alert alert-warning border-0 shadow-sm mb-0">Item not found.</div>
+        <div class="alert alert-warning border-0 shadow-sm">
+            You cannot view this request.
+        </div>
     }
     else
     {
-        <div class="card border-0 shadow-sm mb-3">
+        <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <div class="text-muted small">Patient</div>
-                        <div class="fw-semibold">@Model.Item.PatientName</div>
+                        <strong>Patient</strong>
+                        <div>@Model.PatientName</div>
                     </div>
                     <div class="col-md-6">
-                        <div class="text-muted small">Submitted</div>
-                        <div class="fw-semibold">@Model.Item.UploadedAtLocal</div>
+                        <strong>Doctor</strong>
+                        <div>@Model.DoctorName</div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Submitted</strong>
+                        <div>@Model.UploadedAtDisplay</div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Requested slot</strong>
+                        <div>@Model.RequestedSlotDisplay</div>
                     </div>
                     <div class="col-12">
-                        <div class="text-muted small">Reason</div>
-                        <div class="fw-semibold">@Model.Item.Reason</div>
-                    </div>
-                    <div class="col-12">
-                        <div class="text-muted small">Requested Time</div>
-                        <div class="fw-semibold text-primary">@Model.Item.RequestedDisplay</div>
+                        <strong>Reason</strong>
+                        <div>@Model.Reason</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm">
+        <form method="post" asp-page-handler="Approve" class="card border-0 shadow-sm mb-3">
             <div class="card-body">
-                <form method="post" class="d-flex flex-wrap gap-2">
-                    <input type="hidden" asp-for="AttachmentId" />
-                    <button type="submit" asp-page-handler="Approve" class="btn btn-success">
-                        <i class="bi bi-check-circle me-1"></i> Approve & Schedule
-                    </button>
-                    <button type="submit" asp-page-handler="Reject" class="btn btn-outline-danger">
-                        <i class="bi bi-x-circle me-1"></i> Reject Request
-                    </button>
-                </form>
+                <h5 class="fw-bold mb-3">Approve Request</h5>
+
+                <div class="mb-3">
+                    <label class="form-label">Location</label>
+                    <input asp-for="Location" class="form-control" placeholder="Clinic / Office / Room..." />
+                    <span asp-validation-for="Location" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Optional note</label>
+                    <input asp-for="DecisionNote" class="form-control" placeholder="Optional note..." />
+                    <span asp-validation-for="DecisionNote" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-success">Approve</button>
+                <a asp-page="/Doctor/Appointments/Approvals" class="btn btn-outline-secondary ms-2">Cancel</a>
             </div>
-        </div>
+        </form>
+
+        <form method="post" asp-page-handler="Reject" class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">Reject Request</h5>
+
+                <div class="mb-3">
+                    <label class="form-label">Reason</label>
+                    <input asp-for="DecisionNote" class="form-control" placeholder="Reason for rejection..." />
+                    <span asp-validation-for="DecisionNote" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-danger">Reject</button>
+            </div>
+        </form>
     }
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -92,7 +92,7 @@ namespace Licenta.Pages.Patient.Appointments
 
             if (CanRequest)
             {
-                await LoadDoctorSlotsAsync(appt.DoctorId);
+                await LoadDoctorSlotsAsync(appt.DoctorId, appt.Id);
             }
 
             return Page();
@@ -128,7 +128,7 @@ namespace Licenta.Pages.Patient.Appointments
                 CurrentScheduledAtDisplay = appt.ScheduledAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
                 Location = string.IsNullOrWhiteSpace(appt.Location) ? "Clinic" : appt.Location;
                 CanRequest = true;
-                await LoadDoctorSlotsAsync(appt.DoctorId);
+                await LoadDoctorSlotsAsync(appt.DoctorId, appt.Id);
                 return Page();
             }
 
@@ -136,7 +136,11 @@ namespace Licenta.Pages.Patient.Appointments
             if (parts.Length != 2 || !Guid.TryParse(parts[0], out var doctorId) || doctorId != appt.DoctorId)
             {
                 ModelState.AddModelError(nameof(SelectedSlotKey), "Invalid slot selected.");
-                await LoadDoctorSlotsAsync(appt.DoctorId);
+                DoctorName = appt.Doctor?.User?.FullName ?? appt.Doctor?.User?.Email ?? "Doctor";
+                CurrentScheduledAtDisplay = appt.ScheduledAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+                Location = string.IsNullOrWhiteSpace(appt.Location) ? "Clinic" : appt.Location;
+                CanRequest = true;
+                await LoadDoctorSlotsAsync(appt.DoctorId, appt.Id);
                 return Page();
             }
 
@@ -144,7 +148,11 @@ namespace Licenta.Pages.Patient.Appointments
             if (!DateTime.TryParseExact(localIso, "yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var localDt))
             {
                 ModelState.AddModelError(nameof(SelectedSlotKey), "Invalid slot time format.");
-                await LoadDoctorSlotsAsync(appt.DoctorId);
+                DoctorName = appt.Doctor?.User?.FullName ?? appt.Doctor?.User?.Email ?? "Doctor";
+                CurrentScheduledAtDisplay = appt.ScheduledAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+                Location = string.IsNullOrWhiteSpace(appt.Location) ? "Clinic" : appt.Location;
+                CanRequest = true;
+                await LoadDoctorSlotsAsync(appt.DoctorId, appt.Id);
                 return Page();
             }
 
@@ -154,8 +162,25 @@ namespace Licenta.Pages.Patient.Appointments
             if (scheduledUtc <= DateTime.UtcNow)
             {
                 ModelState.AddModelError(nameof(SelectedSlotKey), "You cannot choose a past slot.");
-                await LoadDoctorSlotsAsync(appt.DoctorId);
+                DoctorName = appt.Doctor?.User?.FullName ?? appt.Doctor?.User?.Email ?? "Doctor";
+                CurrentScheduledAtDisplay = appt.ScheduledAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+                Location = string.IsNullOrWhiteSpace(appt.Location) ? "Clinic" : appt.Location;
+                CanRequest = true;
+                await LoadDoctorSlotsAsync(appt.DoctorId, appt.Id);
                 return Page();
+            }
+
+            var alreadyExists = await _db.Set<AppointmentRescheduleRequest>()
+                .AnyAsync(r =>
+                    r.AppointmentId == appt.Id &&
+                    (r.Status == AppointmentRescheduleStatus.Requested ||
+                     r.Status == AppointmentRescheduleStatus.Proposed ||
+                     r.Status == AppointmentRescheduleStatus.PatientSelected));
+
+            if (alreadyExists)
+            {
+                TempData["StatusMessage"] = "There is already an active reschedule request for this appointment.";
+                return RedirectToPage("/Patient/Appointments/Index");
             }
 
             var req = new AppointmentRescheduleRequest
@@ -167,6 +192,7 @@ namespace Licenta.Pages.Patient.Appointments
                 Reason = InputReason.Trim(),
                 PreferredWindows = localIso,
                 OldScheduledAtUtc = appt.ScheduledAt,
+                NewScheduledAtUtc = DateTime.SpecifyKind(scheduledUtc, DateTimeKind.Utc),
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             };
@@ -181,8 +207,8 @@ namespace Licenta.Pages.Patient.Appointments
                     doctorUser,
                     NotificationType.Appointment,
                     "Reschedule Request",
-                    $"Patient {user.FullName} requested to reschedule an appointment.",
-                    actionUrl: "/Doctor/Appointments/Index",
+                    $"Patient {user.FullName} requested to reschedule an appointment to <b>{localKinded:ddd dd MMM HH:mm}</b>.",
+                    actionUrl: "/Doctor/Appointments/RescheduleApprovals",
                     actionText: "View Reschedules",
                     relatedEntity: "AppointmentRescheduleRequest",
                     relatedEntityId: req.Id.ToString(),
@@ -206,14 +232,18 @@ namespace Licenta.Pages.Patient.Appointments
             return RedirectToPage("/Patient/Appointments/Index");
         }
 
-        private async Task LoadDoctorSlotsAsync(Guid doctorId)
+        private async Task LoadDoctorSlotsAsync(Guid doctorId, int appointmentId)
         {
-            var schedule = await _db.DoctorAvailabilities.AsNoTracking().Where(x => x.DoctorId == doctorId && x.IsActive).ToListAsync();
+            var schedule = await _db.DoctorAvailabilities
+                .AsNoTracking()
+                .Where(x => x.DoctorId == doctorId && x.IsActive)
+                .ToListAsync();
+
             var slots = new List<string>();
 
             if (schedule.Count > 0)
             {
-                slots = await BuildSlotsAsync(doctorId, schedule);
+                slots = await BuildSlotsAsync(doctorId, schedule, appointmentId);
             }
 
             var docUi = new DoctorUiModel
@@ -238,7 +268,7 @@ namespace Licenta.Pages.Patient.Appointments
             DoctorSlotsJson = JsonSerializer.Serialize(docUi);
         }
 
-        private async Task<List<string>> BuildSlotsAsync(Guid doctorId, List<DoctorAvailability> schedule)
+        private async Task<List<string>> BuildSlotsAsync(Guid doctorId, List<DoctorAvailability> schedule, int currentAppointmentId)
         {
             var result = new List<string>();
             var startDate = DateTime.Today;
@@ -247,15 +277,33 @@ namespace Licenta.Pages.Patient.Appointments
             var rangeStartUtc = DateTime.SpecifyKind(startDate, DateTimeKind.Local).ToUniversalTime();
             var rangeEndUtc = DateTime.SpecifyKind(endDate.AddDays(1), DateTimeKind.Local).ToUniversalTime();
 
-            var existingAppointments = await _db.Appointments.AsNoTracking()
-                .Where(a => a.DoctorId == doctorId && a.Status != AppointmentStatus.Cancelled && a.Status != AppointmentStatus.Rejected && a.ScheduledAt >= rangeStartUtc && a.ScheduledAt < rangeEndUtc)
+            var existingAppointments = await _db.Appointments
+                .AsNoTracking()
+                .Where(a =>
+                    a.DoctorId == doctorId &&
+                    a.Id != currentAppointmentId &&
+                    a.Status != AppointmentStatus.Cancelled &&
+                    a.Status != AppointmentStatus.Rejected &&
+                    a.ScheduledAt >= rangeStartUtc &&
+                    a.ScheduledAt < rangeEndUtc)
                 .ToListAsync();
 
-            var proposedStartsUtc = await GetProposedStartsUtcAsync(doctorId, rangeStartUtc, rangeEndUtc);
+            var proposedStartsUtc = await _db.Set<AppointmentRescheduleRequest>()
+                .AsNoTracking()
+                .Where(r =>
+                    r.DoctorId == doctorId &&
+                    r.AppointmentId != currentAppointmentId &&
+                    r.Status == AppointmentRescheduleStatus.Requested &&
+                    r.NewScheduledAtUtc.HasValue &&
+                    r.NewScheduledAtUtc >= rangeStartUtc &&
+                    r.NewScheduledAtUtc < rangeEndUtc)
+                .Select(r => r.NewScheduledAtUtc!.Value)
+                .ToListAsync();
 
             for (var day = startDate; day <= endDate; day = day.AddDays(1))
             {
                 var daySlots = schedule.Where(s => s.IsActive && s.DayOfWeek == day.DayOfWeek).ToList();
+
                 foreach (var s in daySlots)
                 {
                     for (var t = s.StartTime; t < s.EndTime; t = t.Add(TimeSpan.FromMinutes(SlotMinutes)))
@@ -267,48 +315,26 @@ namespace Licenta.Pages.Patient.Appointments
                         var newStartUtc = utc;
                         var newEndUtc = utc.AddMinutes(DurationMinutes);
 
-                        if (existingAppointments.Any(a => a.ScheduledAt < newEndUtc && a.ScheduledAt.AddMinutes(DurationMinutes) > newStartUtc)) continue;
-                        if (proposedStartsUtc.Any(p => p < newEndUtc && p.AddMinutes(DurationMinutes) > newStartUtc)) continue;
+                        if (existingAppointments.Any(a => a.ScheduledAt < newEndUtc && a.ScheduledAt.AddMinutes(DurationMinutes) > newStartUtc))
+                            continue;
+
+                        if (proposedStartsUtc.Any(p => p < newEndUtc && p.AddMinutes(DurationMinutes) > newStartUtc))
+                            continue;
 
                         result.Add(local.ToString("yyyy-MM-ddTHH:mm"));
                     }
                 }
             }
+
             return result.OrderBy(x => x, StringComparer.Ordinal).ToList();
-        }
-
-        private async Task<List<DateTime>> GetProposedStartsUtcAsync(Guid doctorId, DateTime rangeStartUtc, DateTime rangeEndUtc)
-        {
-            var items = await _db.MedicalAttachments.AsNoTracking()
-                .Where(a => a.Type == "AppointmentRequest" && a.Status == AttachmentStatus.Pending && a.DoctorId == doctorId && a.ValidationNotes != null && a.ValidationNotes.Contains("Suggested:"))
-                .Select(a => a.ValidationNotes!).ToListAsync();
-
-            var result = new List<DateTime>();
-            foreach (var notes in items)
-            {
-                var iso = ExtractSuggestedIso(notes);
-                if (!string.IsNullOrWhiteSpace(iso) && DateTime.TryParseExact(iso, new[] { "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
-                {
-                    var utc = DateTime.SpecifyKind(dt, DateTimeKind.Local).ToUniversalTime();
-                    if (utc >= rangeStartUtc && utc < rangeEndUtc) result.Add(utc);
-                }
-            }
-            return result;
-        }
-
-        private static string ExtractSuggestedIso(string? notes)
-        {
-            if (string.IsNullOrWhiteSpace(notes)) return "";
-            var idx = notes.IndexOf("Suggested:", StringComparison.OrdinalIgnoreCase);
-            if (idx < 0) return "";
-            var v = notes[(idx + "Suggested:".Length)..].Trim();
-            if (v.Contains("|")) v = v.Split('|', StringSplitOptions.RemoveEmptyEntries)[0].Trim();
-            return string.IsNullOrWhiteSpace(v) ? "" : v;
         }
 
         private async Task<bool> CanRequestRescheduleAsync(int appointmentId)
         {
-            var appt = await _db.Set<Appointment>().AsNoTracking().FirstOrDefaultAsync(a => a.Id == appointmentId);
+            var appt = await _db.Set<Appointment>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
+
             if (appt == null) return false;
 
             if (appt.Status == AppointmentStatus.Cancelled || appt.Status == AppointmentStatus.Completed)

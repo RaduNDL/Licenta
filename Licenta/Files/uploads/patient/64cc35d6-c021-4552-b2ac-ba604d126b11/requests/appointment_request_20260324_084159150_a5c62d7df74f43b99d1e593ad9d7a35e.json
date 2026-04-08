@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-03-24T08:41:59.1439282Z",
+  "ClinicId": "CL-40F15A09",
+  "PatientUserId": "af331323-b29d-4d0c-a1e2-f9a465036505",
+  "PatientProfileId": "64cc35d6-c021-4552-b2ac-ba604d126b11",
+  "SelectedDoctorId": "3b403b0b-cab0-4c13-8260-781c2f4349bd",
+  "SelectedLocalIso": "2026-03-24T14:00",
+  "SelectedScheduledUtc": "2026-03-24T12:00:00Z",
+  "Reason": "ceav"
+}

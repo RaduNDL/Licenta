@@ -1,4 +1,5 @@
 ﻿@page
+@using System.Globalization
 @model Licenta.Pages.Patient.Predictions.IndexModel
 @{
     ViewData["Title"] = "Predictions";
@@ -18,65 +19,87 @@
         </h2>
     </div>
 
-    @if (!Model.Items.Any())
-    {
-        <div class="empty-state">
-            <p>No predictions available yet.</p>
-        </div>
-    }
-    else
-    {
-        <div class="table-responsive">
-            <table class="custom-table">
-                <thead>
-                    <tr>
-                        <th>Model</th>
-                        <th>Result</th>
-                        <th>Confidence</th>
-                        <th>Date</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var p in Model.Items)
-                    {
-                        var confidence = p.Probability ?? 0;
-                        var confidenceClass = confidence > 0.8 ? "confidence-high" : (confidence > 0.5 ? "confidence-med" : "confidence-low");
-                        var percentage = (confidence * 100).ToString("0") + "%";
-
+    <div id="predictions-root" data-list-url="@Url.Page("/Patient/Predictions/Index", "List")">
+        @if (!Model.Items.Any())
+        {
+            <div class="empty-state" id="empty-state">
+                <p>No predictions available yet.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive" id="table-wrapper">
+                <table class="custom-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <span class="model-badge">@p.ModelName</span>
-                            </td>
-                            <td data-type="result">@(string.IsNullOrWhiteSpace(p.ResultLabel) ? "-" : p.ResultLabel)</td>
-                            <td>
-                                <div class="confidence-meter">
-                                    <span style="min-width: 48px; font-weight:600; font-size:0.85rem;">
-                                        @(p.Probability.HasValue? p.Probability.Value.ToString("P2") : "-")
-                                    </span>
-                                    @if (p.Probability.HasValue)
-                                    {
-                                        <div class="meter-track">
-                                            <div class="meter-fill @confidenceClass" style="width: 0%" data-width="@percentage"></div>
-                                        </div>
-                                    }
-                                </div>
-                            </td>
-                            <td class="date-cell">@p.CreatedAtUtc.ToLocalTime().ToString("g")</td>
-                            <td style="text-align: right;">
-                                <a asp-page="/Patient/Predictions/Details" asp-route-id="@p.Id" class="btn-details">
-                                    View Analysis
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                    </svg>
-                                </a>
-                            </td>
+                            <th>Model</th>
+                            <th>Result</th>
+                            <th>Confidence</th>
+                            <th>Date</th>
+                            <th></th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
+                    </thead>
+                    <tbody id="predictions-body">
+                        @foreach (var p in Model.Items)
+                        {
+                            var resultText = (p.ResultLabel ?? string.Empty).Trim().ToUpperInvariant();
+
+                            var isMalignant =
+                                resultText.Contains("MALIGNANT") ||
+                                resultText.Contains("CANCER") ||
+                                resultText.Contains("POSITIVE");
+
+                            var resultClass = isMalignant ? "result-cancer" : "result-safe";
+                            var fillClass = isMalignant ? "confidence-cancer" : "confidence-safe";
+
+                            var probability = p.Probability ?? 0f;
+                            var percentValue = Math.Clamp((double)probability * 100d, 0d, 100d);
+                            var percentDisplay = p.Probability.HasValue ? p.Probability.Value.ToString("P2") : "-";
+                            var percentAttr = percentValue.ToString("0.##", CultureInfo.InvariantCulture);
+
+                            <tr data-id="@p.Id">
+                                <td data-label="Model">
+                                    <span class="model-badge">@p.ModelName</span>
+                                </td>
+
+                                <td data-label="Result" data-type="result" class="@resultClass">
+                                    @(string.IsNullOrWhiteSpace(p.ResultLabel) ? "-" : p.ResultLabel)
+                                </td>
+
+                                <td data-label="Confidence">
+                                    <div class="confidence-meter">
+                                        <span class="confidence-text">@percentDisplay</span>
+
+                                        @if (p.Probability.HasValue)
+                                        {
+                                            <div class="meter-track">
+                                                <div class="meter-fill @fillClass"
+                                                     data-percent="@percentAttr"
+                                                     style="width: 0%;"></div>
+                                            </div>
+                                        }
+                                    </div>
+                                </td>
+
+                                <td data-label="Date" class="date-cell">
+                                    @p.CreatedAtUtc.ToLocalTime().ToString("g")
+                                </td>
+
+                                <td data-label="Action" class="action-cell">
+                                    <a asp-page="/Patient/Predictions/Details" asp-route-id="@p.Id" class="btn-details">
+                                        View Analysis
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
 </div>
 
 @section Scripts {

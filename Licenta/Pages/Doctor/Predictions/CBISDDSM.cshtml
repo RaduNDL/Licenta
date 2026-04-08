@@ -12,7 +12,9 @@
         Model.Result.Probabilities.TryGetValue("MALIGNANT", out pMal);
     }
 
-    bool hasQuality = hasResult && Model.Result != null && (Model.Result.QualityOk.HasValue || (Model.Result.QualityIssues?.Count ?? 0) > 0);
+    bool hasQuality = hasResult && Model.Result != null &&
+                      (Model.Result.QualityOk.HasValue || (Model.Result.QualityIssues?.Count ?? 0) > 0);
+
     bool qualityOk = hasResult && (Model.Result?.QualityOkSafe ?? true);
 }
 
@@ -21,7 +23,6 @@
 }
 
 <div class="page-container">
-
     <div class="page-header mb-3">
         <h2 class="page-title">
             <i class="bi bi-image text-primary"></i> CBIS-DDSM Prediction
@@ -53,7 +54,8 @@
         <div class="col-lg-5">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
+                    <form method="post" enctype="multipart/form-data" id="predictForm">
+                        @Html.AntiForgeryToken()
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Patient</label>
@@ -80,8 +82,14 @@
                             <div class="form-text">Default: 224</div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-play-circle me-2"></i>Run prediction
+                        <button type="submit" class="btn btn-primary w-100" id="predictBtn">
+                            <span class="default-label">
+                                <i class="bi bi-play-circle me-2"></i>Run prediction
+                            </span>
+                            <span class="loading-label d-none">
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Running...
+                            </span>
                         </button>
 
                         <div class="mt-3 d-flex justify-content-between">
@@ -92,7 +100,6 @@
                                 <i class="bi bi-arrow-clockwise me-1"></i>Refresh status
                             </a>
                         </div>
-
                     </form>
                 </div>
             </div>
@@ -112,11 +119,17 @@
                         @if (hasQuality && !qualityOk)
                         {
                             <div class="alert alert-warning border-0 shadow-sm">
-                                <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle me-2"></i>Image quality not OK</div>
+                                <div class="fw-bold mb-1">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>Image quality not OK
+                                </div>
+
                                 @if (Model.Result?.QualityScore != null)
                                 {
-                                    <div class="small text-muted">Quality score: @Model.Result.QualityScore.Value.ToString("P0")</div>
+                                    <div class="small text-muted">
+                                        Quality score: @Model.Result.QualityScore.Value.ToString("P0")
+                                    </div>
                                 }
+
                                 @if (Model.Result?.QualityIssues != null && Model.Result.QualityIssues.Count > 0)
                                 {
                                     <div class="small mt-2">
@@ -151,7 +164,7 @@
 
                         <div class="mt-3">
                             <strong>Probabilities:</strong>
-                            <ul>
+                            <ul class="mb-0">
                                 <li>BENIGN: @pBen.ToString("P2")</li>
                                 <li>MALIGNANT: @pMal.ToString("P2")</li>
                             </ul>
@@ -161,8 +174,8 @@
                         {
                             <div class="mt-3">
                                 <a asp-page="/Doctor/Predictions/Record"
-                                   asp-route-id="@Model.SavedPredictionId"
-                                   class="btn btn-outline-primary">
+                                       asp-route-id="@Model.SavedPredictionId"
+                                       class="btn btn-outline-primary">
                                     View record
                                 </a>
                             </div>
@@ -173,3 +186,23 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById('predictForm');
+            const btn = document.getElementById('predictBtn');
+            if (!form || !btn) return;
+
+            form.addEventListener('submit', function () {
+                btn.disabled = true;
+
+                const defaultLabel = btn.querySelector('.default-label');
+                const loadingLabel = btn.querySelector('.loading-label');
+
+                if (defaultLabel) defaultLabel.classList.add('d-none');
+                if (loadingLabel) loadingLabel.classList.remove('d-none');
+            });
+        })();
+    </script>
+}

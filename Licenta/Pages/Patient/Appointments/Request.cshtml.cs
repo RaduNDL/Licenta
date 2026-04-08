@@ -59,11 +59,6 @@ namespace Licenta.Pages.Patient.Appointments
             public Dictionary<string, List<SlotUiModel>> DaysAndSlots { get; set; } = new();
         }
 
-        public string DoctorsJson { get; set; } = "[]";
-
-        [BindProperty]
-        public InputModel Input { get; set; } = new();
-
         public class InputModel
         {
             [Required(ErrorMessage = "Please select a time slot.")]
@@ -86,6 +81,11 @@ namespace Licenta.Pages.Patient.Appointments
             public string Reason { get; set; } = "";
         }
 
+        public string DoctorsJson { get; set; } = "[]";
+
+        [BindProperty]
+        public InputModel Input { get; set; } = new();
+
         public async Task OnGetAsync()
         {
             await LoadSlotsAsync();
@@ -102,17 +102,24 @@ namespace Licenta.Pages.Patient.Appointments
             }
 
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return Page();
+            if (user == null)
+                return Challenge();
 
-            var parts = Input.SelectedSlotKey.Split('|');
+            var parts = Input.SelectedSlotKey.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (parts.Length != 2 || !Guid.TryParse(parts[0], out var doctorId))
             {
                 ModelState.AddModelError(nameof(Input.SelectedSlotKey), "Invalid slot selected.");
                 return Page();
             }
+
             var localIso = parts[1];
 
-            if (!DateTime.TryParseExact(localIso, "yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var localDt))
+            if (!DateTime.TryParseExact(
+                    localIso,
+                    "yyyy-MM-ddTHH:mm",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var localDt))
             {
                 ModelState.AddModelError(nameof(Input.SelectedSlotKey), "Invalid slot time.");
                 return Page();
@@ -137,7 +144,12 @@ namespace Licenta.Pages.Patient.Appointments
             var patient = await _db.Patients.FirstOrDefaultAsync(p => p.UserId == user.Id);
             if (patient == null)
             {
-                patient = new PatientProfileEntity { Id = Guid.NewGuid(), UserId = user.Id };
+                patient = new PatientProfileEntity
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id
+                };
+
                 _db.Patients.Add(patient);
                 await _db.SaveChangesAsync();
             }
@@ -150,16 +162,21 @@ namespace Licenta.Pages.Patient.Appointments
                 PatientProfileId = patient.Id,
                 SelectedDoctorId = doctorId,
                 SelectedLocalIso = localIso,
-                SelectedScheduledUtc = scheduledUtc,
-                Reason = Input.Reason
+                SelectedScheduledUtc = DateTime.SpecifyKind(scheduledUtc, DateTimeKind.Utc),
+                Reason = Input.Reason.Trim()
             };
 
-            var payload = JsonSerializer.Serialize(payloadObj, new JsonSerializerOptions { WriteIndented = true });
+            var payload = JsonSerializer.Serialize(payloadObj, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+
             var folder = GetPrivateRequestsFolder(patient.Id);
             Directory.CreateDirectory(folder);
 
             var safeName = $"appointment_request_{DateTime.UtcNow:yyyyMMdd_HHmmssfff}_{Guid.NewGuid():N}.json";
             var fullPath = Path.Combine(folder, safeName);
+
             await System.IO.File.WriteAllTextAsync(fullPath, payload);
 
             var attachment = new MedicalAttachment
@@ -173,14 +190,19 @@ namespace Licenta.Pages.Patient.Appointments
                 Type = "AppointmentRequest",
                 UploadedAt = DateTime.UtcNow,
                 Status = AttachmentStatus.Pending,
-                PatientNotes = Input.Reason,
+                PatientNotes = Input.Reason.Trim(),
                 ValidationNotes = $"Selected:{localIso}"
             };
 
             _db.MedicalAttachments.Add(attachment);
             await _db.SaveChangesAsync();
 
-            var doctorUser = await _db.Users.FirstOrDefaultAsync(u => _db.Doctors.Any(d => d.Id == doctorId && d.UserId == u.Id));
+            var doctorUser = await _db.Doctors
+                .AsNoTracking()
+                .Include(d => d.User)
+                .Where(d => d.Id == doctorId)
+                .Select(d => d.User)
+                .FirstOrDefaultAsync();
 
             if (doctorUser != null)
             {
@@ -189,8 +211,8 @@ namespace Licenta.Pages.Patient.Appointments
                     NotificationType.Appointment,
                     "New Appointment Request",
                     $"A patient requested an appointment for <b>{FormatLocalIsoForDisplay(localIso)}</b>.",
-                    actionUrl: "/Doctor/Attachments/Inbox",
-                    actionText: "Open Inbox",
+                    actionUrl: "/Doctor/Appointments/Approvals",
+                    actionText: "Review Request",
                     relatedEntity: "MedicalAttachment",
                     relatedEntityId: attachment.Id.ToString(),
                     sendEmail: false
@@ -201,7 +223,7 @@ namespace Licenta.Pages.Patient.Appointments
                 user,
                 NotificationType.Appointment,
                 "Appointment request submitted",
-                $"Your request for <b>{FormatLocalIsoForDisplay(localIso)}</b> was sent to Dr. {doctorUser?.FullName}.",
+                $"Your request for <b>{FormatLocalIsoForDisplay(localIso)}</b> was sent to Dr. {doctorUser?.FullName ?? "your doctor"}.",
                 actionUrl: "/Patient/Appointments/Index",
                 actionText: "View Appointments",
                 relatedEntity: "MedicalAttachment",
@@ -216,15 +238,26 @@ namespace Licenta.Pages.Patient.Appointments
         private async Task LoadSlotsAsync()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null) return;
+            if (user == null)
+                return;
 
             var clinicId = user.ClinicId;
-            var doctorRoleId = await _db.Roles.AsNoTracking().Where(r => r.Name == "Doctor").Select(r => r.Id).FirstOrDefaultAsync();
+
+            var doctorRoleId = await _db.Roles
+                .AsNoTracking()
+                .Where(r => r.Name == "Doctor")
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
             var doctorUserIds = new List<string>();
 
             if (!string.IsNullOrWhiteSpace(doctorRoleId))
             {
-                doctorUserIds = await _db.UserRoles.AsNoTracking().Where(ur => ur.RoleId == doctorRoleId).Select(ur => ur.UserId).ToListAsync();
+                doctorUserIds = await _db.UserRoles
+                    .AsNoTracking()
+                    .Where(ur => ur.RoleId == doctorRoleId)
+                    .Select(ur => ur.UserId)
+                    .ToListAsync();
             }
 
             var doctors = await _db.Doctors
@@ -238,7 +271,11 @@ namespace Licenta.Pages.Patient.Appointments
 
             foreach (var d in doctors)
             {
-                var schedule = await _db.DoctorAvailabilities.AsNoTracking().Where(x => x.DoctorId == d.Id && x.IsActive).ToListAsync();
+                var schedule = await _db.DoctorAvailabilities
+                    .AsNoTracking()
+                    .Where(x => x.DoctorId == d.Id && x.IsActive)
+                    .ToListAsync();
+
                 var slots = new List<string>();
 
                 if (schedule.Count > 0)
@@ -283,33 +320,56 @@ namespace Licenta.Pages.Patient.Appointments
             var rangeStartUtc = DateTime.SpecifyKind(startDate, DateTimeKind.Local).ToUniversalTime();
             var rangeEndUtc = DateTime.SpecifyKind(endDate.AddDays(1), DateTimeKind.Local).ToUniversalTime();
 
-            var existingAppointments = await _db.Appointments.AsNoTracking()
-                .Where(a => a.DoctorId == doctorId && a.Status != AppointmentStatus.Cancelled && a.Status != AppointmentStatus.Rejected && a.ScheduledAt >= rangeStartUtc && a.ScheduledAt < rangeEndUtc)
+            var existingAppointments = await _db.Appointments
+                .AsNoTracking()
+                .Where(a =>
+                    a.DoctorId == doctorId &&
+                    a.Status != AppointmentStatus.Cancelled &&
+                    a.Status != AppointmentStatus.Rejected &&
+                    a.ScheduledAt >= rangeStartUtc &&
+                    a.ScheduledAt < rangeEndUtc)
                 .ToListAsync();
 
             var proposedStartsUtc = await GetProposedStartsUtcAsync(doctorId, rangeStartUtc, rangeEndUtc);
 
             for (var day = startDate; day <= endDate; day = day.AddDays(1))
             {
-                var daySlots = schedule.Where(s => s.IsActive && s.DayOfWeek == day.DayOfWeek).ToList();
+                var daySlots = schedule
+                    .Where(s => s.IsActive && s.DayOfWeek == day.DayOfWeek)
+                    .ToList();
+
                 foreach (var s in daySlots)
                 {
                     for (var t = s.StartTime; t < s.EndTime; t = t.Add(TimeSpan.FromMinutes(SlotMinutes)))
                     {
                         var local = DateTime.SpecifyKind(day.Date + t, DateTimeKind.Local);
                         var utc = local.ToUniversalTime();
-                        if (utc <= DateTime.UtcNow) continue;
+
+                        if (utc <= DateTime.UtcNow)
+                            continue;
 
                         var newStartUtc = utc;
                         var newEndUtc = utc.AddMinutes(DurationMinutes);
 
-                        if (existingAppointments.Any(a => a.ScheduledAt < newEndUtc && a.ScheduledAt.AddMinutes(DurationMinutes) > newStartUtc)) continue;
-                        if (proposedStartsUtc.Any(p => p < newEndUtc && p.AddMinutes(DurationMinutes) > newStartUtc)) continue;
+                        var appointmentConflict = existingAppointments.Any(a =>
+                            a.ScheduledAt < newEndUtc &&
+                            a.ScheduledAt.AddMinutes(DurationMinutes) > newStartUtc);
+
+                        if (appointmentConflict)
+                            continue;
+
+                        var pendingConflict = proposedStartsUtc.Any(p =>
+                            p < newEndUtc &&
+                            p.AddMinutes(DurationMinutes) > newStartUtc);
+
+                        if (pendingConflict)
+                            continue;
 
                         result.Add(local.ToString("yyyy-MM-ddTHH:mm"));
                     }
                 }
             }
+
             return result.OrderBy(x => x, StringComparer.Ordinal).ToList();
         }
 
@@ -318,54 +378,112 @@ namespace Licenta.Pages.Patient.Appointments
             var day = scheduledLocalKinded.DayOfWeek;
             var time = scheduledLocalKinded.TimeOfDay;
 
-            var daySlots = await _db.DoctorAvailabilities.AsNoTracking().Where(a => a.DoctorId == doctorId && a.IsActive && a.DayOfWeek == day).ToListAsync();
-            if (!daySlots.Any() || !daySlots.Any(s => time >= s.StartTime && time < s.EndTime)) return false;
-            if (time.Minutes % SlotMinutes != 0) return false;
+            var daySlots = await _db.DoctorAvailabilities
+                .AsNoTracking()
+                .Where(a => a.DoctorId == doctorId && a.IsActive && a.DayOfWeek == day)
+                .ToListAsync();
+
+            if (!daySlots.Any() || !daySlots.Any(s => time >= s.StartTime && time < s.EndTime))
+                return false;
+
+            if (time.Minutes % SlotMinutes != 0)
+                return false;
 
             var scheduledUtc = scheduledLocalKinded.ToUniversalTime();
-            if (scheduledUtc <= DateTime.UtcNow) return false;
+            if (scheduledUtc <= DateTime.UtcNow)
+                return false;
 
-            var doctorConflict = await _db.Appointments.AsNoTracking().AnyAsync(a => a.DoctorId == doctorId && a.Status != AppointmentStatus.Cancelled && a.Status != AppointmentStatus.Rejected && a.ScheduledAt < scheduledUtc.AddMinutes(DurationMinutes) && a.ScheduledAt.AddMinutes(DurationMinutes) > scheduledUtc);
-            if (doctorConflict) return false;
+            var doctorConflict = await _db.Appointments
+                .AsNoTracking()
+                .AnyAsync(a =>
+                    a.DoctorId == doctorId &&
+                    a.Status != AppointmentStatus.Cancelled &&
+                    a.Status != AppointmentStatus.Rejected &&
+                    a.ScheduledAt < scheduledUtc.AddMinutes(DurationMinutes) &&
+                    a.ScheduledAt.AddMinutes(DurationMinutes) > scheduledUtc);
 
-            var proposedStartsUtc = await GetProposedStartsUtcAsync(doctorId, scheduledUtc.AddDays(-1), scheduledUtc.AddMinutes(DurationMinutes).AddDays(1));
-            return !proposedStartsUtc.Any(p => p < scheduledUtc.AddMinutes(DurationMinutes) && p.AddMinutes(DurationMinutes) > scheduledUtc);
+            if (doctorConflict)
+                return false;
+
+            var proposedStartsUtc = await GetProposedStartsUtcAsync(
+                doctorId,
+                scheduledUtc.AddDays(-1),
+                scheduledUtc.AddMinutes(DurationMinutes).AddDays(1));
+
+            return !proposedStartsUtc.Any(p =>
+                p < scheduledUtc.AddMinutes(DurationMinutes) &&
+                p.AddMinutes(DurationMinutes) > scheduledUtc);
         }
 
         private async Task<List<DateTime>> GetProposedStartsUtcAsync(Guid doctorId, DateTime rangeStartUtc, DateTime rangeEndUtc)
         {
-            var items = await _db.MedicalAttachments.AsNoTracking()
-                .Where(a => a.Type == "AppointmentRequest" && a.Status == AttachmentStatus.Pending && a.DoctorId == doctorId && a.ValidationNotes != null)
-                .Select(a => a.ValidationNotes!).ToListAsync();
+            var items = await _db.MedicalAttachments
+                .AsNoTracking()
+                .Where(a =>
+                    a.Type == "AppointmentRequest" &&
+                    a.Status == AttachmentStatus.Pending &&
+                    a.DoctorId == doctorId &&
+                    a.ValidationNotes != null)
+                .Select(a => a.ValidationNotes!)
+                .ToListAsync();
 
             var result = new List<DateTime>();
+
             foreach (var notes in items)
             {
                 var iso = ExtractRequestedIso(notes);
-                if (!string.IsNullOrWhiteSpace(iso) && DateTime.TryParseExact(iso, new[] { "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                if (!string.IsNullOrWhiteSpace(iso) &&
+                    DateTime.TryParseExact(
+                        iso,
+                        new[] { "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss" },
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out var dt))
                 {
                     var utc = DateTime.SpecifyKind(dt, DateTimeKind.Local).ToUniversalTime();
-                    if (utc >= rangeStartUtc && utc < rangeEndUtc) result.Add(utc);
+                    if (utc >= rangeStartUtc && utc < rangeEndUtc)
+                        result.Add(utc);
                 }
             }
+
             return result;
         }
 
-        private string GetPrivateRequestsFolder(Guid patientId) => Path.Combine(_env.ContentRootPath, "Files", "uploads", "patient", patientId.ToString(), "requests");
+        private string GetPrivateRequestsFolder(Guid patientId)
+        {
+            return Path.Combine(
+                _env.ContentRootPath,
+                "Files",
+                "uploads",
+                "patient",
+                patientId.ToString(),
+                "requests");
+        }
 
         private static string ExtractRequestedIso(string? notes)
         {
-            if (string.IsNullOrWhiteSpace(notes)) return "";
+            if (string.IsNullOrWhiteSpace(notes))
+                return "";
+
             var idx = notes.IndexOf("Selected:", StringComparison.OrdinalIgnoreCase);
-            if (idx < 0) return "";
+            if (idx < 0)
+                return "";
+
             var v = notes[(idx + "Selected:".Length)..].Trim();
-            if (v.Contains("|")) v = v.Split('|', StringSplitOptions.RemoveEmptyEntries)[0].Trim();
+
+            if (v.Contains("|"))
+            {
+                v = v.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)[0];
+            }
+
             return string.IsNullOrWhiteSpace(v) ? "" : v;
         }
 
         private static string FormatLocalIsoForDisplay(string localIso)
         {
-            if (!DateTime.TryParseExact(localIso, "yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt)) return localIso;
+            if (!DateTime.TryParseExact(localIso, "yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                return localIso;
+
             return DateTime.SpecifyKind(dt, DateTimeKind.Local).ToString("ddd dd MMM HH:mm");
         }
     }

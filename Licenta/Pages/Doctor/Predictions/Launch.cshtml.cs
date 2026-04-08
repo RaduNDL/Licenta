@@ -1,6 +1,5 @@
 using Licenta.Areas.Identity.Data;
 using Licenta.Data;
-using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +33,10 @@ namespace Licenta.Pages.Doctor.Predictions
             if (user == null)
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
 
-            var doctor = await _db.Doctors.AsNoTracking().FirstOrDefaultAsync(d => d.UserId == user.Id, ct);
+            var doctor = await _db.Doctors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.UserId == user.Id, ct);
+
             if (doctor == null)
                 return Forbid();
 
@@ -43,21 +45,21 @@ namespace Licenta.Pages.Doctor.Predictions
 
             if (predictionId.HasValue && predictionId.Value != Guid.Empty)
             {
-                var p = await _db.Predictions
+                var prediction = await _db.Predictions
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Id == predictionId.Value && x.DoctorId == doctor.Id, ct);
 
-                if (p == null)
+                if (prediction == null)
                 {
                     StatusMessage = "Prediction record not found.";
                     RedirectUrl = Url.Page("/Doctor/Predictions/Index");
                     return Page();
                 }
 
-                resolvedModelName = (p.ModelName ?? "").Trim();
-                resolvedPatientId = p.PatientId;
+                resolvedModelName = (prediction.ModelName ?? "").Trim();
+                resolvedPatientId = prediction.PatientId;
 
-                if (TryExtractAttachmentId(p.InputDataJson, out var attachmentId))
+                if (TryExtractAttachmentId(prediction.InputDataJson, out var attachmentId))
                 {
                     RedirectUrl = Url.Page("/Doctor/Predictions/FromAttachment", new { id = attachmentId });
                     return Page();
@@ -93,16 +95,16 @@ namespace Licenta.Pages.Doctor.Predictions
                 if (root.ValueKind != JsonValueKind.Object)
                     return false;
 
-                if (root.TryGetProperty("attachment_id", out var attEl))
+                if (root.TryGetProperty("attachment_id", out var att1))
                 {
-                    var raw = attEl.ValueKind == JsonValueKind.String ? attEl.GetString() : attEl.ToString();
+                    var raw = att1.ValueKind == JsonValueKind.String ? att1.GetString() : att1.ToString();
                     if (Guid.TryParse(raw, out attachmentId) && attachmentId != Guid.Empty)
                         return true;
                 }
 
-                if (root.TryGetProperty("attachmentId", out var attEl2))
+                if (root.TryGetProperty("attachmentId", out var att2))
                 {
-                    var raw = attEl2.ValueKind == JsonValueKind.String ? attEl2.GetString() : attEl2.ToString();
+                    var raw = att2.ValueKind == JsonValueKind.String ? att2.GetString() : att2.ToString();
                     if (Guid.TryParse(raw, out attachmentId) && attachmentId != Guid.Empty)
                         return true;
                 }
@@ -121,11 +123,17 @@ namespace Licenta.Pages.Doctor.Predictions
 
             if (m.Equals("CBIS-DDSM", StringComparison.OrdinalIgnoreCase) ||
                 m.Equals("CBISDDSM", StringComparison.OrdinalIgnoreCase) ||
-                m.Equals("CBIS DDSM", StringComparison.OrdinalIgnoreCase))
+                m.Equals("CBIS DDSM", StringComparison.OrdinalIgnoreCase) ||
+                m.Equals("cbis_ddsm_images:torch_cnn", StringComparison.OrdinalIgnoreCase))
+            {
                 return "/Doctor/Predictions/CBISDDSM";
+            }
 
-            if (m.Equals("Mammogram Mastery", StringComparison.OrdinalIgnoreCase))
+            if (m.Equals("Mammogram Mastery", StringComparison.OrdinalIgnoreCase) ||
+                m.Equals("mammogram_mastery_images:torch_cnn", StringComparison.OrdinalIgnoreCase))
+            {
                 return "/Doctor/Predictions/CBISDDSM";
+            }
 
             return null;
         }

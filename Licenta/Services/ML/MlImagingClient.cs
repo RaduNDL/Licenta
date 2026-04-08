@@ -28,7 +28,7 @@ namespace Licenta.Services.Ml
             var body = await resp.Content.ReadAsStringAsync(ct);
 
             if (!resp.IsSuccessStatusCode)
-                throw new Exception($"ML status failed ({(int)resp.StatusCode}): {body}");
+                throw new InvalidOperationException($"ML status failed ({(int)resp.StatusCode}): {body}");
 
             var dto = JsonSerializer.Deserialize<MlStatusResponse>(body, JsonOpts);
             return dto ?? new MlStatusResponse { Ok = false, Message = "Empty ML status response" };
@@ -70,10 +70,10 @@ namespace Licenta.Services.Ml
             if (resp.IsSuccessStatusCode || (int)resp.StatusCode == 422)
             {
                 return JsonSerializer.Deserialize<ImagingPredictResponse>(body, JsonOpts)
-                       ?? throw new Exception("ML predict returned empty JSON.");
+                       ?? throw new InvalidOperationException("ML predict returned empty JSON.");
             }
 
-            throw new Exception($"ML predict failed ({(int)resp.StatusCode}): {body}");
+            throw new InvalidOperationException($"ML predict failed ({(int)resp.StatusCode}): {body}");
         }
 
         public async Task<GroundTruthResponse> GetGroundTruthAsync(string fileNameOrPath, CancellationToken ct)
@@ -85,7 +85,7 @@ namespace Licenta.Services.Ml
             var body = await resp.Content.ReadAsStringAsync(ct);
 
             if (!resp.IsSuccessStatusCode)
-                throw new Exception($"ML ground truth failed ({(int)resp.StatusCode}): {body}");
+                throw new InvalidOperationException($"ML ground truth failed ({(int)resp.StatusCode}): {body}");
 
             var dto = JsonSerializer.Deserialize<GroundTruthResponse>(body, JsonOpts);
             return dto ?? new GroundTruthResponse();

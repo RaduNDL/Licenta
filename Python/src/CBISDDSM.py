@@ -106,8 +106,12 @@ def _sha1(b: bytes) -> str:
 
 
 def _device() -> torch.device:
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+    if not torch.cuda.is_available():
+        raise RuntimeError(
+            "CUDA GPU is required, but torch.cuda.is_available() is False. "
+            "Install a CUDA-enabled PyTorch build and make sure NVIDIA driver/CUDA are working."
+        )
+    return torch.device("cuda")
 
 def _speed_flags(dev: torch.device) -> None:
     if dev.type == "cuda":
@@ -213,7 +217,8 @@ def _default_mm_base(project_root: Path) -> Path:
     return (
         project_root
         / "dataset"
-        / "Breast Cancer Detection and Medical Education"
+        / "dataset"
+        / "Mammogram"
         / "Mammogram Mastery A Robust Dataset for Breast Cancer Detection and Medical Education"
         / "Breast Cancer Dataset"
     )
@@ -326,7 +331,12 @@ def build_samples_mm(cfg: CbisDdsmConfig) -> List[Sample]:
         roots.append((augmented_root, "augmented"))
 
     if not roots:
-        raise FileNotFoundError(f"Missing expected folders under: {scan_base}")
+        raise FileNotFoundError(
+            f"Missing expected folders under: {scan_base}\n"
+            f"Expected at least one of:\n"
+            f" - {original_root}\n"
+            f" - {augmented_root}"
+        )
 
     if not has_original:
         cfg.mm_val_from_original_only = False
@@ -338,6 +348,7 @@ def build_samples_mm(cfg: CbisDdsmConfig) -> List[Sample]:
         for class_dir in root.iterdir():
             if not class_dir.is_dir():
                 continue
+
             y = _mm_label_from_folder(class_dir.name)
             if y is None:
                 continue
@@ -349,16 +360,28 @@ def build_samples_mm(cfg: CbisDdsmConfig) -> List[Sample]:
                     continue
 
                 gid = _mm_group_key(p)
+
                 if cache_root is not None:
                     rel = p.relative_to(cache_root).as_posix()
                 else:
                     rel = p.relative_to(base).as_posix()
 
-                samples.append(Sample(path=str(p), y=int(y), group_id=str(gid), rel=str(rel), origin=tag))
+                samples.append(
+                    Sample(
+                        path=str(p),
+                        y=int(y),
+                        group_id=str(gid),
+                        rel=str(rel),
+                        origin=tag,
+                    )
+                )
+
                 if max_samples and len(samples) >= max_samples:
                     break
+
             if max_samples and len(samples) >= max_samples:
                 break
+
         if max_samples and len(samples) >= max_samples:
             break
 
@@ -366,6 +389,7 @@ def build_samples_mm(cfg: CbisDdsmConfig) -> List[Sample]:
         raise ValueError("No images found in Mammogram Mastery folders.")
 
     return samples
+
 
 def build_samples_folder_binary(cfg: CbisDdsmConfig) -> List[Sample]:
     dsd, _ = _resolve_dirs(cfg)
@@ -867,26 +891,50 @@ def _make_loader_eval(
 
 def _split_groupwise(cfg: CbisDdsmConfig, samples: List[Sample]) -> Tuple[List[Sample], List[Sample]]:
     rng = np.random.default_rng(int(cfg.seed))
+
     groups: Dict[str, List[Sample]] = {}
     for s in samples:
         groups.setdefault(s.group_id, []).append(s)
+
     items = list(groups.items())
     rng.shuffle(items)
 
     if cfg.mm_val_from_original_only:
-        orig = [s for s in samples if s.origin == "original"]
-        if len(orig) >= 32:
-            rng.shuffle(orig)
-            k = max(16, int(round(float(cfg.val_ratio) * len(samples))))
-            va = orig[:k]
-            va_set = set(id(x) for x in va)
-            tr = [s for s in samples if id(s) not in va_set]
+        orig_groups: Dict[str, List[Sample]] = {}
+        for s in samples:
+            if s.origin == "original":
+                orig_groups.setdefault(s.group_id, []).append(s)
+
+        orig_items = list(orig_groups.items())
+        rng.shuffle(orig_items)
+
+        if len(orig_items) >= 2:
+            target_val = max(16, int(round(float(cfg.val_ratio) * len(samples))))
+
+            va_groups = set()
+            va: List[Sample] = []
+            va_n = 0
+
+            for gid, g in orig_items:
+                if va_n < target_val:
+                    va_groups.add(gid)
+                    va.extend(g)
+                    va_n += len(g)
+
+            tr = [s for s in samples if s.group_id not in va_groups]
+
             ys_va = set(int(s.y) for s in va)
-            if tr and va and len(ys_va) == 2:
+            ys_tr = set(int(s.y) for s in tr)
+
+            if tr and va and len(ys_va) == 2 and len(ys_tr) == 2:
                 return tr, va
 
     target_val = max(16, int(round(float(cfg.val_ratio) * len(samples))))
-    tr, va, va_n = [], [], 0
+
+    tr: List[Sample] = []
+    va: List[Sample] = []
+    va_n = 0
+
     for _, g in items:
         if va_n < target_val:
             va.extend(g)
@@ -900,14 +948,15 @@ def _split_groupwise(cfg: CbisDdsmConfig, samples: List[Sample]) -> Tuple[List[S
         tr = samples[k:]
 
     ys_va = set(int(s.y) for s in va)
-    if len(ys_va) < 2:
+    ys_tr = set(int(s.y) for s in tr)
+
+    if len(ys_va) < 2 or len(ys_tr) < 2:
         rng.shuffle(samples)
         k = max(16, int(round(cfg.val_ratio * len(samples))))
         va = samples[:k]
         tr = samples[k:]
 
     return tr, va
-
 
 def _roc_auc_binary(y_true: np.ndarray, y_score: np.ndarray) -> float:
     y_true = y_true.astype(np.int64)
@@ -954,14 +1003,22 @@ def _metrics(y_true: np.ndarray, p_malign: np.ndarray) -> Dict[str, float]:
     fn = int(((y_pred == 0) & (y_true == 1)).sum())
 
     acc = (tp + tn) / max(1, (tp + tn + fp + fn))
-    tpr = tp / max(1, (tp + fn))
-    tnr = tn / max(1, (tn + fp))
-    bal_acc = 0.5 * (tpr + tnr)
+    recall = tp / max(1, (tp + fn))
+    specificity = tn / max(1, (tn + fp))
+    precision = tp / max(1, (tp + fp))
+    bal_acc = 0.5 * (recall + specificity)
     f1 = (2 * tp) / max(1, (2 * tp + fp + fn))
     auc = _roc_auc_binary(y_true, p_malign)
 
-    return {"acc": float(acc), "bal_acc": float(bal_acc), "f1": float(f1), "auc": float(auc)}
-
+    return {
+        "acc": float(acc),
+        "bal_acc": float(bal_acc),
+        "precision": float(precision),
+        "recall": float(recall),
+        "specificity": float(specificity),
+        "f1": float(f1),
+        "auc": float(auc),
+    }
 
 def _confusion(y_true: np.ndarray, p_malign: np.ndarray) -> Dict[str, int]:
     y_true = y_true.astype(np.int64)
@@ -1005,9 +1062,11 @@ def _train_one_epoch(
     dev: torch.device,
     use_amp: bool,
     mixup_alpha: float,
-) -> float:
+) -> Tuple[float, float]:
     model.train()
     total_loss, total_n = 0.0, 0
+    correct = 0
+
     scaler, autocast = _amp_tools(dev, use_amp)
     opt.zero_grad(set_to_none=True)
 
@@ -1015,12 +1074,13 @@ def _train_one_epoch(
         xb = xb.to(dev, non_blocking=True)
         yb = yb.to(dev, non_blocking=True)
 
-        xb, ya, yb2, lam = _mixup(xb, yb, mixup_alpha)
+        xb_mix, ya, yb2, lam = _mixup(xb, yb, mixup_alpha)
 
         if scaler is not None and autocast is not None:
             with autocast():
-                logits = model(xb)
+                logits = model(xb_mix)
                 loss = lam * loss_fn(logits, ya) + (1.0 - lam) * loss_fn(logits, yb2)
+
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -1028,19 +1088,24 @@ def _train_one_epoch(
             scaler.update()
             opt.zero_grad(set_to_none=True)
         else:
-            logits = model(xb)
+            logits = model(xb_mix)
             loss = lam * loss_fn(logits, ya) + (1.0 - lam) * loss_fn(logits, yb2)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
             opt.zero_grad(set_to_none=True)
 
-        bs = int(ya.numel())
+        with torch.no_grad():
+            pred = torch.argmax(logits, dim=1)
+            correct += int((pred == yb).sum().item())
+
+        bs = int(yb.numel())
         total_loss += float(loss.detach().float().cpu().item()) * bs
         total_n += bs
 
-    return float(total_loss / max(1, total_n))
-
+    train_loss = float(total_loss / max(1, total_n))
+    train_acc = float(correct / max(1, total_n))
+    return train_loss, train_acc
 
 @torch.no_grad()
 def _eval(
@@ -1279,6 +1344,7 @@ def train_and_save(cfg: Optional[CbisDdsmConfig] = None) -> Dict:
 
     dsd, ad = _resolve_dirs(cfg)
     ap = _artifact_paths(ad)
+    ad.mkdir(parents=True, exist_ok=True)
 
     params = _preset_params(cfg.preset)
     arch = params["arch"]
@@ -1297,20 +1363,16 @@ def train_and_save(cfg: Optional[CbisDdsmConfig] = None) -> Dict:
     dev = _device()
     _speed_flags(dev)
 
-    epochs_cap = _env_int("CBIS_EPOCHS_CAP", 12 if dev.type == "cuda" else 6)
+    if dev.type != "cuda":
+        raise RuntimeError("GPU-only training is enabled, but selected device is not CUDA.")
+
+    epochs_cap = _env_int("CBIS_EPOCHS_CAP", 12)
     if epochs_cap > 0:
         epochs = min(epochs, epochs_cap)
         freeze_epochs = min(freeze_epochs, max(0, epochs - 1))
 
-    if dev.type != "cuda":
-        cfg.amp = False
-        image_size = min(image_size, 224)
-        batch_size = min(batch_size, 24)
-        epochs = min(epochs, 6)
-        freeze_epochs = min(freeze_epochs, 2)
-
     if cfg.workers <= 0:
-        cfg.workers = max(0, min(4, os.cpu_count() or 0))
+        cfg.workers = max(1, min(4, os.cpu_count() or 1))
 
     with _TRAIN_LOCK:
         _TRAIN_STATE["started"] = True
@@ -1320,31 +1382,60 @@ def train_and_save(cfg: Optional[CbisDdsmConfig] = None) -> Dict:
     try:
         while True:
             try:
-                if dev.type == "cuda":
-                    try:
-                        torch.cuda.empty_cache()
-                    except Exception:
-                        pass
+                try:
+                    torch.cuda.empty_cache()
+                except Exception:
+                    pass
+
+                print("train_and_save: resolving samples...", flush=True)
+                print(f"dataset_dir: {dsd}", flush=True)
+                print(f"artifact_dir: {ad}", flush=True)
+                print(f"dataset_kind: {cfg.dataset_kind}", flush=True)
 
                 samples = build_samples(cfg)
+                print(f"train_and_save: total samples found = {len(samples)}", flush=True)
+
                 tr_s, va_s = _split_groupwise(cfg, samples)
+                print(f"train_and_save: split -> train={len(tr_s)} val={len(va_s)}", flush=True)
+
+                if not tr_s:
+                    raise RuntimeError("Training split is empty.")
+                if not va_s:
+                    raise RuntimeError("Validation split is empty.")
+
+                y_train = [int(s.y) for s in tr_s]
+                y_val = [int(s.y) for s in va_s]
+
+                print(
+                    f"train_and_save: train class counts -> benign={sum(1 for y in y_train if y == 0)} malignant={sum(1 for y in y_train if y == 1)}",
+                    flush=True
+                )
+                print(
+                    f"train_and_save: val class counts -> benign={sum(1 for y in y_val if y == 0)} malignant={sum(1 for y in y_val if y == 1)}",
+                    flush=True
+                )
+
+                print(
+                    f"train_and_save: creating model arch={arch} image_size={image_size} batch_size={batch_size} epochs={epochs} freeze_epochs={freeze_epochs} device={dev}",
+                    flush=True
+                )
 
                 model = _create_model(arch, 2)
-                if dev.type == "cuda":
-                    model = model.to(dev, memory_format=torch.channels_last)
-                else:
-                    model = model.to(dev)
+                model = model.to(dev, memory_format=torch.channels_last)
 
-                if cfg.compile and hasattr(torch, "compile") and dev.type == "cuda":
+                if cfg.compile and hasattr(torch, "compile"):
                     try:
+                        print("train_and_save: compiling model...", flush=True)
                         model = torch.compile(model, mode="reduce-overhead")
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"train_and_save: compile skipped: {e}", flush=True)
 
                 loss_fn = nn.CrossEntropyLoss(label_smoothing=float(cfg.label_smoothing))
 
+                print("train_and_save: building dataloaders...", flush=True)
                 train_dl = _make_loader_train(cfg, tr_s, image_size, batch_size, cfg.workers, dev, erase_p=erase_p)
                 val_dl = _make_loader_eval(cfg, va_s, image_size, max(8, batch_size), cfg.workers, dev, erase_p=erase_p)
+                print("train_and_save: dataloaders ready", flush=True)
 
                 best_score = -1e9
                 best_state = None
@@ -1354,21 +1445,53 @@ def train_and_save(cfg: Optional[CbisDdsmConfig] = None) -> Dict:
 
                 def _make_opt(params_iter, lr: float):
                     try:
-                        return torch.optim.AdamW(params_iter, lr=lr, weight_decay=1e-4, fused=(dev.type == "cuda"))
+                        return torch.optim.AdamW(
+                            params_iter,
+                            lr=lr,
+                            weight_decay=1e-4,
+                            fused=True
+                        )
                     except Exception:
                         return torch.optim.AdamW(params_iter, lr=lr, weight_decay=1e-4)
 
                 if freeze_epochs > 0:
+                    print("train_and_save: phase 1 (freeze backbone) starting...", flush=True)
                     _set_backbone_trainable(model, trainable=False)
                     opt = _make_opt(filter(lambda p: p.requires_grad, model.parameters()), lr_head)
                     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(1, freeze_epochs))
 
                     for ep in range(1, freeze_epochs + 1):
-                        tr_loss = _train_one_epoch(model, train_dl, opt, loss_fn, dev, cfg.amp, mixup_alpha)
-                        va_loss, va_m, va_cm, _, _ = _eval(model, val_dl, loss_fn, dev, max_batches=int(cfg.max_val_batches))
+                        tr_loss, tr_acc = _train_one_epoch(model, train_dl, opt, loss_fn, dev, cfg.amp, mixup_alpha)
+                        va_loss, va_m, va_cm, _, _ = _eval(
+                            model,
+                            val_dl,
+                            loss_fn,
+                            dev,
+                            max_batches=int(cfg.max_val_batches)
+                        )
+
+                        lr_now = float(opt.param_groups[0]["lr"])
                         auc = va_m["auc"]
                         auc_term = 0.0 if (isinstance(auc, float) and math.isnan(auc)) else float(auc)
                         score = float(va_m["bal_acc"]) + 0.25 * auc_term
+
+                        print(
+                            f"[freeze] epoch {ep}/{freeze_epochs} "
+                            f"lr={lr_now:.6e} "
+                            f"train_loss={tr_loss:.4f} "
+                            f"train_acc={tr_acc:.4f} "
+                            f"val_loss={va_loss:.4f} "
+                            f"val_acc={va_m['acc']:.4f} "
+                            f"precision={va_m['precision']:.4f} "
+                            f"recall={va_m['recall']:.4f} "
+                            f"specificity={va_m['specificity']:.4f} "
+                            f"bal_acc={va_m['bal_acc']:.4f} "
+                            f"f1={va_m['f1']:.4f} "
+                            f"auc={va_m['auc']:.4f} "
+                            f"cm=[tp={va_cm['tp']} tn={va_cm['tn']} fp={va_cm['fp']} fn={va_cm['fn']}] "
+                            f"score={score:.4f}",
+                            flush=True
+                        )
 
                         if score > best_score:
                             best_score = score
@@ -1376,30 +1499,62 @@ def train_and_save(cfg: Optional[CbisDdsmConfig] = None) -> Dict:
                             best_info = {
                                 "phase": 1.0,
                                 "epoch": float(ep),
+                                "lr": float(lr_now),
                                 "train_loss": float(tr_loss),
+                                "train_acc": float(tr_acc),
                                 "val_loss": float(va_loss),
                                 **{f"val_{k}": float(v) for k, v in va_m.items()},
                             }
                             best_cm = dict(va_cm)
                             bad = 0
+                            print(f"[freeze] new best score = {best_score:.4f}", flush=True)
                         else:
                             bad += 1
+                            print(f"[freeze] no improvement, patience={bad}/{patience}", flush=True)
                             if bad >= patience:
+                                print("[freeze] early stopping triggered", flush=True)
                                 break
 
                         sched.step()
 
+                print("train_and_save: phase 2 (finetune) starting...", flush=True)
                 _set_backbone_trainable(model, trainable=True)
                 opt = _make_opt(model.parameters(), lr_ft)
                 finetune_epochs = max(1, epochs - freeze_epochs)
                 sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=finetune_epochs)
 
                 for ep in range(freeze_epochs + 1, epochs + 1):
-                    tr_loss = _train_one_epoch(model, train_dl, opt, loss_fn, dev, cfg.amp, mixup_alpha)
-                    va_loss, va_m, va_cm, _, _ = _eval(model, val_dl, loss_fn, dev, max_batches=int(cfg.max_val_batches))
+                    tr_loss, tr_acc = _train_one_epoch(model, train_dl, opt, loss_fn, dev, cfg.amp, mixup_alpha)
+                    va_loss, va_m, va_cm, _, _ = _eval(
+                        model,
+                        val_dl,
+                        loss_fn,
+                        dev,
+                        max_batches=int(cfg.max_val_batches)
+                    )
+
+                    lr_now = float(opt.param_groups[0]["lr"])
                     auc = va_m["auc"]
                     auc_term = 0.0 if (isinstance(auc, float) and math.isnan(auc)) else float(auc)
                     score = float(va_m["bal_acc"]) + 0.25 * auc_term
+
+                    print(
+                        f"[finetune] epoch {ep}/{epochs} "
+                        f"lr={lr_now:.6e} "
+                        f"train_loss={tr_loss:.4f} "
+                        f"train_acc={tr_acc:.4f} "
+                        f"val_loss={va_loss:.4f} "
+                        f"val_acc={va_m['acc']:.4f} "
+                        f"precision={va_m['precision']:.4f} "
+                        f"recall={va_m['recall']:.4f} "
+                        f"specificity={va_m['specificity']:.4f} "
+                        f"bal_acc={va_m['bal_acc']:.4f} "
+                        f"f1={va_m['f1']:.4f} "
+                        f"auc={va_m['auc']:.4f} "
+                        f"cm=[tp={va_cm['tp']} tn={va_cm['tn']} fp={va_cm['fp']} fn={va_cm['fn']}] "
+                        f"score={score:.4f}",
+                        flush=True
+                    )
 
                     if score > best_score:
                         best_score = score
@@ -1407,20 +1562,26 @@ def train_and_save(cfg: Optional[CbisDdsmConfig] = None) -> Dict:
                         best_info = {
                             "phase": 2.0,
                             "epoch": float(ep),
+                            "lr": float(lr_now),
                             "train_loss": float(tr_loss),
+                            "train_acc": float(tr_acc),
                             "val_loss": float(va_loss),
                             **{f"val_{k}": float(v) for k, v in va_m.items()},
                         }
                         best_cm = dict(va_cm)
                         bad = 0
+                        print(f"[finetune] new best score = {best_score:.4f}", flush=True)
                     else:
                         bad += 1
+                        print(f"[finetune] no improvement, patience={bad}/{patience}", flush=True)
                         if bad >= patience:
+                            print("[finetune] early stopping triggered", flush=True)
                             break
 
                     sched.step()
 
                 if best_state is not None:
+                    print("train_and_save: restoring best model weights...", flush=True)
                     model.load_state_dict(best_state)
 
                 meta = {
@@ -1439,7 +1600,7 @@ def train_and_save(cfg: Optional[CbisDdsmConfig] = None) -> Dict:
                     "workers": int(cfg.workers),
                     "val_ratio": float(cfg.val_ratio),
                     "device": str(dev),
-                    "use_amp": bool(cfg.amp and dev.type == "cuda"),
+                    "use_amp": bool(cfg.amp),
                     "compile": bool(cfg.compile),
                     "mm_use_cache": bool(cfg.mm_use_cache),
                     "mm_cache_dir_name": str(cfg.mm_cache_dir_name),
@@ -1448,6 +1609,7 @@ def train_and_save(cfg: Optional[CbisDdsmConfig] = None) -> Dict:
                     "n_samples_total": int(len(samples)),
                     "n_samples_train": int(len(tr_s)),
                     "n_samples_val": int(len(va_s)),
+                    "best_score": float(best_score),
                     "best_info": best_info,
                     "best_confusion": best_cm,
                     "dataset_kind": str(cfg.dataset_kind),
@@ -1458,46 +1620,66 @@ def train_and_save(cfg: Optional[CbisDdsmConfig] = None) -> Dict:
                     "hash_map_ok": False,
                 }
 
+                print("train_and_save: saving artifacts...", flush=True)
                 _save_artifacts(ad, model, meta)
 
                 if cfg.build_path_map:
                     try:
+                        print("train_and_save: building path map...", flush=True)
                         build_path_label_map(cfg, samples)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"train_and_save: path map skipped: {e}", flush=True)
+
                 if cfg.build_name_map:
                     try:
+                        print("train_and_save: building name map...", flush=True)
                         build_name_label_map(cfg, samples)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"train_and_save: name map skipped: {e}", flush=True)
+
                 if cfg.build_hash_map:
                     try:
+                        print("train_and_save: building hash map...", flush=True)
                         build_hash_label_map(cfg, samples)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"train_and_save: hash map skipped: {e}", flush=True)
 
                 with _TRAIN_LOCK:
                     _TRAIN_STATE["done"] = True
                     _TRAIN_STATE["error"] = None
 
                 _update_train_state_from_artifacts(cfg)
+                print("train_and_save: DONE", flush=True)
                 return meta
 
             except RuntimeError as e:
                 msg = str(e).lower()
-                if dev.type == "cuda" and ("out of memory" in msg or "cuda out of memory" in msg):
+                if "out of memory" in msg or "cuda out of memory" in msg:
+                    print(f"train_and_save: CUDA OOM at batch_size={batch_size}, retrying...", flush=True)
                     try:
                         torch.cuda.empty_cache()
                     except Exception:
                         pass
+
                     if batch_size <= 8:
                         raise
+
                     batch_size = max(8, batch_size // 2)
+                    print(f"train_and_save: new batch_size={batch_size}", flush=True)
                     continue
+
                 raise
 
     except Exception as e:
-        meta_fail = {"train_started": True, "train_failed": True, "train_error": repr(e)}
+        print("train_and_save: FAILED", flush=True)
+        print(repr(e), flush=True)
+
+        meta_fail = {
+            "train_started": True,
+            "train_failed": True,
+            "train_error": repr(e)
+        }
+
         try:
             _, ad2 = _resolve_dirs(cfg)
             ap2 = _artifact_paths(ad2)
@@ -1506,13 +1688,13 @@ def train_and_save(cfg: Optional[CbisDdsmConfig] = None) -> Dict:
             _save_json(ap2["meta"], old)
         except Exception:
             pass
+
         with _TRAIN_LOCK:
             _TRAIN_STATE["done"] = True
             _TRAIN_STATE["error"] = repr(e)
+
         _update_train_state_from_artifacts(cfg)
         raise
-
-
 def find_ground_truth(cfg: Optional[CbisDdsmConfig], filename: str, file_bytes: Optional[bytes] = None) -> Optional[str]:
     cfg = cfg or CbisDdsmConfig()
     ensure_maps_loaded(cfg)
@@ -1539,11 +1721,13 @@ def _normalize_model_id(cfg: CbisDdsmConfig, model_id: str) -> str:
     m = (model_id or "").strip()
     if m:
         return m
+
     kind = (cfg.dataset_kind or "").strip().lower()
     if kind == "mammogram_mastery":
         return "mammogram_mastery_images:torch_cnn"
+    if kind == "folder_binary":
+        return "folder_binary_images:torch_cnn"
     return "cbis_ddsm_images:torch_cnn"
-
 
 
 def _make_out_of_domain_result(cfg: CbisDdsmConfig, model_id: str, q: Dict, dom: Dict) -> Dict:

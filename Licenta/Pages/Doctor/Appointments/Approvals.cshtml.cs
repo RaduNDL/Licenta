@@ -33,11 +33,14 @@ namespace Licenta.Pages.Doctor.Appointments
             if (user == null)
                 return Challenge();
 
-            var doctor = await _db.Doctors.AsNoTracking().FirstOrDefaultAsync(d => d.UserId == user.Id, ct);
+            var doctor = await _db.Doctors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.UserId == user.Id, ct);
+
             if (doctor == null)
                 return Forbid();
 
-            var q = _db.MedicalAttachments
+            var query = _db.MedicalAttachments
                 .AsNoTracking()
                 .Include(a => a.Patient)
                 .ThenInclude(p => p!.User)
@@ -47,10 +50,12 @@ namespace Licenta.Pages.Doctor.Appointments
 
             if (!string.IsNullOrWhiteSpace(user.ClinicId))
             {
-                q = q.Where(a => a.Patient != null && a.Patient.User != null && a.Patient.User.ClinicId == user.ClinicId);
+                query = query.Where(a => a.Patient != null
+                                        && a.Patient.User != null
+                                        && a.Patient.User.ClinicId == user.ClinicId);
             }
 
-            Items = await q
+            Items = await query
                 .OrderByDescending(a => a.UploadedAt)
                 .Take(300)
                 .ToListAsync(ct);

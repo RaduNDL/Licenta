@@ -85,7 +85,6 @@ namespace Licenta.Pages
                 ],
                 "Assistant" =>
                 [
-                    new() { Title = "Appointment Requests", Subtitle = "Process & schedule", Url = "/Assistant/Appointments/Requests", Icon = "🗂️" },
                     new() { Title = "Assistant Panel", Subtitle = "Overview & tools", Url = "/Assistant/AssistantPanel/Index", Icon = "🧭" },
                     new() { Title = "Patients", Subtitle = "Lookup & support", Url = "/Assistant/Patients/Index", Icon = "👥" },
                     new() { Title = "Inbox", Subtitle = "Pending items", Url = "/Assistant/Messages/Inbox", Icon = "📥" }
