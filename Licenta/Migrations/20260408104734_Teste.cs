@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Licenta.Migrations
 {
     /// <inheritdoc />
-    public partial class migration1 : Migration
+    public partial class Teste : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

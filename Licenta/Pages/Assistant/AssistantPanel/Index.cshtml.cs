@@ -53,36 +53,39 @@ namespace Licenta.Pages.Assistant.AssistantPanel
             var assistant = await _userManager.GetUserAsync(User);
             if (assistant == null) return;
 
-            AssistantName = assistant.FullName ?? assistant.Email ?? "Assistant";
+            AssistantName = string.IsNullOrWhiteSpace(assistant.FullName)
+                ? (assistant.Email ?? "Assistant")
+                : assistant.FullName;
+
             var nowUtc = DateTime.UtcNow;
 
-            var baseQuery = _context.PatientMessageRequests
+            var requestsForAssistant = _context.PatientMessageRequests
                 .AsNoTracking()
                 .Where(r => r.AssistantId == assistant.Id);
 
-            NewInquiriesCount = await baseQuery.CountAsync(r => r.Status == PatientMessageRequestStatus.Pending);
-            ActiveTriageCount = await baseQuery.CountAsync(r => r.Status == PatientMessageRequestStatus.AssistantChat);
-            EscalatedToDoctorCount = await baseQuery.CountAsync(r =>
+            NewInquiriesCount = await requestsForAssistant.CountAsync(r => r.Status == PatientMessageRequestStatus.Pending);
+            ActiveTriageCount = await requestsForAssistant.CountAsync(r => r.Status == PatientMessageRequestStatus.AssistantChat);
+            EscalatedToDoctorCount = await requestsForAssistant.CountAsync(r =>
                 r.Status == PatientMessageRequestStatus.WaitingDoctorApproval ||
                 r.Status == PatientMessageRequestStatus.ActiveDoctorChat);
 
             UnreadMessagesCount = await _context.InternalMessages
                 .AsNoTracking()
-                .Where(m => m.RecipientId == assistant.Id && !m.IsRead)
-                .CountAsync();
+                .CountAsync(m => m.RecipientId == assistant.Id && !m.IsRead);
 
-            RecentRequests = await baseQuery
+            RecentRequests = await requestsForAssistant
                 .Include(r => r.Patient).ThenInclude(p => p.User)
                 .OrderByDescending(r => r.UpdatedAt ?? r.CreatedAt)
                 .Take(6)
                 .Select(r => new TriageRequestVm
                 {
                     RequestId = r.Id,
-                    PatientName = r.Patient.FullName ?? r.Patient.Email ?? "Unknown",
-                    Subject = r.Subject ?? "No Subject",
+                    PatientName = (r.Patient.FullName ?? r.Patient.Email ?? "Unknown").Trim(),
+                    Subject = string.IsNullOrWhiteSpace(r.Subject) ? "No Subject" : r.Subject,
                     Status = r.Status.ToString(),
                     TimeAgo = FormatAgo(r.UpdatedAt ?? r.CreatedAt, nowUtc)
-                }).ToListAsync();
+                })
+                .ToListAsync();
 
             RecentNotifications = await _context.UserNotifications
                 .AsNoTracking()
@@ -94,7 +97,8 @@ namespace Licenta.Pages.Assistant.AssistantPanel
                     Type = n.Type.ToString(),
                     Message = n.Message ?? "",
                     TimeAgo = FormatAgo(n.CreatedAtUtc, nowUtc)
-                }).ToListAsync();
+                })
+                .ToListAsync();
         }
 
         private static string FormatAgo(DateTime dateUtc, DateTime nowUtc)

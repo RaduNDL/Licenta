@@ -36,15 +36,17 @@
             @if (Model.CanAccept)
             {
                 <form method="post" asp-page-handler="Accept" asp-route-id="@Model.RequestData.Id" class="d-flex gap-2 mt-4">
+                    @Html.AntiForgeryToken()
                     <button type="submit" class="btn btn-success">
                         <i class="bi bi-check2-circle"></i> Accept & Start Triage
                     </button>
                 </form>
 
                 <form method="post" asp-page-handler="ReturnToDoctor" asp-route-id="@Model.RequestData.Id" class="mt-3">
+                    @Html.AntiForgeryToken()
                     <div class="mb-2">
-                        <label class="text-muted small">Note to doctor (optional)</label>
-                        <textarea name="note" class="form-control" rows="3" maxlength="2000"></textarea>
+                        <label class="text-muted small" for="noteBox">Note to doctor (optional)</label>
+                        <textarea id="noteBox" name="note" class="form-control" rows="3" maxlength="2000"></textarea>
                     </div>
                     <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Send this request back to the doctor?');">
                         <i class="bi bi-arrow-repeat"></i> Send back to doctor
@@ -59,6 +61,7 @@
                     </a>
 
                     <form method="post" asp-page-handler="ReturnToDoctor" asp-route-id="@Model.RequestData.Id">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" name="note" value="Assistant requested doctor review." />
                         <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Send this request back to the doctor?');">
                             <i class="bi bi-arrow-repeat"></i> Send back to doctor

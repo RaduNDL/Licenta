@@ -16,13 +16,13 @@
                     <h3 class="font-weight-light my-2 text-center">Create New Account</h3>
                 </div>
                 <div class="card-body p-5">
-                    <form method="post" id="createUserForm">
+                    <form method="post" id="createUserForm" novalidate>
                         @Html.AntiForgeryToken()
 
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
                         <div class="form-floating mb-3 input-group-custom">
-                            <input asp-for="Input.FullName" class="form-control" placeholder="John Doe" />
+                            <input asp-for="Input.FullName" class="form-control" placeholder="John Doe" maxlength="256" />
                             <label asp-for="Input.FullName"><i class="bi bi-person me-2"></i>Full Name</label>
                             <span asp-validation-for="Input.FullName" class="text-danger small"></span>
                         </div>
@@ -46,7 +46,7 @@
                                 <input asp-for="Input.Password" type="password" class="form-control" id="passwordInput" placeholder="Password" />
                                 <label asp-for="Input.Password"><i class="bi bi-key me-2"></i>Password</label>
                             </div>
-                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword" aria-label="Show or hide password">
                                 <i class="bi bi-eye"></i>
                             </button>
                         </div>
@@ -54,31 +54,31 @@
 
                         <div class="form-check form-switch mb-4 d-flex align-items-center">
                             <input asp-for="Input.EmailConfirmed" class="form-check-input me-3" type="checkbox" role="switch" id="emailConfirmedSwitch" style="height: 1.5rem; width: 3rem;">
-                            <label class="form-check-label pt-1" for="emailConfirmedSwitch">
-                                <span class="fw-bold text-dark">Auto-confirm Email</span>
-                                <small class="text-muted d-block">User can login immediately without verification.</small>
-                            </label>
-                        </div>
+                                <label class="form-check-label pt-1" for="emailConfirmedSwitch">
+                                    <span class="fw-bold text-dark">Auto-confirm Email</span>
+                                    <small class="text-muted d-block">User can login immediately without verification.</small>
+                                </label>
+                            </div>
 
-                        <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
-                            <a asp-page="./Index" class="btn btn-link text-secondary text-decoration-none ps-0">
-                                <i class="bi bi-arrow-left me-1"></i> Back to List
-                            </a>
-                            <button type="submit" class="btn btn-primary btn-lg px-4 shadow-sm">
-                                <i class="bi bi-check2-circle me-2"></i>Create User
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                <div class="card-footer text-center py-3">
-                    <div class="small text-muted">Secure user creation via Admin Portal</div>
+                            <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                <a asp-page="./Index" class="btn btn-link text-secondary text-decoration-none ps-0">
+                                    <i class="bi bi-arrow-left me-1"></i> Back to List
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg px-4 shadow-sm">
+                                    <i class="bi bi-check2-circle me-2"></i>Create User
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card-footer text-center py-3">
+                        <div class="small text-muted">Secure user creation via Admin Portal</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/create-user.js" asp-append-version="true"></script>
-}
+    @section Scripts {
+        <partial name="_ValidationScriptsPartial" />
+        <script src="~/js/create-user.js" asp-append-version="true"></script>
+    }

@@ -13,3 +13,5 @@
 **/artifacts/*.json
 .vscode/
 *.pyc
+appsettings.Development.json
+**/startup-logs/

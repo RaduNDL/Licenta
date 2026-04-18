@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Licenta.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260331132933_migration1")]
-    partial class migration1
+    [Migration("20260408104734_Teste")]
+    partial class Teste
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -5,6 +5,7 @@ using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Licenta.Data
@@ -15,6 +16,7 @@ namespace Licenta.Data
         {
             using var scope = services.CreateScope();
 
+            var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -32,36 +34,45 @@ namespace Licenta.Data
                 }
             }
 
-            var sharedClinicId = await EnsureSharedClinicIdAsync(userManager);
+            var adminEmail = config["SeedAccounts:AdminEmail"] ?? "admin@gmail.com";
+            var adminPassword = config["SeedAccounts:AdminPassword"] ?? throw new InvalidOperationException("SeedAccounts:AdminPassword is not configured.");
+            var doctorEmail = config["SeedAccounts:DoctorEmail"] ?? "doctor@gmail.com";
+            var doctorPassword = config["SeedAccounts:DoctorPassword"] ?? throw new InvalidOperationException("SeedAccounts:DoctorPassword is not configured.");
+            var assistantEmail = config["SeedAccounts:AssistantEmail"] ?? "assistant@gmail.com";
+            var assistantPassword = config["SeedAccounts:AssistantPassword"] ?? throw new InvalidOperationException("SeedAccounts:AssistantPassword is not configured.");
+            var patientEmail = config["SeedAccounts:PatientEmail"] ?? "patient@gmail.com";
+            var patientPassword = config["SeedAccounts:PatientPassword"] ?? throw new InvalidOperationException("SeedAccounts:PatientPassword is not configured.");
+
+            var sharedClinicId = await EnsureSharedClinicIdAsync(userManager, assistantEmail);
 
             var admin = await EnsureUserInRole(
                 userManager,
-                email: "admin@gmail.com",
-                password: "Parola123!",
+                email: adminEmail,
+                password: adminPassword,
                 fullName: "System Administrator",
                 role: "Administrator",
                 clinicId: sharedClinicId);
 
             var doctorUser = await EnsureUserInRole(
                 userManager,
-                email: "doctor@gmail.com",
-                password: "Parola123!",
+                email: doctorEmail,
+                password: doctorPassword,
                 fullName: "Default Doctor",
                 role: "Doctor",
                 clinicId: sharedClinicId);
 
             var assistantUser = await EnsureUserInRole(
                 userManager,
-                email: "assistant@gmail.com",
-                password: "Parola123!",
+                email: assistantEmail,
+                password: assistantPassword,
                 fullName: "Default Assistant",
                 role: "Assistant",
                 clinicId: sharedClinicId);
 
             var patientUser = await EnsureUserInRole(
                 userManager,
-                email: "patient@gmail.com",
-                password: "Parola123!",
+                email: patientEmail,
+                password: patientPassword,
                 fullName: "Default Patient",
                 role: "Patient",
                 clinicId: sharedClinicId);
@@ -72,9 +83,9 @@ namespace Licenta.Data
             await db.SaveChangesAsync();
         }
 
-        private static async Task<string> EnsureSharedClinicIdAsync(UserManager<ApplicationUser> userManager)
+        private static async Task<string> EnsureSharedClinicIdAsync(UserManager<ApplicationUser> userManager, string assistantEmail)
         {
-            var assistant = await userManager.FindByEmailAsync("assistant@gmail.com");
+            var assistant = await userManager.FindByEmailAsync(assistantEmail);
             var cid = (assistant?.ClinicId ?? "").Trim();
             if (!string.IsNullOrWhiteSpace(cid))
                 return cid;

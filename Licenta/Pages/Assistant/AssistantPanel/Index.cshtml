@@ -15,7 +15,9 @@
             <p class="subtitle"><i class="bi bi-shield-check-fill"></i> Clinic Triage Hub</p>
         </div>
         <div class="header-actions">
-            <button class="btn btn-modern-refresh"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+            <a class="btn btn-modern-refresh" asp-page="./Index" aria-label="Refresh dashboard">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </a>
         </div>
     </div>
 
@@ -79,12 +81,15 @@
                             <tbody>
                                 @foreach (var r in Model.RecentRequests)
                                 {
+                                    var patientName = string.IsNullOrWhiteSpace(r.PatientName) ? "Unknown" : r.PatientName.Trim();
+                                    var avatarLetter = patientName.Substring(0, 1).ToUpperInvariant();
+
                                     <tr class="table-row-hover">
                                         <td>
                                             <div class="patient-cell">
-                                                <div class="patient-avatar">@r.PatientName.Substring(0, 1).ToUpper()</div>
+                                                <div class="patient-avatar">@avatarLetter</div>
                                                 <div class="patient-details">
-                                                    <span class="patient-name">@r.PatientName</span>
+                                                    <span class="patient-name">@patientName</span>
                                                     <span class="time-ago">@r.TimeAgo</span>
                                                 </div>
                                             </div>

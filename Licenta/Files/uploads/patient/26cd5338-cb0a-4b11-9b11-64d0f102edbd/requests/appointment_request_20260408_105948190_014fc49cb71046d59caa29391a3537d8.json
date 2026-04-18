@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-04-08T10:59:48.1831696Z",
+  "ClinicId": "CL-B03DCB1E",
+  "PatientUserId": "ac05cc3e-a02d-40f7-851f-b0c279d5bf8b",
+  "PatientProfileId": "26cd5338-cb0a-4b11-9b11-64d0f102edbd",
+  "SelectedDoctorId": "7cc6f6a3-153e-4267-b6bb-0ad104edb4d7",
+  "SelectedLocalIso": "2026-04-09T10:00",
+  "SelectedScheduledUtc": "2026-04-09T07:00:00Z",
+  "Reason": "Referral for a diagnostic mammogram following a self-detected palpable lump in the upper outer quadrant of the left breast. Requesting AI-assisted analysis for a preliminary assessment of malignancy risk before the specialist consultation."
+}

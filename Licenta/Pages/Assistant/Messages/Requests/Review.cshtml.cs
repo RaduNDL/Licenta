@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Licenta.Pages.Assistant.Messages.Requests;
 
 [Authorize(Roles = "Assistant")]
+[AutoValidateAntiforgeryToken]
 public class ReviewModel : PageModel
 {
     private readonly AppDbContext _db;
@@ -30,7 +31,6 @@ public class ReviewModel : PageModel
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Unauthorized();
-
         if (user.AssignedDoctorId == null) return Unauthorized();
 
         RequestData = await _db.PatientMessageRequests
@@ -44,7 +44,8 @@ public class ReviewModel : PageModel
 
         if (RequestData == null) return NotFound();
 
-        CanAccept = RequestData.Status == PatientMessageRequestStatus.Pending && string.IsNullOrEmpty(RequestData.AssistantId);
+        CanAccept = RequestData.Status == PatientMessageRequestStatus.Pending &&
+                    string.IsNullOrEmpty(RequestData.AssistantId);
 
         return Page();
     }
@@ -60,7 +61,11 @@ public class ReviewModel : PageModel
             .FirstOrDefaultAsync(r => r.Id == id && r.DoctorProfileId == user.AssignedDoctorId.Value);
 
         if (req == null) return NotFound();
-        if (req.Status != PatientMessageRequestStatus.Pending) return BadRequest();
+        if (req.Status != PatientMessageRequestStatus.Pending)
+        {
+            TempData["StatusMessage"] = "Request is no longer pending.";
+            return RedirectToPage("./Review", new { id });
+        }
 
         if (!string.IsNullOrWhiteSpace(req.AssistantId) && req.AssistantId != user.Id)
         {
@@ -71,7 +76,16 @@ public class ReviewModel : PageModel
         req.AssistantId = user.Id;
         req.Status = PatientMessageRequestStatus.AssistantChat;
         req.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            TempData["StatusMessage"] = "Request was updated by another user. Please refresh.";
+            return RedirectToPage("./Review", new { id });
+        }
 
         await _notifier.NotifyUserAsync(
             req.Patient.UserId,
@@ -94,7 +108,11 @@ public class ReviewModel : PageModel
 
         if (req == null) return NotFound();
 
-        req.AssistantNote = string.IsNullOrWhiteSpace(note) ? "Assistant requested doctor review." : note.Trim();
+        var safeNote = string.IsNullOrWhiteSpace(note) ? "Assistant requested doctor review." : note.Trim();
+        if (safeNote.Length > 2000)
+            safeNote = safeNote.Substring(0, 2000);
+
+        req.AssistantNote = safeNote;
         req.AssistantId = null;
         req.Status = PatientMessageRequestStatus.WaitingDoctorApproval;
         req.UpdatedAt = DateTime.UtcNow;

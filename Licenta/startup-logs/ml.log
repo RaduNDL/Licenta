@@ -24,8 +24,70 @@ ML_HOST = 127.0.0.1
 ML_PORT = 8001
 =================================
 
-INFO:     Started server process [19356]
+INFO:     Started server process [23068]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
-INFO:     127.0.0.1:64394 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61648 - "GET /api/status HTTP/1.1" 200 OK
+
+=== RUN_SERVER DEBUG ===
+sys.executable = C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe
+sys.version = 3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]
+PROJECT_ROOT = E:\Facultate\Licenta\Licenta\Python
+cwd = E:\Facultate\Licenta\Licenta\Python
+ML_HOST = 127.0.0.1
+ML_PORT = 8001
+ML_LOG_LEVEL = info
+========================
+
+
+=== ML SERVER ENV DEBUG ===
+sys.executable = C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe
+sys.version = 3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]
+PROJECT_ROOT = E:\Facultate\Licenta\Licenta\Python
+cwd = E:\Facultate\Licenta\Licenta\Python
+torch.__version__ = 2.5.1+cu121
+torch.version.cuda = 12.1
+torch.cuda.is_available() = True
+torch.cuda.device_count() = 1
+CUDA_VISIBLE_DEVICES = None
+ML_HOST = 127.0.0.1
+ML_PORT = 8001
+=================================
+
+INFO:     Started server process [8296]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
+INFO:     127.0.0.1:50745 - "GET /api/status HTTP/1.1" 200 OK
+^C
+=== RUN_SERVER DEBUG ===
+sys.executable = C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe
+sys.version = 3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]
+PROJECT_ROOT = E:\Facultate\Licenta\Licenta\Python
+cwd = E:\Facultate\Licenta\Licenta\Python
+ML_HOST = 127.0.0.1
+ML_PORT = 8001
+ML_LOG_LEVEL = info
+========================
+
+
+=== ML SERVER ENV DEBUG ===
+sys.executable = C:\Users\Administrator\AppData\Local\Programs\Python\Python311\python.exe
+sys.version = 3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]
+PROJECT_ROOT = E:\Facultate\Licenta\Licenta\Python
+cwd = E:\Facultate\Licenta\Licenta\Python
+torch.__version__ = 2.5.1+cu121
+torch.version.cuda = 12.1
+torch.cuda.is_available() = True
+torch.cuda.device_count() = 1
+CUDA_VISIBLE_DEVICES = None
+ML_HOST = 127.0.0.1
+ML_PORT = 8001
+=================================
+
+INFO:     Started server process [26948]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
+INFO:     127.0.0.1:56350 - "GET /api/status HTTP/1.1" 200 OK
