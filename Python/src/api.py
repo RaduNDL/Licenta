@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import sys
 import traceback
@@ -16,26 +17,37 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import src.CBISDDSM as mm
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("ml_server")
+
+DEBUG_ENV = os.environ.get("ML_DEBUG", "0").strip() == "1"
+
 app = FastAPI(title="MedFlow ML", version="1.0")
 
 
-def _print_ml_env_debug() -> None:
-    print("\n=== ML SERVER ENV DEBUG ===", flush=True)
-    print(f"sys.executable = {sys.executable}", flush=True)
-    print(f"sys.version = {sys.version}", flush=True)
-    print(f"PROJECT_ROOT = {PROJECT_ROOT}", flush=True)
-    print(f"cwd = {os.getcwd()}", flush=True)
-    print(f"torch.__version__ = {torch.__version__}", flush=True)
-    print(f"torch.version.cuda = {torch.version.cuda}", flush=True)
-    print(f"torch.cuda.is_available() = {torch.cuda.is_available()}", flush=True)
-    print(f"torch.cuda.device_count() = {torch.cuda.device_count()}", flush=True)
-    print(f"CUDA_VISIBLE_DEVICES = {os.environ.get('CUDA_VISIBLE_DEVICES')}", flush=True)
-    print(f"ML_HOST = {os.environ.get('ML_HOST')}", flush=True)
-    print(f"ML_PORT = {os.environ.get('ML_PORT')}", flush=True)
-    print("=================================\n", flush=True)
+def _log_ml_env() -> None:
+    if not DEBUG_ENV:
+        return
+    logger.debug("=== ML SERVER ENV ===")
+    logger.debug("sys.executable = %s", sys.executable)
+    logger.debug("sys.version = %s", sys.version)
+    logger.debug("PROJECT_ROOT = %s", PROJECT_ROOT)
+    logger.debug("cwd = %s", os.getcwd())
+    logger.debug("torch = %s", torch.__version__)
+    logger.debug("torch.cuda = %s", torch.version.cuda)
+    logger.debug("cuda_available = %s", torch.cuda.is_available())
+    logger.debug("cuda_device_count = %s", torch.cuda.device_count())
+    logger.debug("CUDA_VISIBLE_DEVICES = %s", os.environ.get("CUDA_VISIBLE_DEVICES"))
+    logger.debug("ML_HOST = %s", os.environ.get("ML_HOST"))
+    logger.debug("ML_PORT = %s", os.environ.get("ML_PORT"))
+    logger.debug("=====================")
 
 
-_print_ml_env_debug()
+_log_ml_env()
 
 
 @app.get("/api/status")
@@ -65,21 +77,19 @@ async def api_predict(
     require_domain: int = Form(1),
 ):
     try:
-        print("\n=== BEFORE PREDICT ===", flush=True)
-        print(f"sys.executable = {sys.executable}", flush=True)
-        print(f"filename = {file.filename}", flush=True)
-        print(f"model_id = {model_id}", flush=True)
-        print(f"image_size = {image_size}", flush=True)
-        print(f"require_quality = {require_quality}", flush=True)
-        print(f"require_domain = {require_domain}", flush=True)
-        print(f"torch.cuda.is_available() = {torch.cuda.is_available()}", flush=True)
-        print(f"torch.version.cuda = {torch.version.cuda}", flush=True)
-        if torch.cuda.is_available():
-            try:
-                print(f"GPU = {torch.cuda.get_device_name(0)}", flush=True)
-            except Exception:
-                traceback.print_exc()
-        print("======================\n", flush=True)
+        logger.info(
+            "Predict request: filename=%s model_id=%s image_size=%s "
+            "require_quality=%s require_domain=%s",
+            file.filename, model_id, image_size, require_quality, require_domain,
+        )
+
+        if DEBUG_ENV:
+            logger.debug("cuda_available=%s cuda_version=%s", torch.cuda.is_available(), torch.version.cuda)
+            if torch.cuda.is_available():
+                try:
+                    logger.debug("GPU = %s", torch.cuda.get_device_name(0))
+                except Exception:
+                    logger.debug("Could not get GPU name", exc_info=True)
 
         b = await file.read()
         if not b:
@@ -96,23 +106,19 @@ async def api_predict(
         )
 
         status = 422 if out.get("label") in ("OUT_OF_DOMAIN", "UNUSABLE_IMAGE") else 200
+
+        logger.info("Predict result: label=%s status=%s", out.get("label"), status)
+
         return JSONResponse(status_code=status, content=out)
 
     except HTTPException:
         raise
     except Exception as e:
-        print("\n=== ML PREDICT ERROR ===", flush=True)
-        print(f"filename = {file.filename}", flush=True)
-        print(f"model_id = {model_id}", flush=True)
-        print(f"image_size = {image_size}", flush=True)
-        print(f"require_quality = {require_quality}", flush=True)
-        print(f"require_domain = {require_domain}", flush=True)
-        print(f"sys.executable = {sys.executable}", flush=True)
-        print(f"torch.__version__ = {torch.__version__}", flush=True)
-        print(f"torch.version.cuda = {torch.version.cuda}", flush=True)
-        print(f"torch.cuda.is_available() = {torch.cuda.is_available()}", flush=True)
-        traceback.print_exc()
-        print("=================================\n", flush=True)
+        logger.error(
+            "Predict failed: filename=%s model_id=%s error=%s: %s",
+            file.filename, model_id, type(e).__name__, e,
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
     finally:
         await file.close()

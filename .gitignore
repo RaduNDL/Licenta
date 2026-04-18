@@ -1,17 +1,58 @@
+# ========================
 # .NET
+# ========================
 **/bin/
 **/obj/
 **/.vs/
-**/.user
+**/*.user
 **/Logs/
+**/TestResults/
 
+# Secrets & config
+appsettings.Development.json
+**/secrets.json
+
+# NuGet
+**/packages/
+*.nupkg
+
+# Publish output
+**/publish/
+
+# ========================
 # Python & ML
+# ========================
 **/__pycache__/
 **/.venv/
+**/venv/
+**/env/
 **/dataset/
 **/artifacts/*.pt
 **/artifacts/*.json
-.vscode/
 *.pyc
-appsettings.Development.json
+*.pyo
+*.pyd
+*.egg-info/
+.Python
+
+# ========================
+# Logs & runtime
+# ========================
+**/Logs/
 **/startup-logs/
+*.log
+
+# ========================
+# OS
+# ========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========================
+# IDE
+# ========================
+.vscode/
+.idea/
+*.suo
+*.swp
