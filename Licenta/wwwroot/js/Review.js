@@ -1,13 +1,9 @@
 ﻿document.addEventListener("DOMContentLoaded", function () {
-    const reviewModalEl = document.getElementById("reviewModal");
-    const deleteReviewModalEl = document.getElementById("deleteReviewModal");
-
-    const reviewModal = reviewModalEl ? new bootstrap.Modal(reviewModalEl, { backdrop: true, keyboard: true, focus: true }) : null;
-    const deleteReviewModal = deleteReviewModalEl ? new bootstrap.Modal(deleteReviewModalEl) : null;
-
     const form = document.getElementById("reviewForm");
-    const titleSpan = document.getElementById("reviewModalTitle")?.querySelector('[data-slot="title"]');
+    const formPanel = document.querySelector(".form-panel");
+    const formTitle = document.getElementById("formPanelTitle");
     const submitSpan = document.getElementById("reviewSubmitBtn")?.querySelector('[data-slot="submit"]');
+    const btnCancelEdit = document.getElementById("btnCancelEdit");
 
     const inputId = document.getElementById("Input_Id");
     const targetApp = document.getElementById("target-app");
@@ -18,16 +14,28 @@
     const inputComment = document.getElementById("Input_Comment");
     const charCount = document.getElementById("charCount");
 
-    function setFormHandler(handler) {
-        if (!form) return;
-        form.setAttribute("action", `?handler=${handler}`);
-    }
+    function setFormMode(mode) {
+        if (!form || !formTitle || !submitSpan || !btnCancelEdit || !formPanel) return;
 
-    function updateChoiceCards() {
-        document.querySelectorAll(".choice-card").forEach(card => {
-            const input = card.querySelector('input[type="radio"]');
-            card.classList.toggle("is-selected", !!input?.checked);
-        });
+        if (mode === "create") {
+            form.setAttribute("action", "?handler=Create");
+            formTitle.textContent = "Write a Review";
+            submitSpan.textContent = "Submit Feedback";
+            btnCancelEdit.classList.add("d-none");
+            formPanel.classList.remove("edit-mode");
+            form.reset();
+            if (inputId) inputId.value = "";
+            setRating(5);
+            if (charCount) charCount.textContent = "0";
+            if (targetDoctor) targetDoctor.checked = true;
+            toggleDoctorSelect();
+        } else {
+            form.setAttribute("action", "?handler=Edit");
+            formTitle.textContent = "Update Feedback";
+            submitSpan.textContent = "Save Changes";
+            btnCancelEdit.classList.remove("d-none");
+            formPanel.classList.add("edit-mode");
+        }
     }
 
     function toggleDoctorSelect() {
@@ -37,13 +45,12 @@
         doctorSelectWrap.hidden = !isDoctor;
         doctorSelect.disabled = !isDoctor;
 
-        if (isDoctor) doctorSelect.setAttribute("required", "required");
-        else {
+        if (isDoctor) {
+            doctorSelect.setAttribute("required", "required");
+        } else {
             doctorSelect.removeAttribute("required");
             doctorSelect.value = "";
         }
-
-        updateChoiceCards();
     }
 
     function setRating(value) {
@@ -58,47 +65,22 @@
         if (charCount) charCount.textContent = String(inputComment.value.length);
     });
 
-    document.querySelectorAll('[data-mode="create"]').forEach(btn => {
-        btn.addEventListener("click", function () {
-            form?.reset();
-            setFormHandler("Create");
-
-            if (inputId) inputId.value = "";
-            if (titleSpan) titleSpan.textContent = "Write a Review";
-            if (submitSpan) submitSpan.textContent = "Submit Feedback";
-
-            const target = this.getAttribute("data-target");
-            if (target === "Doctor") {
-                if (targetDoctor) targetDoctor.checked = true;
-                if (targetApp) targetApp.checked = false;
-            } else {
-                if (targetApp) targetApp.checked = true;
-                if (targetDoctor) targetDoctor.checked = false;
-            }
-
-            toggleDoctorSelect();
-            setRating(5);
-            if (charCount) charCount.textContent = "0";
-        });
+    btnCancelEdit?.addEventListener("click", () => {
+        setFormMode("create");
     });
 
     document.querySelectorAll(".js-edit-review").forEach(btn => {
         btn.addEventListener("click", function () {
-            form?.reset();
-            setFormHandler("Edit");
+            setFormMode("edit");
 
             if (inputId) inputId.value = this.getAttribute("data-id") || "";
-            if (titleSpan) titleSpan.textContent = "Update Feedback";
-            if (submitSpan) submitSpan.textContent = "Save Changes";
 
             const target = this.getAttribute("data-target");
             if (target === "Doctor") {
                 if (targetDoctor) targetDoctor.checked = true;
-                if (targetApp) targetApp.checked = false;
                 if (doctorSelect) doctorSelect.value = this.getAttribute("data-doctor-id") || "";
             } else {
                 if (targetApp) targetApp.checked = true;
-                if (targetDoctor) targetDoctor.checked = false;
             }
 
             toggleDoctorSelect();
@@ -112,15 +94,17 @@
                 if (charCount) charCount.textContent = String(inputComment.value.length);
             }
 
-            reviewModal?.show();
+            window.scrollTo({
+                top: formPanel.offsetTop - 120,
+                behavior: 'smooth'
+            });
         });
     });
 
     document.querySelectorAll(".js-delete-review").forEach(btn => {
         btn.addEventListener("click", function () {
-            const deleteInput = document.getElementById("deleteReviewId");
-            if (deleteInput) deleteInput.value = this.getAttribute("data-id") || "";
-            deleteReviewModal?.show();
+            const reviewId = this.getAttribute("data-id");
+            document.getElementById("deleteReviewId").value = reviewId;
         });
     });
 
@@ -143,11 +127,6 @@
 
     searchInput?.addEventListener("input", applyFilters);
     ratingFilter?.addEventListener("change", applyFilters);
-
-    reviewModalEl?.addEventListener("shown.bs.modal", function () {
-        toggleDoctorSelect();
-        setTimeout(() => inputComment?.focus(), 50);
-    });
 
     toggleDoctorSelect();
 });
