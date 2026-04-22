@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -112,52 +111,80 @@ namespace Licenta.Pages.Administrator.Users
                 FullName = string.IsNullOrWhiteSpace(Input.FullName) ? null : Input.FullName.Trim()
             };
 
-            await using var tx = await _db.Database.BeginTransactionAsync();
+            var strategy = _db.Database.CreateExecutionStrategy();
 
-            var create = await _userManager.CreateAsync(user, Input.Password);
-            if (!create.Succeeded)
+            IdentityResult? createResult = null;
+            IdentityResult? addRoleResult = null;
+            string? errorMessage = null;
+
+            await strategy.ExecuteAsync(async () =>
             {
-                foreach (var e in create.Errors)
-                    ModelState.AddModelError(string.Empty, e.Description);
+                await using var tx = await _db.Database.BeginTransactionAsync();
+                try
+                {
+                    createResult = await _userManager.CreateAsync(user, Input.Password);
+                    if (!createResult.Succeeded)
+                    {
+                        await tx.RollbackAsync();
+                        return;
+                    }
 
-                await tx.RollbackAsync();
+                    addRoleResult = await _userManager.AddToRoleAsync(user, Input.Role);
+                    if (!addRoleResult.Succeeded)
+                    {
+                        await _userManager.DeleteAsync(user);
+                        await tx.RollbackAsync();
+                        return;
+                    }
+
+                    if (Input.Role == "Doctor")
+                    {
+                        _db.Doctors.Add(new DoctorProfile
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = user.Id,
+                            Specialty = "General Practice",
+                            ProfileImagePath = "/images/default.jpg"
+                        });
+                    }
+                    else if (Input.Role == "Patient")
+                    {
+                        _db.Patients.Add(new PatientProfile
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = user.Id
+                        });
+                    }
+
+                    await _db.SaveChangesAsync();
+                    await tx.CommitAsync();
+                }
+                catch
+                {
+                    await tx.RollbackAsync();
+                    throw;
+                }
+            });
+
+            if (createResult != null && !createResult.Succeeded)
+            {
+                foreach (var e in createResult.Errors)
+                    ModelState.AddModelError(string.Empty, e.Description);
                 return Page();
             }
 
-            var addRole = await _userManager.AddToRoleAsync(user, Input.Role);
-            if (!addRole.Succeeded)
+            if (addRoleResult != null && !addRoleResult.Succeeded)
             {
-                foreach (var e in addRole.Errors)
+                foreach (var e in addRoleResult.Errors)
                     ModelState.AddModelError(string.Empty, e.Description);
-
-                await _userManager.DeleteAsync(user);
-                await tx.RollbackAsync();
                 return Page();
             }
 
-            if (Input.Role == "Doctor")
+            if (!string.IsNullOrWhiteSpace(errorMessage))
             {
-                var doctorProfile = new DoctorProfile
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id,
-                    Specialty = "General Practice",
-                    ProfileImagePath = "/images/default.jpg"
-                };
-                _db.Doctors.Add(doctorProfile);
+                ModelState.AddModelError(string.Empty, errorMessage);
+                return Page();
             }
-            else if (Input.Role == "Patient")
-            {
-                var patientProfile = new PatientProfile
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id
-                };
-                _db.Patients.Add(patientProfile);
-            }
-
-            await _db.SaveChangesAsync();
-            await tx.CommitAsync();
 
             TempData["StatusMessage"] = $"User {email} created with role '{Input.Role}'.";
             return RedirectToPage("./Index");

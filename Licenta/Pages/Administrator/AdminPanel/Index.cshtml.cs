@@ -1,17 +1,11 @@
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Licenta.Pages.Administrator.AdminPanel
 {
@@ -34,8 +28,6 @@ namespace Licenta.Pages.Administrator.AdminPanel
         public int TotalUsersCount { get; set; }
         public int ActiveDoctorsCount { get; set; }
         public int RecentSecurityEvents { get; set; }
-        public int UnreadNotifications { get; set; }
-
         public int StorageUsage { get; set; }
 
         public List<LoginEventVm> RecentLogins { get; set; } = new();
@@ -67,36 +59,31 @@ namespace Licenta.Pages.Administrator.AdminPanel
             var doctorUsers = await _userManager.GetUsersInRoleAsync("Doctor");
             ActiveDoctorsCount = doctorUsers.Count(u => !IsLocked(u) && !u.IsSoftDeleted);
 
-            UnreadNotifications = 0;
-            if (admin != null)
+            var sinceUtc = DateTime.UtcNow.AddDays(-7);
+
+            var allEvents = ReadAuditEventsFromFiles(_env.ContentRootPath, sinceUtc);
+
+            var signInEvents = allEvents
+            .Where(e => string.Equals(e.AuditType, "SignIn", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+            RecentSecurityEvents = signInEvents.Count;
+
+            RecentLogins = signInEvents
+            .OrderByDescending(e => e.TimestampUtc)
+            .Take(12)
+            .Select(e => new LoginEventVm
             {
-                UnreadNotifications = await _context.UserNotifications
-                    .AsNoTracking()
-                    .Where(n => n.UserId == admin.Id && !n.IsRead)
-                    .CountAsync();
-            }
-
-            var nowUtc = DateTime.UtcNow;
-            var sinceUtc = nowUtc.AddDays(-7);
-
-            var fileEvents = ReadAuditEventsFromFiles(_env.ContentRootPath, sinceUtc);
-            RecentSecurityEvents = fileEvents.Count;
-
-            RecentLogins = fileEvents
-                .Where(e => !string.IsNullOrWhiteSpace(e.AuditType) && e.AuditType!.Contains("SignIn", StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(e => e.TimestampUtc)
-                .Take(12)
-                .Select(e => new LoginEventVm
-                {
-                    UserName = string.IsNullOrWhiteSpace(e.UserName) ? (e.UserId ?? "Unknown") : e.UserName!,
-                    RoleOrScheme = string.IsNullOrWhiteSpace(e.Scheme) ? "-" : e.Scheme!,
-                    TimestampUtc = DateTime.SpecifyKind(e.TimestampUtc, DateTimeKind.Utc),
-                    Success = e.Success
-                })
-                .ToList();
+                UserName = string.IsNullOrWhiteSpace(e.UserName)
+            ? (e.UserId ?? "Unknown")
+            : e.UserName!,
+                RoleOrScheme = string.IsNullOrWhiteSpace(e.Scheme) ? "Identity.Application" : e.Scheme!,
+                TimestampUtc = DateTime.SpecifyKind(e.TimestampUtc, DateTimeKind.Utc),
+                Success = e.Success
+            })
+            .ToList();
 
             NewestUsers = await BuildNewestUsersAsync();
-
             StorageUsage = ComputeUploadsUsagePercent(_env.WebRootPath);
         }
 
@@ -105,35 +92,35 @@ namespace Licenta.Pages.Administrator.AdminPanel
             try
             {
                 var created = await _context.AuditLogs
-                    .AsNoTracking()
-                    .Where(a => a.EventType == AuditEventType.Create && a.EntityName == nameof(ApplicationUser))
-                    .OrderByDescending(a => a.OccurredAtUtc)
-                    .Take(80)
-                    .Select(a => new { a.EntityId, a.OccurredAtUtc })
-                    .ToListAsync();
+                .AsNoTracking()
+                .Where(a => a.EventType == AuditEventType.Create && a.EntityName == nameof(ApplicationUser))
+                .OrderByDescending(a => a.OccurredAtUtc)
+                .Take(80)
+                .Select(a => new { a.EntityId, a.OccurredAtUtc })
+                .ToListAsync();
 
                 if (created.Count == 0)
                     return await FallbackNewestUsersAsync();
 
                 var orderedUserIds = created
-                    .Where(x => !string.IsNullOrWhiteSpace(x.EntityId))
-                    .Select(x => x.EntityId!)
-                    .Distinct()
-                    .ToList();
+                .Where(x => !string.IsNullOrWhiteSpace(x.EntityId))
+                .Select(x => x.EntityId!)
+                .Distinct()
+                .ToList();
 
                 if (orderedUserIds.Count == 0)
                     return await FallbackNewestUsersAsync();
 
                 var users = await _context.Users
-                    .AsNoTracking()
-                    .Where(u => orderedUserIds.Contains(u.Id))
-                    .ToListAsync();
+                .AsNoTracking()
+                .Where(u => orderedUserIds.Contains(u.Id))
+                .ToListAsync();
 
                 var byId = users.ToDictionary(u => u.Id, u => u, StringComparer.Ordinal);
                 var createdByUserId = created
-                    .Where(x => !string.IsNullOrWhiteSpace(x.EntityId))
-                    .GroupBy(x => x.EntityId!, StringComparer.Ordinal)
-                    .ToDictionary(g => g.Key, g => g.Max(x => x.OccurredAtUtc), StringComparer.Ordinal);
+                .Where(x => !string.IsNullOrWhiteSpace(x.EntityId))
+                .GroupBy(x => x.EntityId!, StringComparer.Ordinal)
+                .ToDictionary(g => g.Key, g => g.Max(x => x.OccurredAtUtc), StringComparer.Ordinal);
 
                 var vms = new List<NewestUserVm>();
                 foreach (var userId in orderedUserIds)
@@ -170,11 +157,11 @@ namespace Licenta.Pages.Administrator.AdminPanel
         private async Task<List<NewestUserVm>> FallbackNewestUsersAsync()
         {
             var users = await _context.Users
-                .AsNoTracking()
-                .Where(u => !u.IsSoftDeleted)
-                .OrderByDescending(u => u.Id)
-                .Take(8)
-                .ToListAsync();
+            .AsNoTracking()
+            .Where(u => !u.IsSoftDeleted)
+            .OrderByDescending(u => u.Id)
+            .Take(8)
+            .ToListAsync();
 
             var vms = new List<NewestUserVm>(users.Count);
             foreach (var u in users)
@@ -192,7 +179,7 @@ namespace Licenta.Pages.Administrator.AdminPanel
         }
 
         private static bool IsLocked(ApplicationUser user)
-            => user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow;
+        => user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow;
 
         private static int ComputeUploadsUsagePercent(string webRootPath)
         {
@@ -209,8 +196,7 @@ namespace Licenta.Pages.Administrator.AdminPanel
                 }
 
                 const long capacityBytes = 5L * 1024L * 1024L * 1024L;
-                var pct = (int)Math.Round(Math.Clamp((double)totalBytes / capacityBytes * 100.0, 0.0, 100.0));
-                return pct;
+                return (int)Math.Round(Math.Clamp((double)totalBytes / capacityBytes * 100.0, 0.0, 100.0));
             }
             catch
             {
@@ -231,7 +217,6 @@ namespace Licenta.Pages.Administrator.AdminPanel
         private static List<AuditEvent> ReadAuditEventsFromFiles(string contentRootPath, DateTime sinceUtc)
         {
             var result = new List<AuditEvent>();
-
             try
             {
                 var logsDir = Path.Combine(contentRootPath, "Logs");
@@ -239,50 +224,73 @@ namespace Licenta.Pages.Administrator.AdminPanel
                     return result;
 
                 var files = Directory.EnumerateFiles(logsDir, "audit-*.json", SearchOption.TopDirectoryOnly)
-                    .OrderByDescending(f => f, StringComparer.OrdinalIgnoreCase)
-                    .Take(20)
-                    .ToList();
+                .OrderByDescending(f => f, StringComparer.OrdinalIgnoreCase)
+                .Take(20)
+                .ToList();
 
                 foreach (var file in files)
                 {
-                    foreach (var line in System.IO.File.ReadLines(file))
+                    try
                     {
-                        if (string.IsNullOrWhiteSpace(line))
-                            continue;
-
-                        try
+                        foreach (var line in System.IO.File.ReadLines(file))
                         {
-                            using var doc = JsonDocument.Parse(line);
-                            var root = doc.RootElement;
-
-                            var ts = TryGetString(root, "@t") ?? TryGetString(root, "Timestamp") ?? TryGetString(root, "Time");
-                            if (!TryParseTimestampUtc(ts, out var tsUtc))
+                            if (string.IsNullOrWhiteSpace(line))
                                 continue;
 
-                            if (tsUtc < sinceUtc)
-                                continue;
-
-                            var auditType = TryGetString(root, "AuditType") ?? TryGetString(root, "EventType") ?? TryGetString(root, "Type");
-                            var userId = TryGetString(root, "UserId");
-                            var userName = TryGetString(root, "UserName") ?? TryGetString(root, "Email");
-                            var scheme = TryGetString(root, "Scheme") ?? TryGetString(root, "AuthScheme") ?? TryGetString(root, "Provider");
-
-                            bool success = true;
-                            if (TryGetBool(root, "Success", out var b)) success = b;
-                            else if (auditType != null && auditType.Contains("Fail", StringComparison.OrdinalIgnoreCase)) success = false;
-
-                            result.Add(new AuditEvent
+                            try
                             {
-                                TimestampUtc = tsUtc,
-                                AuditType = auditType,
-                                UserId = userId,
-                                UserName = userName,
-                                Scheme = scheme,
-                                Success = success
-                            });
+                                using var doc = JsonDocument.Parse(line);
+                                var root = doc.RootElement;
+
+                                var ts = TryGetString(root, "@t")
+                                ?? TryGetString(root, "TimestampUtc")
+                                ?? TryGetString(root, "Timestamp");
+
+                                if (!TryParseTimestampUtc(ts, out var tsUtc))
+                                    continue;
+
+                                if (tsUtc < sinceUtc)
+                                    continue;
+
+                                var auditType = TryGetString(root, "AuditType");
+
+                                if (string.IsNullOrWhiteSpace(auditType))
+                                {
+                                    var mt = TryGetString(root, "@mt") ?? TryGetString(root, "@m") ?? "";
+                                    if (mt.Contains("SignIn", StringComparison.OrdinalIgnoreCase))
+                                        auditType = "SignIn";
+                                    else if (mt.Contains("HTTP", StringComparison.OrdinalIgnoreCase))
+                                        auditType = "Request";
+                                    else
+                                        auditType = "Other";
+                                }
+
+                                var userId = TryGetString(root, "UserId");
+                                var userName = TryGetString(root, "UserName") ?? TryGetString(root, "Email");
+                                var scheme = TryGetString(root, "Scheme")
+                                ?? TryGetString(root, "AuthScheme")
+                                ?? TryGetString(root, "Provider");
+
+                                bool success = true;
+                                if (TryGetBool(root, "Success", out var b))
+                                    success = b;
+                                else if (auditType.Contains("Fail", StringComparison.OrdinalIgnoreCase))
+                                    success = false;
+
+                                result.Add(new AuditEvent
+                                {
+                                    TimestampUtc = tsUtc,
+                                    AuditType = auditType,
+                                    UserId = userId,
+                                    UserName = userName,
+                                    Scheme = scheme,
+                                    Success = success
+                                });
+                            }
+                            catch { }
                         }
-                        catch { }
                     }
+                    catch { }
                 }
             }
             catch { }
@@ -314,7 +322,6 @@ namespace Licenta.Pages.Administrator.AdminPanel
             if (p.ValueKind == JsonValueKind.True) { value = true; return true; }
             if (p.ValueKind == JsonValueKind.False) { value = false; return true; }
             if (p.ValueKind == JsonValueKind.String && bool.TryParse(p.GetString(), out var b)) { value = b; return true; }
-
             return false;
         }
 
@@ -324,13 +331,15 @@ namespace Licenta.Pages.Administrator.AdminPanel
             if (string.IsNullOrWhiteSpace(s))
                 return false;
 
-            if (DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dto))
+            if (DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dto))
             {
                 utc = dto.UtcDateTime;
                 return true;
             }
 
-            if (DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt))
+            if (DateTime.TryParse(s, CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt))
             {
                 utc = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
                 return true;

@@ -1,0 +1,323 @@
+﻿@page
+@model Licenta.Pages.Patient.Reviews.IndexModel
+@using Licenta.Models
+@{
+    ViewData["Title"] = "Patient Reviews";
+
+    string StarsHtml(int rating)
+    {
+        var sb = new System.Text.StringBuilder();
+        for (int i = 1; i <= 5; i++)
+        {
+            sb.Append(i <= rating
+                ? "<i class='bi bi-star-fill text-warning'></i>"
+                : "<i class='bi bi-star text-muted opacity-25'></i>");
+        }
+        return sb.ToString();
+    }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/Review.css" asp-append-version="true" />
+}
+
+<div class="reviews-wrapper animate-fade-in">
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Community Voice</h1>
+            <p class="hero-subtitle">Discover and share genuine experiences from our clinic.</p>
+        </div>
+        <div class="hero-action">
+            <button type="button" class="btn-glow" data-bs-toggle="modal" data-bs-target="#reviewModal" data-mode="create" data-target="Doctor">
+                <i class="bi bi-pencil-square me-2"></i> Write a Review
+            </button>
+        </div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-icon bg-warning-light text-warning">
+                <i class="bi bi-star-half"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Platform Rating</span>
+                <div class="stat-value">@Model.AppAverage.ToString("0.0")<span class="stat-max">/5</span></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-primary-light text-primary">
+                <i class="bi bi-chat-heart"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Total Reviews</span>
+                <div class="stat-value">@Model.AppTotalCount</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-success-light text-success">
+                <i class="bi bi-person-hearts"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Your Impact</span>
+                <div class="stat-value">@Model.MyReviewsCount</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <ul class="nav modern-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-doctors" type="button">
+                    <i class="bi bi-heart-pulse me-2"></i>Doctors
+                    <span class="tab-badge">@Model.DoctorReviews.Count</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-app" type="button">
+                    <i class="bi bi-laptop me-2"></i>Platform
+                    <span class="tab-badge">@Model.AppReviews.Count</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-mine" type="button">
+                    <i class="bi bi-person-badge me-2"></i>Personal
+                </button>
+            </li>
+        </ul>
+
+        <div class="filter-group">
+            <div class="search-input-wrapper">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" id="reviewSearch" class="modern-input" placeholder="Search experiences..." />
+            </div>
+            <select id="reviewRatingFilter" class="modern-select">
+                <option value="0">All Ratings</option>
+                <option value="5">5 Stars Only</option>
+                <option value="4">4 Stars Only</option>
+                <option value="3">3 Stars Only</option>
+                <option value="2">2 Stars Only</option>
+                <option value="1">1 Star Only</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="tab-content mt-4">
+        <div class="tab-pane fade show active" id="tab-doctors" role="tabpanel">
+            <div class="reviews-grid">
+                @if (Model.DoctorReviews.Count == 0)
+                {
+                    <partial name="_EmptyReviews" model=' "No doctor reviews yet. Be the first to share!" ' />
+                }
+                else
+                {
+                    @foreach (var r in Model.DoctorReviews)
+                    {
+                        var docName = r.Doctor?.User?.FullName ?? "Doctor";
+                        <div class="review-card" data-rating="@r.Rating" data-date="@r.CreatedAtUtc.Ticks" data-search="@(docName + " " + (r.Title ?? "") + " " + r.Comment)">
+                            <div class="card-header-custom">
+                                <span class="custom-badge badge-doctor">Dr. @docName</span>
+                                @if (r.AuthorUserId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
+                                {
+                                    <div class="dropdown">
+                                        <button class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                            <li><button class="dropdown-item js-edit-review" data-id="@r.Id" data-target="@r.Target" data-doctor-id="@r.DoctorId" data-rating="@r.Rating" data-title="@(r.Title ?? "")" data-comment="@r.Comment"><i class="bi bi-pencil me-2"></i>Edit</button></li>
+                                            <li><button class="dropdown-item text-danger js-delete-review" data-id="@r.Id"><i class="bi bi-trash me-2"></i>Delete</button></li>
+                                        </ul>
+                                    </div>
+                                }
+                            </div>
+                            <div class="stars-container">@Html.Raw(StarsHtml(r.Rating))</div>
+                            @if (!string.IsNullOrWhiteSpace(r.Title))
+                            {
+                                <h5 class="review-heading">@r.Title</h5>
+                            }
+                            <p class="review-body">@r.Comment</p>
+                            <div class="card-footer-custom">
+                                <div class="reviewer-avatar">@Licenta.Pages.Patient.Reviews.IndexModel.GetInitial(r.Author.FullName)</div>
+                                <div class="reviewer-info">
+                                    <div class="reviewer-name">@(r.Author.FullName ?? "Patient")</div>
+                                    <div class="review-date">@r.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy")</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-app" role="tabpanel">
+            <div class="reviews-grid">
+                @if (Model.AppReviews.Count == 0)
+                {
+                    <partial name="_EmptyReviews" model=' "No platform reviews yet." ' />
+                }
+                else
+                {
+                    @foreach (var r in Model.AppReviews)
+                    {
+                        <div class="review-card" data-rating="@r.Rating" data-date="@r.CreatedAtUtc.Ticks" data-search="@((r.Title ?? "") + " " + r.Comment)">
+                            <div class="card-header-custom">
+                                <span class="custom-badge badge-platform">Platform Review</span>
+                            </div>
+                            <div class="stars-container">@Html.Raw(StarsHtml(r.Rating))</div>
+                            @if (!string.IsNullOrWhiteSpace(r.Title))
+                            {
+                                <h5 class="review-heading">@r.Title</h5>
+                            }
+                            <p class="review-body">@r.Comment</p>
+                            <div class="card-footer-custom">
+                                <div class="reviewer-avatar bg-primary text-white">@Licenta.Pages.Patient.Reviews.IndexModel.GetInitial(r.Author.FullName)</div>
+                                <div class="reviewer-info">
+                                    <div class="reviewer-name">@(r.Author.FullName ?? "Patient")</div>
+                                    <div class="review-date">@r.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy")</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-mine" role="tabpanel">
+            <div class="reviews-grid">
+                @if (Model.MyReviews.Count == 0)
+                {
+                    <partial name="_EmptyReviews" model=' "You haven&apos;t written any reviews yet." ' />
+                }
+                else
+                {
+                    @foreach (var r in Model.MyReviews)
+                    {
+                        var isDoctor = r.Target == ReviewTarget.Doctor;
+                        <div class="review-card personal-review" data-rating="@r.Rating" data-date="@r.CreatedAtUtc.Ticks" data-search="@((r.Title ?? "") + " " + r.Comment)">
+                            <div class="card-header-custom">
+                                <span class="custom-badge badge-personal">@(isDoctor ? $"Dr. {r.Doctor?.User?.FullName}" : "Platform")</span>
+                                <div class="dropdown">
+                                    <button class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                        <li><button class="dropdown-item js-edit-review" data-id="@r.Id" data-target="@r.Target" data-doctor-id="@(r.DoctorId?.ToString() ?? "")" data-rating="@r.Rating" data-title="@(r.Title ?? "")" data-comment="@r.Comment"><i class="bi bi-pencil me-2"></i>Edit</button></li>
+                                        <li><button class="dropdown-item text-danger js-delete-review" data-id="@r.Id"><i class="bi bi-trash me-2"></i>Delete</button></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="stars-container">@Html.Raw(StarsHtml(r.Rating))</div>
+                            @if (!string.IsNullOrWhiteSpace(r.Title))
+                            {
+                                <h5 class="review-heading">@r.Title</h5>
+                            }
+                            <p class="review-body">@r.Comment</p>
+                            <div class="card-footer-custom justify-content-between">
+                                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">My Feedback</span>
+                                <span class="review-date">@r.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade modern-modal" id="reviewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" id="reviewForm" asp-page-handler="Create" novalidate>
+                <input type="hidden" asp-for="Input.Id" id="Input_Id" />
+                <div class="modal-header-custom">
+                    <h4 class="modal-title" id="reviewModalTitle"><span data-slot="title">Write a Review</span></h4>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body-custom">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label class="choice-card" for="target-doctor">
+                                <input type="radio" asp-for="Input.Target" value="Doctor" id="target-doctor" class="choice-input" />
+                                <div class="choice-content">
+                                    <div class="choice-icon"><i class="bi bi-heart-pulse"></i></div>
+                                    <h6>Medical Care</h6>
+                                    <p>Rate your doctor's visit</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="choice-card" for="target-app">
+                                <input type="radio" asp-for="Input.Target" value="Application" id="target-app" class="choice-input" />
+                                <div class="choice-content">
+                                    <div class="choice-icon"><i class="bi bi-laptop"></i></div>
+                                    <h6>Platform</h6>
+                                    <p>Rate the app experience</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="doctorSelectWrap" class="input-group-custom mb-4" hidden>
+                        <label class="input-label">Consulting Doctor</label>
+                        <select asp-for="Input.DoctorId" class="form-select custom-select" id="Input_DoctorId">
+                            <option value="">Choose your doctor...</option>
+                            @foreach (var d in Model.AvailableDoctors)
+                            {
+                                <option value="@d.Id">Dr. @d.Name (@d.Specialty)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="rating-box mb-4">
+                        <label class="input-label text-center w-100 mb-3">Overall Satisfaction</label>
+                        <div class="star-rating-control">
+                            @for (int i = 5; i >= 1; i--)
+                            {
+                                <input type="radio" name="Input.Rating" id="rating-@i" value="@i" @(i == 5 ? "checked" : "") />
+                                <label for="rating-@i" title="@i stars"><i class="bi bi-star-fill"></i></label>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="input-group-custom mb-4">
+                        <label class="input-label">Headline</label>
+                        <input asp-for="Input.Title" class="form-control custom-input" placeholder="Summarize your experience..." maxlength="120" />
+                    </div>
+
+                    <div class="input-group-custom mb-0">
+                        <div class="d-flex justify-content-between align-items-end mb-2">
+                            <label class="input-label mb-0">Detailed Story</label>
+                            <span class="char-counter"><span id="charCount">0</span>/2000</span>
+                        </div>
+                        <textarea asp-for="Input.Comment" class="form-control custom-textarea" rows="5" placeholder="What should others know?" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer-custom">
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-submit" id="reviewSubmitBtn">
+                        <span data-slot="submit">Submit Feedback</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade modern-modal" id="deleteReviewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center p-4">
+            <form method="post" asp-page-handler="Delete" id="deleteReviewForm">
+                <input type="hidden" name="id" id="deleteReviewId" />
+                <div class="delete-icon-wrapper mb-3">
+                    <i class="bi bi-trash3"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Delete review?</h5>
+                <p class="text-muted small mb-4">This action cannot be undone.</p>
+                <div class="d-flex flex-column gap-2">
+                    <button type="submit" class="btn btn-danger rounded-pill py-2 fw-bold">Confirm Delete</button>
+                    <button type="button" class="btn btn-light rounded-pill py-2 fw-bold" data-bs-dismiss="modal">Keep Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/Review.js" asp-append-version="true"></script>
+}

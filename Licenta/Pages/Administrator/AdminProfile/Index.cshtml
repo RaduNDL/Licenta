@@ -4,52 +4,117 @@
     ViewData["Title"] = "Admin Profile";
 }
 
-<div class="container py-4">
-    <div class="d-flex align-items-center justify-content-between mb-3">
+@section Styles {
+    <link rel="stylesheet" href="~/css/AdminProfile.css" asp-append-version="true" />
+}
+
+<div class="container py-4" style="max-width: 900px;">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h3 class="mb-0">Administrator Profile</h3>
-            <div class="text-muted">Manage your account details.</div>
+            <h3 class="mb-0 fw-bold">Administrator Profile</h3>
+            <div class="text-muted small">Manage your account details and profile photo.</div>
         </div>
-        <a class="btn btn-outline-secondary" asp-page="/Administrator/Overview/Index">Back</a>
+        <a class="btn btn-outline-secondary btn-sm" asp-page="/Administrator/AdminPanel/Index">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
     </div>
 
     @if (TempData["StatusMessage"] is string status)
     {
-        <div class="alert alert-info border-0 shadow-sm">@status</div>
+        <div class="profile-alert success">
+            <i class="bi bi-check-circle-fill"></i> @status
+        </div>
+    }
+    @if (TempData["ErrorMessage"] is string error)
+    {
+        <div class="profile-alert error">
+            <i class="bi bi-exclamation-circle-fill"></i> @error
+        </div>
     }
 
     <div class="row g-4">
+
+        <!-- Coloana stanga: card profil + upload poza -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm">
+
+            <!-- Card identitate -->
+            <div class="card profile-card mb-4">
                 <div class="card-body">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="rounded-circle bg-danger-subtle d-flex align-items-center justify-content-center" style="width:56px;height:56px;">
-                            <i class="bi bi-shield-lock text-danger fs-4"></i>
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="profile-avatar-wrap">
+                            @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                            {
+                                <img src="@Model.ProfileImageUrl" alt="Profile photo" />
+                            }
+                            else
+                            {
+                                <div class="avatar-placeholder">
+                                    @(string.IsNullOrWhiteSpace(Model.FullName) ? "A" : Model.FullName.Substring(0, 1).ToUpper())
+                                </div>
+                            }
+                            <label for="photoFileInput" class="avatar-edit-btn" title="Change photo">
+                                <i class="bi bi-camera-fill"></i>
+                            </label>
                         </div>
                         <div>
-                            <div class="fw-semibold">@Model.FullName</div>
+                            <div class="fw-bold fs-6">@Model.FullName</div>
                             <div class="text-muted small">@Model.Email</div>
+                            <span class="badge bg-danger-subtle text-danger mt-1">Administrator</span>
                         </div>
                     </div>
 
-                    <hr />
-
-                    <div class="small text-muted mb-1">Role</div>
-                    <div class="fw-semibold">Administrator</div>
-
                     @if (!string.IsNullOrWhiteSpace(Model.ClinicName))
                     {
-                        <div class="small text-muted mt-3 mb-1">Clinic</div>
-                        <div class="fw-semibold">@Model.ClinicName</div>
+                        <div class="d-flex align-items-center gap-2 text-muted small mt-2">
+                            <i class="bi bi-building"></i> @Model.ClinicName
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Card upload poza -->
+            <div class="card profile-card">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-camera me-2 text-danger"></i>Profile Photo</h6>
+
+                    <form method="post" asp-page-handler="UploadPhoto" enctype="multipart/form-data" id="uploadPhotoForm">
+                        @Html.AntiForgeryToken()
+
+                        <div class="photo-upload-zone" id="uploadZone">
+                            <input type="file" id="photoFileInput" name="PhotoFile"
+                                   accept=".png,.jpg,.jpeg,.webp" />
+                            <i class="bi bi-cloud-upload text-muted fs-3 d-block mb-2"></i>
+                            <div class="small text-muted">Click or drag to upload</div>
+                            <div class="text-muted" style="font-size:.75rem;">PNG, JPG, WEBP · max 2 MB</div>
+                            <img id="photoPreview" class="photo-preview" src="" alt="Preview" />
+                        </div>
+
+                        <button type="submit" class="btn btn-danger w-100 mt-3 btn-sm"
+                                id="uploadBtn" style="display:none;">
+                            <i class="bi bi-upload me-1"></i> Save Photo
+                        </button>
+                    </form>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                    {
+                        <form method="post" asp-page-handler="RemovePhoto" class="mt-2"
+                              onsubmit="return confirm('Remove profile photo?')">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-secondary w-100 btn-sm">
+                                <i class="bi bi-trash3 me-1"></i> Remove Photo
+                            </button>
+                        </form>
                     }
                 </div>
             </div>
         </div>
 
+        <!-- Coloana dreapta: date cont -->
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="mb-3">Account</h5>
+            <div class="card profile-card">
+                <div class="card-body p-4 profile-form">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-person-gear me-2 text-danger"></i>Account Details</h5>
 
                     <form method="post">
                         @Html.AntiForgeryToken()
@@ -58,18 +123,19 @@
                             <div class="col-md-6">
                                 <label asp-for="Input.FullName" class="form-label"></label>
                                 <input asp-for="Input.FullName" class="form-control" />
-                                <span asp-validation-for="Input.FullName" class="text-danger"></span>
+                                <span asp-validation-for="Input.FullName" class="text-danger small"></span>
                             </div>
 
                             <div class="col-md-6">
                                 <label asp-for="Input.PhoneNumber" class="form-label"></label>
                                 <input asp-for="Input.PhoneNumber" class="form-control" />
-                                <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                                <span asp-validation-for="Input.PhoneNumber" class="text-danger small"></span>
                             </div>
 
                             <div class="col-md-6">
                                 <label class="form-label">Email</label>
                                 <input class="form-control" value="@Model.Email" disabled />
+                                <div class="form-text">Email cannot be changed here.</div>
                             </div>
 
                             <div class="col-md-6">
@@ -79,21 +145,21 @@
                         </div>
 
                         <div class="d-flex justify-content-end mt-4">
-                            <button class="btn btn-danger">
-                                <i class="bi bi-save me-1"></i> Save changes
+                            <button type="submit" class="btn btn-danger px-4">
+                                <i class="bi bi-save me-1"></i> Save Changes
                             </button>
                         </div>
                     </form>
 
-                    <hr class="my-4" />
+                    <hr class="profile-section-divider" />
 
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
                             <div class="fw-semibold">Security</div>
-                            <div class="text-muted small">Change password from Identity settings.</div>
+                            <div class="text-muted small">Update your password from Identity settings.</div>
                         </div>
-                        <a class="btn btn-outline-secondary" asp-area="Identity" asp-page="/Account/Manage/ChangePassword">
-                            <i class="bi bi-key me-1"></i> Change password
+                        <a class="btn btn-outline-secondary btn-sm" asp-area="Identity" asp-page="/Account/Manage/ChangePassword">
+                            <i class="bi bi-key me-1"></i> Change Password
                         </a>
                     </div>
                 </div>
@@ -104,4 +170,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/AdminProfile.js" asp-append-version="true"></script>
 }

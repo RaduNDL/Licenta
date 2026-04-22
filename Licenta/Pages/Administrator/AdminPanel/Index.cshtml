@@ -27,7 +27,7 @@
     </div>
 
     <div class="row g-4 mb-4">
-        <div class="col-xl-3 col-sm-6">
+        <div class="col-xl-4 col-md-6">
             <div class="stat-card">
                 <div class="stat-icon bg-primary bg-opacity-10 text-primary">
                     <i class="bi bi-people-fill"></i>
@@ -39,7 +39,7 @@
                 <a asp-page="/Administrator/Users/Index" class="stretched-link"></a>
             </div>
         </div>
-        <div class="col-xl-3 col-sm-6">
+        <div class="col-xl-4 col-md-6">
             <div class="stat-card">
                 <div class="stat-icon bg-success bg-opacity-10 text-success">
                     <i class="bi bi-person-badge"></i>
@@ -51,7 +51,7 @@
                 <a asp-page="/Administrator/Users/Index" class="stretched-link"></a>
             </div>
         </div>
-        <div class="col-xl-3 col-sm-6">
+        <div class="col-xl-4 col-md-12">
             <div class="stat-card">
                 <div class="stat-icon bg-danger bg-opacity-10 text-danger">
                     <i class="bi bi-shield-exclamation"></i>
@@ -63,18 +63,6 @@
                 <a asp-page="/Administrator/Audit" class="stretched-link"></a>
             </div>
         </div>
-        <div class="col-xl-3 col-sm-6">
-            <div class="stat-card">
-                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                    <i class="bi bi-bell"></i>
-                </div>
-                <div class="stat-content">
-                    <h3>@Model.UnreadNotifications</h3>
-                    <p>System Alerts</p>
-                </div>
-                <a asp-page="/Administrator/Notifications/Index" class="stretched-link"></a>
-            </div>
-        </div>
     </div>
 
     <div class="row g-4">
@@ -83,7 +71,7 @@
                 <div class="panel-header">
                     <div>
                         <h5 class="mb-0 fw-bold"><i class="bi bi-activity me-2 text-danger"></i>Security Audit Log</h5>
-                        <small class="text-muted">Recent login activities and security events</small>
+                        <small class="text-muted">Login activities from the last 7 days</small>
                     </div>
                     <a asp-page="/Administrator/Audit" class="btn btn-sm btn-light">View Full Log</a>
                 </div>
@@ -95,7 +83,7 @@
                                 <thead class="bg-light">
                                     <tr>
                                         <th class="ps-4">User</th>
-                                        <th>Role/Scheme</th>
+                                        <th>Scheme</th>
                                         <th>Timestamp</th>
                                         <th class="text-end pe-4">Status</th>
                                     </tr>
@@ -174,6 +162,13 @@
                             }
                         </div>
                     }
+                    else
+                    {
+                        <div class="empty-state-panel text-center p-5">
+                            <i class="bi bi-people text-muted opacity-25" style="font-size: 2.5rem;"></i>
+                            <p class="text-muted mt-2">No users found.</p>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -185,10 +180,10 @@
                 </div>
                 <div class="panel-body p-3">
                     <div class="row g-2">
-                        <div class="col-6">
-                            <a asp-page="/Administrator/Users/Create" class="quick-action-btn">
-                                <i class="bi bi-person-plus-fill text-success"></i>
-                                <span>Create User</span>
+                        <div class="col-12">
+                            <a asp-page="/Administrator/Users/Create" class="quick-action-btn w-100 d-flex align-items-center justify-content-center py-2" style="background-color: rgba(25, 135, 84, 0.1); border-radius: 8px; text-decoration: none;">
+                                <i class="bi bi-person-plus-fill text-success me-2"></i>
+                                <span class="text-success fw-bold">Create User</span>
                             </a>
                         </div>
                         <div class="col-6">
@@ -201,12 +196,6 @@
                             <a asp-page="/Administrator/Staff/Assignments" class="quick-action-btn">
                                 <i class="bi bi-person-vcard-fill text-info"></i>
                                 <span>Assignments</span>
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a asp-page="/Administrator/Notifications/Index" class="quick-action-btn">
-                                <i class="bi bi-bell-fill text-warning"></i>
-                                <span>Alerts</span>
                             </a>
                         </div>
                         <div class="col-6">

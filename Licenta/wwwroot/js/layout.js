@@ -1,40 +1,90 @@
-﻿document.addEventListener("DOMContentLoaded", function () {
-    const navbar = document.querySelector('.navbar-modern');
+﻿(function () {
+    "use strict";
 
-    function handleScroll() {
-        if (window.scrollY > 10) {
-            navbar.classList.add('scrolled');
-        } else {
-            navbar.classList.remove('scrolled');
-        }
+    function onReady(fn) {
+        if (document.readyState !== "loading") fn();
+        else document.addEventListener("DOMContentLoaded", fn);
     }
 
-    window.addEventListener('scroll', handleScroll);
-    handleScroll();
+    onReady(function () {
+        var navbar = document.querySelector(".app-navbar");
+        var collapseEl = document.getElementById("navContent");
 
-    const currentPath = window.location.pathname.toLowerCase();
-    const navLinks = document.querySelectorAll('.nav-link');
-    const dropdownItems = document.querySelectorAll('.dropdown-item');
+        if (navbar) {
+            var applyScrollState = function () {
+                if (window.scrollY > 8) navbar.classList.add("scrolled");
+                else navbar.classList.remove("scrolled");
+            };
+            window.addEventListener("scroll", applyScrollState, { passive: true });
+            applyScrollState();
+        }
 
-    function setActiveStatus(elements) {
-        elements.forEach(link => {
-            const href = link.getAttribute('href');
-            if (!href || href === '#') return;
+        var normalize = function (p) {
+            if (!p) return "";
+            try {
+                var url = new URL(p, window.location.origin);
+                var path = url.pathname.toLowerCase();
+                if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+                return path;
+            } catch (e) {
+                return p.split("?")[0].toLowerCase().replace(/\/+$/, "");
+            }
+        };
 
-            const hrefPath = href.split('?')[0].toLowerCase();
+        var currentPath = normalize(window.location.pathname);
 
-            if (currentPath === hrefPath || (currentPath.startsWith(hrefPath) && hrefPath !== '/' && hrefPath.length > 3)) {
-                link.classList.add('active');
+        var bestMatchLength = 0;
+        var bestMatchEl = null;
 
-                const parentDropdown = link.closest('.dropdown');
-                if (parentDropdown) {
-                    const toggle = parentDropdown.querySelector('.dropdown-toggle');
-                    if (toggle) toggle.classList.add('active');
-                }
+        var allLinks = document.querySelectorAll(".main-menu .nav-link, .main-menu .dropdown-item");
+        allLinks.forEach(function (link) {
+            var href = link.getAttribute("href");
+            if (!href || href === "#") return;
+            var hrefPath = normalize(href);
+            if (!hrefPath || hrefPath === "/") return;
+
+            var isMatch = currentPath === hrefPath ||
+                (currentPath.startsWith(hrefPath + "/") && hrefPath.length > 1);
+
+            if (isMatch && hrefPath.length > bestMatchLength) {
+                bestMatchLength = hrefPath.length;
+                bestMatchEl = link;
             }
         });
-    }
 
-    setActiveStatus(navLinks);
-    setActiveStatus(dropdownItems);
-});
+        if (bestMatchEl) {
+            bestMatchEl.classList.add("active");
+
+            var parentDropdown = bestMatchEl.closest(".dropdown");
+            if (parentDropdown) {
+                var toggle = parentDropdown.querySelector(".nav-link.dropdown-toggle");
+                if (toggle) toggle.classList.add("active");
+            }
+        }
+
+        if (collapseEl && window.bootstrap) {
+            var leafLinks = collapseEl.querySelectorAll(".nav-link:not(.dropdown-toggle), .dropdown-item");
+            leafLinks.forEach(function (link) {
+                link.addEventListener("click", function () {
+                    if (window.innerWidth < 1200 && collapseEl.classList.contains("show")) {
+                        var inst = window.bootstrap.Collapse.getInstance(collapseEl) ||
+                            new window.bootstrap.Collapse(collapseEl, { toggle: false });
+                        inst.hide();
+                    }
+                });
+            });
+        }
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+                document.querySelectorAll(".dropdown-menu.show").forEach(function (menu) {
+                    var toggle = menu.previousElementSibling;
+                    if (toggle && window.bootstrap) {
+                        var dd = window.bootstrap.Dropdown.getInstance(toggle);
+                        if (dd) dd.hide();
+                    }
+                });
+            }
+        });
+    });
+})();

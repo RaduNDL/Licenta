@@ -17,12 +17,16 @@ namespace Licenta.Data
             using var scope = services.CreateScope();
 
             var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            string[] roles = { "Administrator", "Doctor", "Assistant", "Patient" };
+            var settings = await db.SystemSettings.FirstOrDefaultAsync();
+            if (settings != null && settings.IdentitySeeded)
+                return;
 
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+            string[] roles = { "Administrator", "Doctor", "Assistant", "Patient" };
             foreach (var role in roles)
             {
                 if (!await roleManager.RoleExistsAsync(role))
@@ -45,44 +49,31 @@ namespace Licenta.Data
 
             var sharedClinicId = await EnsureSharedClinicIdAsync(userManager, assistantEmail);
 
-            var admin = await EnsureUserInRole(
-                userManager,
-                email: adminEmail,
-                password: adminPassword,
-                fullName: "System Administrator",
-                role: "Administrator",
-                clinicId: sharedClinicId);
+            var admin = await EnsureUserInRole(userManager, adminEmail, adminPassword,
+                "System Administrator", "Administrator", sharedClinicId);
 
-            var doctorUser = await EnsureUserInRole(
-                userManager,
-                email: doctorEmail,
-                password: doctorPassword,
-                fullName: "Default Doctor",
-                role: "Doctor",
-                clinicId: sharedClinicId);
+            var doctorUser = await EnsureUserInRole(userManager, doctorEmail, doctorPassword,
+                "Default Doctor", "Doctor", sharedClinicId);
 
-            var assistantUser = await EnsureUserInRole(
-                userManager,
-                email: assistantEmail,
-                password: assistantPassword,
-                fullName: "Default Assistant",
-                role: "Assistant",
-                clinicId: sharedClinicId);
+            var assistantUser = await EnsureUserInRole(userManager, assistantEmail, assistantPassword,
+                "Default Assistant", "Assistant", sharedClinicId);
 
-            var patientUser = await EnsureUserInRole(
-                userManager,
-                email: patientEmail,
-                password: patientPassword,
-                fullName: "Default Patient",
-                role: "Patient",
-                clinicId: sharedClinicId);
+            var patientUser = await EnsureUserInRole(userManager, patientEmail, patientPassword,
+                "Default Patient", "Patient", sharedClinicId);
 
             await EnsureDoctorProfileAsync(db, doctorUser);
             await EnsurePatientProfileAsync(db, patientUser);
 
-            await db.SaveChangesAsync();
+            if (settings != null)
+            {
+                settings.IdentitySeeded = true;
+                await db.SaveChangesAsync();
+            }
+            else
+            {
+                await db.SaveChangesAsync();
+            }
         }
-
         private static async Task<string> EnsureSharedClinicIdAsync(UserManager<ApplicationUser> userManager, string assistantEmail)
         {
             var assistant = await userManager.FindByEmailAsync(assistantEmail);

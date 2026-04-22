@@ -29,6 +29,7 @@ namespace Licenta.Areas.Identity.Data
         public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
         public DbSet<AppointmentRescheduleRequest> AppointmentRescheduleRequests => Set<AppointmentRescheduleRequest>();
         public DbSet<AppointmentRescheduleOption> AppointmentRescheduleOptions => Set<AppointmentRescheduleOption>();
+        public DbSet<Review> Reviews => Set<Review>();
 
         protected override void OnModelCreating(ModelBuilder b)
         {
@@ -332,6 +333,45 @@ namespace Licenta.Areas.Identity.Data
             b.Entity<AppointmentRescheduleOption>()
                 .Property(o => o.Location)
                 .HasMaxLength(120);
+
+            b.Entity<Review>()
+                .Property(r => r.Target)
+                .HasConversion<int>();
+
+            b.Entity<Review>()
+                .Property(r => r.Comment)
+                .IsRequired()
+                .HasMaxLength(2000);
+
+            b.Entity<Review>()
+                .Property(r => r.Title)
+                .HasMaxLength(120);
+
+            b.Entity<Review>()
+                .HasOne(r => r.Author)
+                .WithMany()
+                .HasForeignKey(r => r.AuthorUserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired();
+
+            b.Entity<Review>()
+                .HasOne(r => r.Doctor)
+                .WithMany()
+                .HasForeignKey(r => r.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            b.Entity<Review>()
+                .HasQueryFilter(r => !r.IsDeleted && !r.Author.IsSoftDeleted);
+
+            b.Entity<Review>()
+                .HasIndex(r => new { r.Target, r.CreatedAtUtc });
+
+            b.Entity<Review>()
+                .HasIndex(r => new { r.DoctorId, r.CreatedAtUtc });
+
+            b.Entity<Review>()
+                .HasIndex(r => r.AuthorUserId);
         }
     }
 }

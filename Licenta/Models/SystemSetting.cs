@@ -23,6 +23,7 @@ namespace Licenta.Models
             public bool RequireUppercase { get; set; }
 
             public bool RequireSpecialChar { get; set; }
+            public bool IdentitySeeded { get; internal set; }
         }
     }
 }

@@ -12,6 +12,8 @@ namespace Licenta.Areas.Identity.Data
         public bool IsSoftDeleted { get; set; }
         public string? ClinicId { get; set; }
 
+        public string? ProfileImagePath { get; set; }
+
         public Guid? AssignedDoctorId { get; set; }
         public DoctorProfile? AssignedDoctor { get; set; }
 

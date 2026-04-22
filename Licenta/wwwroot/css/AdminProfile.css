@@ -1,0 +1,162 @@
+﻿/* ═══════════════════════════════════════════════
+   AdminProfile.css
+   E:\Facultate\Licenta\Licenta\Licenta\wwwroot\css\AdminProfile.css
+   ═══════════════════════════════════════════════ */
+
+/* ── Avatar wrap ── */
+.profile-avatar-wrap {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+}
+
+    .profile-avatar-wrap img,
+    .profile-avatar-wrap .avatar-placeholder {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .profile-avatar-wrap .avatar-placeholder {
+        background: linear-gradient(135deg, #dc3545, #c0152a);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+/* ── Camera button peste avatar ── */
+.avatar-edit-btn {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #dc3545;
+    color: white;
+    border: 2px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: background 0.2s;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+    .avatar-edit-btn:hover {
+        background: #b02a37;
+    }
+
+/* ── Upload zone ── */
+.photo-upload-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    user-select: none;
+}
+
+    .photo-upload-zone:hover,
+    .photo-upload-zone.drag-over {
+        border-color: #dc3545;
+        background: #fff5f5;
+    }
+
+    .photo-upload-zone input[type="file"] {
+        display: none;
+    }
+
+/* ── Preview ── */
+.photo-preview {
+    display: none;
+    max-width: 120px;
+    max-height: 120px;
+    border-radius: 8px;
+    object-fit: cover;
+    margin: 0.5rem auto 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Card overrides ── */
+.profile-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+}
+
+    .profile-card .card-body {
+        padding: 1.5rem;
+    }
+
+/* ── Form labels ── */
+.profile-form .form-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #374151;
+    margin-bottom: 0.3rem;
+}
+
+.profile-form .form-control:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+}
+
+.profile-form .form-control:disabled,
+.profile-form .form-control[readonly] {
+    background: #f9fafb;
+    color: #6b7280;
+}
+
+/* ── Section divider ── */
+.profile-section-divider {
+    border: none;
+    border-top: 1px solid #f0f0f0;
+    margin: 1.5rem 0;
+}
+
+/* ── Status alerts ── */
+.profile-alert {
+    border: none;
+    border-radius: 10px;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    animation: fadeSlideIn 0.3s ease;
+}
+
+@keyframes fadeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.profile-alert.success {
+    background: #ecfdf5;
+    color: #065f46;
+    border-left: 3px solid #34d399;
+}
+
+.profile-alert.error {
+    background: #fef2f2;
+    color: #991b1b;
+    border-left: 3px solid #f87171;
+}

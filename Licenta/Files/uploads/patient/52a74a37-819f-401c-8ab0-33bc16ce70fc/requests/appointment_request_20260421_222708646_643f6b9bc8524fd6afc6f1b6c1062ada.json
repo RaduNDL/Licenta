@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-04-21T22:27:08.6462439Z",
+  "ClinicId": "CL-58A6849C",
+  "PatientUserId": "bb84e87a-8295-4ced-9b1f-d3b9ea5eaf41",
+  "PatientProfileId": "52a74a37-819f-401c-8ab0-33bc16ce70fc",
+  "SelectedDoctorId": "9ffce17b-6c2b-447b-aca2-b9a5a556d380",
+  "SelectedLocalIso": "2026-05-01T11:00",
+  "SelectedScheduledUtc": "2026-05-01T08:00:00Z",
+  "Reason": "asdasdasd"
+}
