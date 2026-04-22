@@ -372,6 +372,11 @@ namespace Licenta.Areas.Identity.Data
 
             b.Entity<Review>()
                 .HasIndex(r => r.AuthorUserId);
+
+            b.Entity<Review>()
+                .HasIndex(r => new { r.AuthorUserId, r.DoctorId, r.Target })
+                .IsUnique()
+                .HasFilter("[Target] = 1 AND [DoctorId] IS NOT NULL AND [IsDeleted] = 0");
         }
     }
 }

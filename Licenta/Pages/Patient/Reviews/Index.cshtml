@@ -119,10 +119,10 @@
                                 @if (r.AuthorUserId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
                                 {
                                     <div class="dropdown">
-                                        <button class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                                        <button class="action-btn" data-bs-toggle="dropdown" type="button"><i class="bi bi-three-dots"></i></button>
                                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                            <li><button class="dropdown-item js-edit-review" data-id="@r.Id" data-target="@r.Target" data-doctor-id="@r.DoctorId" data-rating="@r.Rating" data-title="@(r.Title ?? "")" data-comment="@r.Comment"><i class="bi bi-pencil me-2"></i>Edit</button></li>
-                                            <li><button class="dropdown-item text-danger js-delete-review" data-id="@r.Id"><i class="bi bi-trash me-2"></i>Delete</button></li>
+                                            <li><button type="button" class="dropdown-item js-edit-review" data-id="@r.Id" data-target="@r.Target" data-doctor-id="@r.DoctorId" data-rating="@r.Rating" data-title="@(r.Title ?? "")" data-comment="@r.Comment"><i class="bi bi-pencil me-2"></i>Edit</button></li>
+                                            <li><button type="button" class="dropdown-item text-danger js-delete-review" data-id="@r.Id"><i class="bi bi-trash me-2"></i>Delete</button></li>
                                         </ul>
                                     </div>
                                 }
@@ -194,10 +194,10 @@
                             <div class="card-header-custom">
                                 <span class="custom-badge badge-personal">@(isDoctor ? $"Dr. {r.Doctor?.User?.FullName}" : "Platform")</span>
                                 <div class="dropdown">
-                                    <button class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                                    <button type="button" class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                        <li><button class="dropdown-item js-edit-review" data-id="@r.Id" data-target="@r.Target" data-doctor-id="@(r.DoctorId?.ToString() ?? "")" data-rating="@r.Rating" data-title="@(r.Title ?? "")" data-comment="@r.Comment"><i class="bi bi-pencil me-2"></i>Edit</button></li>
-                                        <li><button class="dropdown-item text-danger js-delete-review" data-id="@r.Id"><i class="bi bi-trash me-2"></i>Delete</button></li>
+                                        <li><button type="button" class="dropdown-item js-edit-review" data-id="@r.Id" data-target="@r.Target" data-doctor-id="@(r.DoctorId?.ToString() ?? "")" data-rating="@r.Rating" data-title="@(r.Title ?? "")" data-comment="@r.Comment"><i class="bi bi-pencil me-2"></i>Edit</button></li>
+                                        <li><button type="button" class="dropdown-item text-danger js-delete-review" data-id="@r.Id"><i class="bi bi-trash me-2"></i>Delete</button></li>
                                     </ul>
                                 </div>
                             </div>
@@ -219,16 +219,21 @@
     </div>
 </div>
 
-<div class="modal fade modern-modal" id="reviewModal" tabindex="-1">
+<div class="modal fade modern-modal" id="reviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
-            <form method="post" id="reviewForm" asp-page-handler="Create" novalidate>
+            <form method="post" id="reviewForm" action="?handler=Create" novalidate>
+                @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="Input.Id" id="Input_Id" />
+
                 <div class="modal-header-custom">
                     <h4 class="modal-title" id="reviewModalTitle"><span data-slot="title">Write a Review</span></h4>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
+
                 <div class="modal-body-custom">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
                     <div class="row g-4 mb-4">
                         <div class="col-md-6">
                             <label class="choice-card" for="target-doctor">
@@ -261,6 +266,7 @@
                                 <option value="@d.Id">Dr. @d.Name (@d.Specialty)</option>
                             }
                         </select>
+                        <span asp-validation-for="Input.DoctorId" class="text-danger small"></span>
                     </div>
 
                     <div class="rating-box mb-4">
@@ -268,15 +274,17 @@
                         <div class="star-rating-control">
                             @for (int i = 5; i >= 1; i--)
                             {
-                                <input type="radio" name="Input.Rating" id="rating-@i" value="@i" @(i == 5 ? "checked" : "") />
+                                <input type="radio" asp-for="Input.Rating" id="rating-@i" value="@i" />
                                 <label for="rating-@i" title="@i stars"><i class="bi bi-star-fill"></i></label>
                             }
                         </div>
+                        <span asp-validation-for="Input.Rating" class="text-danger small d-block mt-2"></span>
                     </div>
 
                     <div class="input-group-custom mb-4">
                         <label class="input-label">Headline</label>
                         <input asp-for="Input.Title" class="form-control custom-input" placeholder="Summarize your experience..." maxlength="120" />
+                        <span asp-validation-for="Input.Title" class="text-danger small"></span>
                     </div>
 
                     <div class="input-group-custom mb-0">
@@ -285,8 +293,10 @@
                             <span class="char-counter"><span id="charCount">0</span>/2000</span>
                         </div>
                         <textarea asp-for="Input.Comment" class="form-control custom-textarea" rows="5" placeholder="What should others know?" required></textarea>
+                        <span asp-validation-for="Input.Comment" class="text-danger small"></span>
                     </div>
                 </div>
+
                 <div class="modal-footer-custom">
                     <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn-submit" id="reviewSubmitBtn">
@@ -298,10 +308,11 @@
     </div>
 </div>
 
-<div class="modal fade modern-modal" id="deleteReviewModal" tabindex="-1">
+<div class="modal fade modern-modal" id="deleteReviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content text-center p-4">
             <form method="post" asp-page-handler="Delete" id="deleteReviewForm">
+                @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="deleteReviewId" />
                 <div class="delete-icon-wrapper mb-3">
                     <i class="bi bi-trash3"></i>
