@@ -19,6 +19,11 @@
         </h2>
     </div>
 
+    @if (TempData["StatusMessage"] is string status)
+    {
+        <div class="alert alert-info">@status</div>
+    }
+
     <div id="predictions-root" data-list-url="@Url.Page("/Patient/Predictions/Index", "List")">
         @if (!Model.Items.Any())
         {

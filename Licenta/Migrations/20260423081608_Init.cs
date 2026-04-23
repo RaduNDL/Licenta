@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Licenta.Migrations
 {
     /// <inheritdoc />
-    public partial class TestingApp : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -37,7 +37,8 @@ namespace Licenta.Migrations
                     PasswordMinLength = table.Column<int>(type: "int", nullable: false),
                     RequireDigit = table.Column<bool>(type: "bit", nullable: false),
                     RequireUppercase = table.Column<bool>(type: "bit", nullable: false),
-                    RequireSpecialChar = table.Column<bool>(type: "bit", nullable: false)
+                    RequireSpecialChar = table.Column<bool>(type: "bit", nullable: false),
+                    IdentitySeeded = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -195,6 +196,7 @@ namespace Licenta.Migrations
                     FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsSoftDeleted = table.Column<bool>(type: "bit", nullable: false),
                     ClinicId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ProfileImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AssignedDoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -412,6 +414,39 @@ namespace Licenta.Migrations
                         principalTable: "Doctors",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Reviews",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AuthorUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Target = table.Column<int>(type: "int", nullable: false),
+                    DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    Rating = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: true),
+                    Comment = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Reviews", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Reviews_AspNetUsers_AuthorUserId",
+                        column: x => x.AuthorUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Reviews_Doctors_DoctorId",
+                        column: x => x.DoctorId,
+                        principalTable: "Doctors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -922,6 +957,28 @@ namespace Licenta.Migrations
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Reviews_AuthorUserId",
+                table: "Reviews",
+                column: "AuthorUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Reviews_AuthorUserId_DoctorId_Target",
+                table: "Reviews",
+                columns: new[] { "AuthorUserId", "DoctorId", "Target" },
+                unique: true,
+                filter: "[Target] = 1 AND [DoctorId] IS NOT NULL AND [IsDeleted] = 0");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Reviews_DoctorId_CreatedAtUtc",
+                table: "Reviews",
+                columns: new[] { "DoctorId", "CreatedAtUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Reviews_Target_CreatedAtUtc",
+                table: "Reviews",
+                columns: new[] { "Target", "CreatedAtUtc" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SystemSettings_ClinicName",
                 table: "SystemSettings",
                 column: "ClinicName");
@@ -1068,6 +1125,9 @@ namespace Licenta.Migrations
 
             migrationBuilder.DropTable(
                 name: "PrescriptionItems");
+
+            migrationBuilder.DropTable(
+                name: "Reviews");
 
             migrationBuilder.DropTable(
                 name: "SystemSettings");

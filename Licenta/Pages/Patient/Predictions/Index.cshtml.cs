@@ -1,4 +1,5 @@
 using Licenta.Areas.Identity.Data;
+using Licenta.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Licenta.Pages.Patient.Predictions
@@ -26,14 +28,14 @@ namespace Licenta.Pages.Patient.Predictions
 
         public List<Prediction> Items { get; set; } = new();
 
-        public async Task OnGetAsync()
+        public async Task OnGetAsync(CancellationToken ct)
         {
-            Items = await GetPredictionsForCurrentPatientAsync();
+            Items = await GetPredictionsForCurrentPatientAsync(ct);
         }
 
-        public async Task<JsonResult> OnGetListAsync()
+        public async Task<JsonResult> OnGetListAsync(CancellationToken ct)
         {
-            var items = await GetPredictionsForCurrentPatientAsync();
+            var items = await GetPredictionsForCurrentPatientAsync(ct);
 
             var payload = items.Select(p => new PredictionListItemDto
             {
@@ -47,7 +49,7 @@ namespace Licenta.Pages.Patient.Predictions
             return new JsonResult(payload);
         }
 
-        private async Task<List<Prediction>> GetPredictionsForCurrentPatientAsync()
+        private async Task<List<Prediction>> GetPredictionsForCurrentPatientAsync(CancellationToken ct)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -55,7 +57,7 @@ namespace Licenta.Pages.Patient.Predictions
 
             var patient = await _db.Patients
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.UserId == user.Id);
+                .FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
 
             if (patient == null)
                 return new List<Prediction>();
@@ -64,7 +66,7 @@ namespace Licenta.Pages.Patient.Predictions
                 .AsNoTracking()
                 .Where(p => p.PatientId == patient.Id && p.Status == PredictionStatus.Accepted)
                 .OrderByDescending(p => p.CreatedAtUtc)
-                .ToListAsync();
+                .ToListAsync(ct);
         }
 
         public class PredictionListItemDto

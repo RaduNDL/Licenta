@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Licenta.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260418133159_SeedFix")]
-    partial class SeedFix
+    [Migration("20260423081608_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -892,6 +892,61 @@ namespace Licenta.Migrations
                     b.ToTable("PrescriptionItems");
                 });
 
+            modelBuilder.Entity("Licenta.Models.Review", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AuthorUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Target")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorUserId");
+
+                    b.HasIndex("DoctorId", "CreatedAtUtc");
+
+                    b.HasIndex("Target", "CreatedAtUtc");
+
+                    b.HasIndex("AuthorUserId", "DoctorId", "Target")
+                        .IsUnique()
+                        .HasFilter("[Target] = 1 AND [DoctorId] IS NOT NULL AND [IsDeleted] = 0");
+
+                    b.ToTable("Reviews");
+                });
+
             modelBuilder.Entity("Licenta.Models.UserActivityLog", b =>
                 {
                     b.Property<long>("Id")
@@ -1421,6 +1476,24 @@ namespace Licenta.Migrations
                         .IsRequired();
 
                     b.Navigation("Prescription");
+                });
+
+            modelBuilder.Entity("Licenta.Models.Review", b =>
+                {
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Licenta.Models.DoctorProfile", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Doctor");
                 });
 
             modelBuilder.Entity("Licenta.Models.UserActivityLog", b =>

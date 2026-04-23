@@ -14,6 +14,9 @@
     const inputComment = document.getElementById("Input_Comment");
     const charCount = document.getElementById("charCount");
 
+    const deleteForm = document.getElementById("deleteReviewForm");
+    const deleteInput = document.getElementById("deleteReviewId");
+
     function setFormMode(mode) {
         if (!form || !formTitle || !submitSpan || !btnCancelEdit || !formPanel) return;
 
@@ -28,6 +31,7 @@
             setRating(5);
             if (charCount) charCount.textContent = "0";
             if (targetDoctor) targetDoctor.checked = true;
+            if (targetApp) targetApp.checked = false;
             toggleDoctorSelect();
         } else {
             form.setAttribute("action", "?handler=Edit");
@@ -78,9 +82,11 @@
             const target = this.getAttribute("data-target");
             if (target === "Doctor") {
                 if (targetDoctor) targetDoctor.checked = true;
+                if (targetApp) targetApp.checked = false;
                 if (doctorSelect) doctorSelect.value = this.getAttribute("data-doctor-id") || "";
             } else {
                 if (targetApp) targetApp.checked = true;
+                if (targetDoctor) targetDoctor.checked = false;
             }
 
             toggleDoctorSelect();
@@ -94,17 +100,26 @@
                 if (charCount) charCount.textContent = String(inputComment.value.length);
             }
 
-            window.scrollTo({
-                top: formPanel.offsetTop - 120,
-                behavior: 'smooth'
-            });
+            if (formPanel) {
+                window.scrollTo({
+                    top: formPanel.offsetTop - 120,
+                    behavior: "smooth"
+                });
+            }
         });
     });
 
+    // Simple delete confirm (no bootstrap modal)
     document.querySelectorAll(".js-delete-review").forEach(btn => {
         btn.addEventListener("click", function () {
             const reviewId = this.getAttribute("data-id");
-            document.getElementById("deleteReviewId").value = reviewId;
+            if (!reviewId || !deleteForm || !deleteInput) return;
+
+            const ok = window.confirm("Sigur vrei să ștergi review-ul? Acțiunea nu poate fi anulată.");
+            if (!ok) return;
+
+            deleteInput.value = reviewId;
+            deleteForm.submit();
         });
     });
 

@@ -33,6 +33,12 @@ namespace Licenta.Pages.Patient.Predictions
 
         public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken ct)
         {
+            if (id == Guid.Empty)
+            {
+                TempData["StatusMessage"] = "Invalid prediction id.";
+                return RedirectToPage("/Patient/Predictions/Index");
+            }
+
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return Challenge();
@@ -42,21 +48,34 @@ namespace Licenta.Pages.Patient.Predictions
                 .FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
 
             if (patient == null)
+            {
+                TempData["StatusMessage"] = "No patient profile linked to your account.";
                 return RedirectToPage("/Patient/Dashboard/Index");
+            }
 
-            Item = await _db.Predictions
+            var prediction = await _db.Predictions
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == id && p.PatientId == patient.Id, ct);
+                .FirstOrDefaultAsync(p => p.Id == id, ct);
 
-            if (Item == null)
-                return NotFound();
+            if (prediction == null)
+            {
+                TempData["StatusMessage"] = "Prediction not found.";
+                return RedirectToPage("/Patient/Predictions/Index");
+            }
 
-            if (Item.Status != PredictionStatus.Accepted)
+            if (prediction.PatientId != patient.Id)
+            {
+                TempData["StatusMessage"] = "Prediction not found.";
+                return RedirectToPage("/Patient/Predictions/Index");
+            }
+
+            if (prediction.Status != PredictionStatus.Accepted)
             {
                 TempData["StatusMessage"] = "This prediction is pending doctor validation.";
                 return RedirectToPage("/Patient/Predictions/Index");
             }
 
+            Item = prediction;
             ParseMedicalInfo(Item.OutputDataJson);
 
             return Page();
@@ -64,24 +83,31 @@ namespace Licenta.Pages.Patient.Predictions
 
         private void ParseMedicalInfo(string? json)
         {
-            if (string.IsNullOrWhiteSpace(json)) return;
+            if (string.IsNullOrWhiteSpace(json))
+                return;
 
             try
             {
                 using var doc = JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("extras", out var extras))
-                {
-                    if (extras.TryGetProperty("medical_type", out var mt))
-                        MedicalType = mt.GetString() ?? "-";
 
-                    if (extras.TryGetProperty("risk_level", out var rl))
-                        RiskLevel = rl.GetString() ?? "-";
+                if (!doc.RootElement.TryGetProperty("extras", out var extras))
+                    return;
 
-                    if (extras.TryGetProperty("medical_note", out var mn))
-                        MedicalNote = mn.GetString() ?? "";
-                }
+                if (extras.ValueKind != JsonValueKind.Object)
+                    return;
+
+                if (extras.TryGetProperty("medical_type", out var mt) && mt.ValueKind == JsonValueKind.String)
+                    MedicalType = mt.GetString() ?? "-";
+
+                if (extras.TryGetProperty("risk_level", out var rl) && rl.ValueKind == JsonValueKind.String)
+                    RiskLevel = rl.GetString() ?? "-";
+
+                if (extras.TryGetProperty("medical_note", out var mn) && mn.ValueKind == JsonValueKind.String)
+                    MedicalNote = mn.GetString() ?? "";
             }
-            catch { }
+            catch (JsonException)
+            {
+            }
         }
     }
 }

@@ -119,7 +119,7 @@
                                                 <button class="action-btn" data-bs-toggle="dropdown" type="button"><i class="bi bi-three-dots"></i></button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                                     <li><button type="button" class="dropdown-item js-edit-review" data-id="@r.Id" data-target="@r.Target" data-doctor-id="@r.DoctorId" data-rating="@r.Rating" data-title="@(r.Title ?? "")" data-comment="@r.Comment"><i class="bi bi-pencil me-2"></i>Edit</button></li>
-                                                    <li><button type="button" class="dropdown-item text-danger js-delete-review" data-id="@r.Id" data-bs-toggle="modal" data-bs-target="#deleteReviewModal"><i class="bi bi-trash me-2"></i>Delete</button></li>
+                                                    <li><button type="button" class="dropdown-item text-danger js-delete-review" data-id="@r.Id"><i class="bi bi-trash me-2"></i>Delete</button></li>
                                                 </ul>
                                             </div>
                                         }
@@ -162,7 +162,7 @@
                                                 <button class="action-btn" data-bs-toggle="dropdown" type="button"><i class="bi bi-three-dots"></i></button>
                                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                                     <li><button type="button" class="dropdown-item js-edit-review" data-id="@r.Id" data-target="@r.Target" data-doctor-id="" data-rating="@r.Rating" data-title="@(r.Title ?? "")" data-comment="@r.Comment"><i class="bi bi-pencil me-2"></i>Edit</button></li>
-                                                    <li><button type="button" class="dropdown-item text-danger js-delete-review" data-id="@r.Id" data-bs-toggle="modal" data-bs-target="#deleteReviewModal"><i class="bi bi-trash me-2"></i>Delete</button></li>
+                                                    <li><button type="button" class="dropdown-item text-danger js-delete-review" data-id="@r.Id"><i class="bi bi-trash me-2"></i>Delete</button></li>
                                                 </ul>
                                             </div>
                                         }
@@ -204,7 +204,7 @@
                                             <button type="button" class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
                                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                                 <li><button type="button" class="dropdown-item js-edit-review" data-id="@r.Id" data-target="@r.Target" data-doctor-id="@(r.DoctorId?.ToString() ?? "")" data-rating="@r.Rating" data-title="@(r.Title ?? "")" data-comment="@r.Comment"><i class="bi bi-pencil me-2"></i>Edit</button></li>
-                                                <li><button type="button" class="dropdown-item text-danger js-delete-review" data-id="@r.Id" data-bs-toggle="modal" data-bs-target="#deleteReviewModal"><i class="bi bi-trash me-2"></i>Delete</button></li>
+                                                <li><button type="button" class="dropdown-item text-danger js-delete-review" data-id="@r.Id"><i class="bi bi-trash me-2"></i>Delete</button></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -232,7 +232,7 @@
                     <h4 class="fw-bold mb-0 text-white" id="formPanelTitle">Write a Review</h4>
                     <button type="button" class="btn btn-sm btn-light rounded-circle ms-auto d-none" id="btnCancelEdit" title="Cancel Edit"><i class="bi bi-x-lg"></i></button>
                 </div>
-                
+
                 <div class="form-body p-4">
                     <form method="post" id="reviewForm" action="?handler=Create" novalidate>
                         @Html.AntiForgeryToken()
@@ -306,25 +306,10 @@
     </div>
 </div>
 
-<div class="modal fade modern-modal" id="deleteReviewModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content text-center p-4 shadow-lg border-0" style="border-radius: 24px;">
-            <form method="post" asp-page-handler="Delete" id="deleteReviewForm">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" id="deleteReviewId" />
-                <div class="delete-icon-wrapper mb-3">
-                    <i class="bi bi-trash3"></i>
-                </div>
-                <h5 class="fw-bold mb-2">Delete review?</h5>
-                <p class="text-muted small mb-4">This action cannot be undone.</p>
-                <div class="d-flex flex-column gap-2">
-                    <button type="submit" class="btn btn-danger rounded-pill py-2 fw-bold">Confirm Delete</button>
-                    <button type="button" class="btn btn-light rounded-pill py-2 fw-bold" data-bs-dismiss="modal">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<form method="post" asp-page-handler="Delete" id="deleteReviewForm" class="d-none">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" id="deleteReviewId" />
+</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
