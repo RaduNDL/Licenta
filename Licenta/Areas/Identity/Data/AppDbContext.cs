@@ -1,6 +1,5 @@
 ﻿using Licenta.Areas.Identity.Data;
 using Licenta.Models;
-using Licenta.Models.Licenta.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 

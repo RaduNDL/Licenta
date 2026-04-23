@@ -53,18 +53,29 @@ namespace Licenta.Areas.Identity.Data
 
             return dict;
         }
-        public override int SaveChanges()
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
-            try { AuditBeforeSave(); } catch {  }
-            return base.SaveChanges();
+            TryAudit();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
         }
-
-        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        public override Task<int> SaveChangesAsync(
+      bool acceptAllChangesOnSuccess,
+      CancellationToken cancellationToken = default)
         {
-            try { AuditBeforeSave(); } catch { }
-            return base.SaveChangesAsync(cancellationToken);
+            TryAudit();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
-
+        private void TryAudit()
+        {
+            try
+            {
+                AuditBeforeSave();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Audit logging failed");
+            }
+        }
         private void AuditBeforeSave()
         {
             var entries = ChangeTracker.Entries()

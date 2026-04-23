@@ -1,5 +1,4 @@
 ﻿using Licenta.Models;
-using Licenta.Models.Licenta.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
@@ -15,9 +14,6 @@ namespace Licenta.Areas.Identity.Data
                 {
                     ClinicName = "LicentaMed Clinic",
                     MaxUploadMb = 20,
-
-                   
-
                     PasswordMinLength = 6,
                     RequireDigit = true,
                     RequireUppercase = false,

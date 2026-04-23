@@ -27,6 +27,5 @@ namespace Licenta.Models
         public ICollection<MedicalAttachment> Attachments { get; set; } = new List<MedicalAttachment>();
         public ICollection<Prediction> Predictions { get; set; } = new List<Prediction>();
         public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
-        public string? UserName { get; internal set; }
     }
 }
