@@ -89,15 +89,29 @@ namespace Licenta.Pages.Patient.Reviews
                 return Page();
             }
 
-            if (Input.Target == ReviewTarget.Doctor && Input.DoctorId.HasValue)
+            if (Input.Target == ReviewTarget.Application)
             {
-                var alreadyExists = await _db.Reviews
+                var alreadyAppReview = await _db.Reviews
+                    .AnyAsync(r => r.AuthorUserId == user.Id
+                                && r.Target == ReviewTarget.Application
+                                && !r.IsDeleted);
+
+                if (alreadyAppReview)
+                {
+                    StatusMessage = "You have already reviewed the platform. You can edit your existing review instead.";
+                    StatusType = "warning";
+                    return RedirectToPage();
+                }
+            }
+            else if (Input.Target == ReviewTarget.Doctor && Input.DoctorId.HasValue)
+            {
+                var alreadyDoctorReview = await _db.Reviews
                     .AnyAsync(r => r.AuthorUserId == user.Id
                                 && r.Target == ReviewTarget.Doctor
                                 && r.DoctorId == Input.DoctorId
                                 && !r.IsDeleted);
 
-                if (alreadyExists)
+                if (alreadyDoctorReview)
                 {
                     StatusMessage = "You have already reviewed this doctor. You can edit your existing review instead.";
                     StatusType = "warning";
@@ -239,8 +253,7 @@ namespace Licenta.Pages.Patient.Reviews
                 .GroupBy(r => r.DoctorId!.Value)
                 .ToDictionary(
                     g => g.Key,
-                    g => new { Avg = g.Average(x => x.Rating), Cnt = g.Count() }
-                );
+                    g => new { Avg = g.Average(x => x.Rating), Cnt = g.Count() });
 
             AvailableDoctors = docs.Select(d => new DoctorLite
             {

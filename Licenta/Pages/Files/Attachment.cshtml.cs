@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-
+using System.IO;
 
 namespace Licenta.Pages.Files
 {
@@ -40,11 +40,13 @@ namespace Licenta.Pages.Files
 
             if (!hasAccess)
             {
-                var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
+                var doctor = await _db.Doctors
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.UserId == user.Id);
+
                 if (doctor != null)
                 {
-                    if (att.DoctorId == doctor.Id ||
-                        att.ValidatedByDoctorId == doctor.Id)
+                    if (att.DoctorId == doctor.Id || att.ValidatedByDoctorId == doctor.Id)
                         hasAccess = true;
 
                     if (att.DoctorId == null &&
@@ -56,13 +58,19 @@ namespace Licenta.Pages.Files
 
             if (!hasAccess) return Forbid();
 
-            if (!System.IO.File.Exists(att.FilePath))
+            var path = att.FilePath ?? "";
+
+         
+            if (string.IsNullOrWhiteSpace(path) || !Path.IsPathRooted(path) || path.StartsWith("/uploads", StringComparison.OrdinalIgnoreCase))
+                return NotFound();
+
+            if (!System.IO.File.Exists(path))
                 return NotFound();
 
             return PhysicalFile(
-                att.FilePath,
+                path,
                 att.ContentType ?? "application/octet-stream",
-                att.FileName);
+                att.FileName ?? "file");
         }
     }
 }

@@ -2,24 +2,28 @@
 using Licenta.Models;
 using Licenta.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Licenta.Pages.Patient.Attachments
 {
     [Authorize(Roles = "Patient")]
     public class UploadModel : PageModel
     {
+        private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg", ".jpeg", ".png", ".dcm", ".tif", ".tiff", ".pdf"
+        };
+
+        private const long MaxFileSizeBytes = 20L * 1024 * 1024; 
+
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IWebHostEnvironment _env;
@@ -70,13 +74,35 @@ namespace Licenta.Pages.Patient.Attachments
                 return Page();
             }
 
+            if (Input.File.Length == 0)
+            {
+                ModelState.AddModelError("Input.File", "The file is empty.");
+                await LoadDoctorsAsync();
+                return Page();
+            }
+
+            if (Input.File.Length > MaxFileSizeBytes)
+            {
+                ModelState.AddModelError("Input.File",
+                    $"File is too large. Max size is {MaxFileSizeBytes / (1024 * 1024)} MB.");
+                await LoadDoctorsAsync();
+                return Page();
+            }
+
+            var ext = Path.GetExtension(Input.File.FileName);
+            if (string.IsNullOrWhiteSpace(ext) || !AllowedExtensions.Contains(ext))
+            {
+                ModelState.AddModelError("Input.File",
+                    "Unsupported file type. Allowed: JPG/JPEG, PNG, DCM, TIFF, PDF.");
+                await LoadDoctorsAsync();
+                return Page();
+            }
+
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
 
-            var patient = await _db.Patients
-                .FirstOrDefaultAsync(p => p.UserId == user.Id);
-
+            var patient = await _db.Patients.FirstOrDefaultAsync(p => p.UserId == user.Id);
             if (patient == null)
                 return Forbid();
 
@@ -92,18 +118,17 @@ namespace Licenta.Pages.Patient.Attachments
             }
 
             var uploadsFolder = Path.Combine(
-                _env.WebRootPath,
-                "uploads",
-                "cbis_ddsm");
+                _env.ContentRootPath,
+                "Files", "uploads", "patient", patient.Id.ToString(), "cbis_ddsm");
 
             Directory.CreateDirectory(uploadsFolder);
 
-            var uniqueFileName =
-                $"{Guid.NewGuid()}_{Path.GetFileName(Input.File.FileName)}";
+            var originalName = Path.GetFileName(Input.File.FileName);
+            var sanitized = SanitizeFileName(originalName, fallbackExt: ext);
+            var uniqueFileName = $"{Guid.NewGuid():N}_{sanitized}";
+            var absolutePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-            var physicalPath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            await using (var stream = new FileStream(physicalPath, FileMode.Create))
+            await using (var stream = new FileStream(absolutePath, FileMode.Create))
             {
                 await Input.File.CopyToAsync(stream);
             }
@@ -113,8 +138,8 @@ namespace Licenta.Pages.Patient.Attachments
                 Id = Guid.NewGuid(),
                 PatientId = patient.Id,
                 DoctorId = Input.DoctorId,
-                FileName = Input.File.FileName,
-                FilePath = $"/uploads/cbis_ddsm/{uniqueFileName}",
+                FileName = originalName,
+                FilePath = absolutePath,
                 ContentType = Input.File.ContentType,
                 Type = string.IsNullOrWhiteSpace(Input.Type) ? "CBIS-DDSM Breast Image" : Input.Type.Trim(),
                 PatientNotes = Input.Notes,
@@ -134,10 +159,9 @@ namespace Licenta.Pages.Patient.Attachments
                 actionText: "Review Image",
                 relatedEntity: "MedicalAttachment",
                 relatedEntityId: attachment.Id.ToString(),
-                sendEmail: false
-            );
+                sendEmail: false);
 
-            TempData["StatusMessage"] = $"Breast image uploaded successfully. Dr. {selectedDoctor.User.FullName} has been notified.";
+            TempData["StatusMessage"] = $"Image uploaded successfully. Dr. {selectedDoctor.User.FullName} has been notified.";
             return RedirectToPage("/Patient/Attachments/Index");
         }
 
@@ -151,9 +175,7 @@ namespace Licenta.Pages.Patient.Attachments
                 .Where(d => !d.User.IsSoftDeleted);
 
             if (!string.IsNullOrWhiteSpace(clinicId))
-            {
                 query = query.Where(d => d.User.ClinicId == clinicId);
-            }
 
             var doctors = await query
                 .Select(d => new
@@ -164,6 +186,21 @@ namespace Licenta.Pages.Patient.Attachments
                 .ToListAsync();
 
             DoctorList = new SelectList(doctors, "Id", "DisplayName");
+        }
+
+        private static string SanitizeFileName(string name, string fallbackExt)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return "file" + fallbackExt;
+
+            var cleaned = new string(name
+                .Where(c => char.IsLetterOrDigit(c) || c == '.' || c == '_' || c == '-')
+                .ToArray());
+
+            if (string.IsNullOrWhiteSpace(cleaned) || cleaned.StartsWith('.'))
+                cleaned = "file" + (string.IsNullOrEmpty(Path.GetExtension(cleaned)) ? fallbackExt : "");
+
+            return cleaned.Length > 80 ? cleaned[^80..] : cleaned;
         }
     }
 }

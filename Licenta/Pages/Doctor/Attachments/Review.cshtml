@@ -19,14 +19,14 @@
                 <div class="card-body bg-light d-flex align-items-center justify-content-center text-center">
                     @if (isImage)
                     {
-                        <img src="@Model.Item.FilePath" class="img-fluid rounded" style="max-height: 500px;" />
+                        <img src="@Url.Page("/Files/Attachment", new { id = Model.Item.Id })" class="img-fluid rounded" style="max-height: 500px;" />
                     }
                     else
                     {
                         <div>
                             <i class="bi bi-file-earmark-text display-1 text-muted"></i>
                             <p class="mt-2">Preview not available.</p>
-                            <a href="@Model.Item.FilePath" target="_blank" class="btn btn-primary btn-sm">Download File</a>
+                            <a href="@Url.Page("/Files/Attachment", new { id = Model.Item.Id })" target="_blank" class="btn btn-primary btn-sm">Download File</a>
                         </div>
                     }
                 </div>

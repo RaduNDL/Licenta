@@ -384,6 +384,11 @@ namespace Licenta.Areas.Identity.Data
                 .HasIndex(r => new { r.AuthorUserId, r.DoctorId, r.Target })
                 .IsUnique()
                 .HasFilter("[Target] = 1 AND [DoctorId] IS NOT NULL AND [IsDeleted] = 0");
+            b.Entity<Review>()
+    .HasIndex(r => new { r.AuthorUserId, r.Target })
+    .IsUnique()
+    .HasFilter("[Target] = 0 AND [IsDeleted] = 0")
+    .HasDatabaseName("IX_Reviews_UniqueApplicationReviewPerUser");
         }
     }
 }

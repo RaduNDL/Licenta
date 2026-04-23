@@ -58,7 +58,7 @@ else
                 <hr />
 
                 <div class="d-flex justify-content-end">
-                    <a href="@item.FilePath" target="_blank" class="btn btn-primary">
+                    <a href="@Url.Page("/Files/Attachment", new { id = item.Id })" target="_blank" class="btn btn-primary">
                         <i class="bi bi-download me-2"></i>Download File
                     </a>
                 </div>

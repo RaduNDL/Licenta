@@ -56,11 +56,12 @@ namespace Licenta
                     options.SignIn.RequireConfirmedAccount = false;
                     options.User.RequireUniqueEmail = true;
 
-                    options.Password.RequiredLength = 8;
-                    options.Password.RequireDigit = true;
-                    options.Password.RequireUppercase = true;
-                    options.Password.RequireNonAlphanumeric = true;
-                    options.Password.RequireLowercase = true;
+             
+                    options.Password.RequiredLength = 1;
+                    options.Password.RequireDigit = false;
+                    options.Password.RequireUppercase = false;
+                    options.Password.RequireNonAlphanumeric = false;
+                    options.Password.RequireLowercase = false;
                     options.Password.RequiredUniqueChars = 1;
                 })
                 .AddRoles<IdentityRole>()
@@ -103,6 +104,7 @@ namespace Licenta
                     ForwardedHeaders.XForwardedProto |
                     ForwardedHeaders.XForwardedHost;
 
+                
                 options.KnownNetworks.Clear();
                 options.KnownProxies.Clear();
             });

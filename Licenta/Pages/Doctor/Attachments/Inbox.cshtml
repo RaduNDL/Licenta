@@ -83,7 +83,7 @@
                                 </td>
                                 <td class="text-end pe-4">
                                     <div class="btn-group">
-                                        <a href="@item.FilePath" target="_blank" class="btn btn-sm btn-outline-secondary" title="Download">
+                                        <a href="@Url.Page("/Files/Attachment", new { id = item.Id })" target="_blank" class="btn btn-sm btn-outline-secondary" title="Download">
                                             <i class="bi bi-download"></i>
                                         </a>
                                         @if (item.DoctorId == null)
