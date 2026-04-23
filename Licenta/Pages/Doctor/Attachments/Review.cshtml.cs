@@ -70,7 +70,6 @@ namespace Licenta.Pages.Doctor.Attachments
                 .ThenInclude(p => p.User!)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
-
             if (item == null) return NotFound();
 
             var docClinic = (user.ClinicId ?? "").Trim();
@@ -187,9 +186,18 @@ namespace Licenta.Pages.Doctor.Attachments
 
                 var relFs = rel.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString());
                 var candidate = Path.Combine(_env.WebRootPath, relFs);
-
                 var rootFull = Path.GetFullPath(_env.WebRootPath);
-                var fileFull = Path.GetFullPath(candidate);
+
+                var fileFull = "";
+                try
+                {
+                    fileFull = Path.GetFullPath(candidate);
+                }
+                catch
+                {
+                    TempData["StatusMessage"] = "Invalid attachment path.";
+                    return RedirectToPage("/Doctor/Attachments/Inbox");
+                }
 
                 if (!fileFull.StartsWith(rootFull, StringComparison.OrdinalIgnoreCase))
                 {
