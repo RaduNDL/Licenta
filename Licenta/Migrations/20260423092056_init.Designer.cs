@@ -4,6 +4,7 @@ using Licenta.Areas.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Licenta.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260423092056_init")]
+    partial class init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -264,36 +267,6 @@ namespace Licenta.Migrations
                     b.HasIndex("AppointmentId", "Status");
 
                     b.ToTable("AppointmentRescheduleRequests");
-                });
-
-            modelBuilder.Entity("Licenta.Models.AssistantProfile", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Bio")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Department")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Phone")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ProfileImagePath")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasFilter("[UserId] IS NOT NULL");
-
-                    b.ToTable("Assistants");
                 });
 
             modelBuilder.Entity("Licenta.Models.AuditLog", b =>
@@ -1270,16 +1243,6 @@ namespace Licenta.Migrations
                     b.Navigation("SelectedOption");
                 });
 
-            modelBuilder.Entity("Licenta.Models.AssistantProfile", b =>
-                {
-                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "User")
-                        .WithOne("AssistantProfile")
-                        .HasForeignKey("Licenta.Models.AssistantProfile", "UserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Licenta.Models.AuditLog", b =>
                 {
                     b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", "User")
@@ -1607,8 +1570,6 @@ namespace Licenta.Migrations
 
             modelBuilder.Entity("Licenta.Areas.Identity.Data.ApplicationUser", b =>
                 {
-                    b.Navigation("AssistantProfile");
-
                     b.Navigation("DoctorProfile");
 
                     b.Navigation("Notifications");

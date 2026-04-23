@@ -52,9 +52,9 @@
         if (visibleCount) visibleCount.textContent = visible.length;
 
         if (visible.length === 0 && cards.length > 0) {
-            noResults?.classList.remove('dr-hidden');
+            noResults?.classList.remove('d-none');
         } else {
-            noResults?.classList.add('dr-hidden');
+            noResults?.classList.add('d-none');
         }
     }
 

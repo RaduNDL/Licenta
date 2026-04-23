@@ -243,6 +243,11 @@
                                     <li><a class="dropdown-item" asp-area="" asp-page="/Doctor/Messages/Requests"><i class="bi bi-inbox-fill me-2"></i>Requests</a></li>
                                 </ul>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-page="/Doctor/Reviews/Index">
+                                    <i class="bi bi-chat-heart"></i><span>Reviews</span>
+                                </a>
+                            </li>
                         }
                         else if (User.IsInRole("Assistant"))
                         {

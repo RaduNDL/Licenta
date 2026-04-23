@@ -48,6 +48,12 @@ body {
     line-height: 1.25;
 }
 
+/* FIX: Ensure select text has enough padding to clear the floating label */
+.form-floating > .form-select {
+    padding-top: 1.625rem;
+    padding-bottom: 0.625rem;
+}
+
     .form-floating > .form-control:focus,
     .form-floating > .form-select:focus {
         background-color: #fff;
@@ -65,29 +71,44 @@ body {
         opacity: 0.8;
     }
 
-.password-group .form-control {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+.password-group {
+    flex-wrap: nowrap;
 }
 
-.password-group .btn {
-    border: 1px solid #d1d3e2;
-    border-left: none;
-    background-color: var(--input-bg);
-    border-top-right-radius: 0.5rem;
-    border-bottom-right-radius: 0.5rem;
-    color: #6e707e;
-    z-index: 0;
-}
-
-    .password-group .btn:hover {
-        background-color: #eaecf4;
-        color: #5a5c69;
+    .password-group .form-control {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
     }
 
-.password-group .form-floating:focus-within {
-    z-index: 2;
-}
+    .password-group .btn {
+        border: 1px solid #d1d3e2;
+        border-left: none;
+        background-color: var(--input-bg);
+        border-top-right-radius: 0.5rem;
+        border-bottom-right-radius: 0.5rem;
+        color: #6e707e;
+        z-index: 0;
+    }
+
+        .password-group .btn:hover {
+            background-color: #eaecf4;
+            color: #5a5c69;
+        }
+
+    .password-group .form-floating:focus-within {
+        z-index: 2;
+    }
+
+    .password-group .btn:focus {
+        z-index: 3;
+        outline: none;
+        box-shadow: none;
+        border-color: var(--input-focus-border);
+    }
+
+    .password-group:focus-within .btn {
+        border-color: var(--input-focus-border);
+    }
 
 .form-check-input:checked {
     background-color: var(--primary-color);

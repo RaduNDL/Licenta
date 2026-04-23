@@ -12,6 +12,7 @@ namespace Licenta.Areas.Identity.Data
 
         public DbSet<PatientProfile> Patients => Set<PatientProfile>();
         public DbSet<DoctorProfile> Doctors => Set<DoctorProfile>();
+        public DbSet<AssistantProfile> Assistants => Set<AssistantProfile>();
         public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
         public DbSet<Appointment> Appointments => Set<Appointment>();
         public DbSet<LabResult> LabResults => Set<LabResult>();
@@ -61,6 +62,13 @@ namespace Licenta.Areas.Identity.Data
                 .HasOne(u => u.DoctorProfile)
                 .WithOne(d => d.User)
                 .HasForeignKey<DoctorProfile>(d => d.UserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            b.Entity<ApplicationUser>()
+                .HasOne(u => u.AssistantProfile)
+                .WithOne(a => a.User)
+                .HasForeignKey<AssistantProfile>(a => a.UserId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .IsRequired(false);
 

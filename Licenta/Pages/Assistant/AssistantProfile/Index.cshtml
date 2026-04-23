@@ -8,116 +8,208 @@
     <link rel="stylesheet" href="~/css/assistantprofile.css" asp-append-version="true" />
 }
 
-<div class="profile-page-wrapper">
-    <div class="container py-5">
+<div class="profile-wrapper py-5">
+    <div class="container-fluid">
 
-        <div class="d-flex align-items-center justify-content-between mb-5 fade-in-up">
-            <div>
-                <h1 class="display-6 fw-bold text-dark mb-1">My Profile</h1>
-                <p class="text-muted mb-0">Manage your assistant credentials and personal details.</p>
-            </div>
-            <div class="d-none d-md-block">
-                <span class="badge bg-white text-primary shadow-sm py-2 px-3 rounded-pill border">
-                    <i class="bi bi-shield-check me-2"></i>Secure Connection
-                </span>
-            </div>
-        </div>
-
-        @if (TempData["StatusMessage"] is string status)
+        @if (TempData["StatusMessage"] is string ok && !string.IsNullOrWhiteSpace(ok))
         {
-            <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center gap-3">
-                <i class="bi bi-check-circle-fill fs-4"></i>
-                <div>@status</div>
+            <div class="alert alert-success custom-alert mb-4">
+                <i class="bi bi-check-circle-fill me-2"></i> @ok
             </div>
         }
-        @if (TempData["ErrorMessage"] is string err)
+        @if (TempData["ErrorMessage"] is string err && !string.IsNullOrWhiteSpace(err))
         {
-            <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center gap-3">
-                <i class="bi bi-exclamation-triangle-fill fs-4"></i>
-                <div>@err</div>
+            <div class="alert alert-danger custom-alert mb-4">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> @err
             </div>
         }
 
         <div class="row g-4">
-            <div class="col-lg-4 fade-in-up" style="animation-delay: 0.1s;">
-                <div class="card profile-card border-0 shadow-lg h-100">
-                    <div class="card-body text-center p-5 d-flex flex-column align-items-center justify-content-center">
-
-                        <div class="avatar-circle mb-4 shadow-sm">
-                            <span id="userInitials">DA</span>
+            <div class="col-lg-4 col-xl-3">
+                <div class="card profile-sidebar-card">
+                    <div class="card-body text-center p-4">
+                        <div class="avatar-wrapper mb-3">
+                            <div class="profile-avatar">
+                                @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                                {
+                                    <img src="@Model.ProfileImageUrl" alt="Profile" />
+                                }
+                                else
+                                {
+                                    <div class="avatar-fallback">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                }
+                            </div>
+                            <div class="status-dot"></div>
                         </div>
 
-                        <h3 class="fw-bold mb-1" id="profileNameDisplay">@Model.Input.FullName</h3>
-                        <p class="text-muted badge bg-light text-secondary rounded-pill px-3 py-2 mt-2">
-                            @Model.Input.ClinicId
-                        </p>
+                        <h4 class="profile-name">@Model.DisplayName</h4>
+                        <p class="profile-email">@Model.Email</p>
 
-                        <div class="divider my-4 w-100"></div>
+                        <div class="d-flex justify-content-center gap-2 mb-4">
+                            <span class="badge badge-role">Assistant</span>
+                            <span class="badge badge-clinic">
+                                <i class="bi bi-building-fill me-1"></i>
+                                @(string.IsNullOrWhiteSpace(Model.ClinicId) ? "No Clinic" : Model.ClinicId)
+                            </span>
+                        </div>
 
-                        <div class="greeting-box w-100 p-3 rounded-4">
-                            <i class="bi bi-sun fs-4 mb-2 d-block text-warning" id="greetingIcon"></i>
-                            <span class="small fw-semibold text-secondary" id="greetingText">Welcome back</span>
+                        <div class="stats-container">
+                            <div class="stat-box">
+                                <span class="stat-number">@Model.StatsAppointments</span>
+                                <span class="stat-title">Appointments</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-number">@Model.StatsPatients</span>
+                                <span class="stat-title">Patients</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-number">@Model.StatsPendingTasks</span>
+                                <span class="stat-title">Tasks</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-number">@Model.StatsUnreadMessages</span>
+                                <span class="stat-title">Messages</span>
+                            </div>
+                        </div>
+
+                        <div class="upload-section mt-4 pt-4 border-top">
+                            <form method="post" enctype="multipart/form-data" asp-page-handler="UploadPhoto">
+                                @Html.AntiForgeryToken()
+                                <div class="file-upload-wrapper">
+                                    <input asp-for="PhotoFile" type="file" id="fileInput" accept=".png,.jpg,.jpeg,.webp" hidden />
+                                    <label for="fileInput" class="btn btn-outline-primary w-100 btn-upload">
+                                        <i class="bi bi-camera me-2"></i> Change Photo
+                                    </label>
+                                    <div id="fileName" class="file-name-display"></div>
+                                </div>
+                                <span asp-validation-for="PhotoFile" class="text-danger small d-block mt-2"></span>
+
+                                <div class="mt-2 d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-sm rounded-pill" id="uploadBtn" style="display:none;">Save Photo</button>
+                                    @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                                    {
+                                        <button type="submit" class="btn btn-light btn-sm text-danger rounded-pill" asp-page-handler="RemovePhoto">Remove Current</button>
+                                    }
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-8 fade-in-up" style="animation-delay: 0.2s;">
-                <div class="card form-card border-0 shadow-sm h-100">
-                    <div class="card-header bg-transparent border-0 pt-4 px-4 px-md-5">
-                        <h5 class="fw-bold mb-0 text-primary">Account Details</h5>
+            <div class="col-lg-8 col-xl-9">
+                <div class="card content-card h-100">
+                    <div class="card-header bg-transparent border-0 p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div>
+                            <h3 class="fw-bold mb-1">Account Settings</h3>
+                            <p class="text-muted mb-0 small">Manage your personal information and contact details.</p>
+                        </div>
+                        <a asp-page="/Assistant/Index" class="btn btn-light btn-back">
+                            <i class="bi bi-arrow-left me-2"></i> Dashboard
+                        </a>
                     </div>
-                    <div class="card-body p-4 p-md-5">
-                        <form method="post" id="profileForm">
+
+                    <div class="px-4">
+                        <ul class="nav nav-pills custom-tabs" id="profileTabs" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pane-account">
+                                    <i class="bi bi-person-badge me-2"></i>Account
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-professional">
+                                    <i class="bi bi-briefcase me-2"></i>Professional
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pane-contact">
+                                    <i class="bi bi-geo-alt me-2"></i>Contact
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <form method="post">
                             @Html.AntiForgeryToken()
 
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input asp-for="Input.FullName" class="form-control" id="fullNameInput" placeholder="Full Name" />
-                                        <label asp-for="Input.FullName">Full Name</label>
+                            <div class="tab-content">
+                                <div class="tab-pane fade show active" id="pane-account">
+                                    <h5 class="section-header">Basic Information</h5>
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Full Name</label>
+                                            <input asp-for="Input.FullName" class="form-control" />
+                                            <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Email Address</label>
+                                            <input class="form-control" value="@Model.Email" disabled />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Clinic ID</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="bi bi-hospital"></i></span>
+                                                <input class="form-control" value="@Model.ClinicId" disabled />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">User ID</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                                <input class="form-control" value="@Model.UserId" disabled />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <span asp-validation-for="Input.FullName" class="text-danger small ms-2"></span>
                                 </div>
 
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input asp-for="Input.Email" class="form-control bg-light" placeholder="Email" readonly />
-                                        <label asp-for="Input.Email">Email Address</label>
+                                <div class="tab-pane fade" id="pane-professional">
+                                    <h5 class="section-header">Professional Details</h5>
+                                    <div class="row g-4">
+                                        <div class="col-md-12">
+                                            <label class="form-label">Department</label>
+                                            <input asp-for="Input.Department" class="form-control" placeholder="e.g. Triage, Administration" />
+                                            <span asp-validation-for="Input.Department" class="text-danger small"></span>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label">Biography</label>
+                                            <textarea asp-for="Input.Bio" class="form-control" rows="4" placeholder="Short professional bio..."></textarea>
+                                            <span asp-validation-for="Input.Bio" class="text-danger small"></span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input asp-for="Input.ClinicId" class="form-control" placeholder="Clinic ID" />
-                                        <label asp-for="Input.ClinicId">Clinic ID</label>
+                                <div class="tab-pane fade" id="pane-contact">
+                                    <h5 class="section-header">Contact Information</h5>
+                                    <div class="row g-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Phone Number</label>
+                                            <input asp-for="Input.Phone" class="form-control" placeholder="+40..." />
+                                            <span asp-validation-for="Input.Phone" class="text-danger small"></span>
+                                        </div>
                                     </div>
-                                    <span asp-validation-for="Input.ClinicId" class="text-danger small ms-2"></span>
-                                </div>
 
-                                <div class="col-md-6">
-                                    <div class="form-floating">
-                                        <input class="form-control bg-light" value="Assistant" placeholder="Role" readonly />
-                                        <label>Current Role</label>
+                                    <div class="preview-banner mt-4">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="icon-box"><i class="bi bi-eye"></i></div>
+                                            <div>
+                                                <small class="text-uppercase fw-bold text-muted">Preview</small>
+                                                <div class="small fw-semibold text-dark">
+                                                    @(string.IsNullOrWhiteSpace(Model.Input.Phone) ? "No phone set" : Model.Input.Phone) •
+                                                    @(string.IsNullOrWhiteSpace(Model.Input.Department) ? "No department set" : Model.Input.Department)
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="security-alert mt-5 p-4 rounded-4 d-flex align-items-start gap-3">
-                                <div class="icon-box bg-white rounded-circle shadow-sm p-2 d-flex align-items-center justify-content-center">
-                                    <i class="bi bi-shield-lock text-primary"></i>
-                                </div>
-                                <div>
-                                    <h6 class="fw-bold mb-1">Security & Password</h6>
-                                    <p class="mb-0 small text-muted">For your protection, password changes must be performed via the dedicated Identity Management portal.</p>
-                                </div>
-                            </div>
+                            <hr class="my-4 text-muted opacity-25" />
 
-                            <div class="d-flex justify-content-end align-items-center gap-3 mt-5">
-                                <a class="btn btn-link text-decoration-none text-muted" asp-page="/Assistant/AssistantPanel/Index">
-                                    Cancel
-                                </a>
-                                <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 shadow-primary-sm hover-lift">
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary px-5 py-2 rounded-pill shadow-sm">
                                     Save Changes
                                 </button>
                             </div>
@@ -131,5 +223,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/assistantprofile.js"></script>
+    <script src="~/js/assistantprofile.js" asp-append-version="true"></script>
 }

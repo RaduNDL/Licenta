@@ -99,6 +99,8 @@
             </div>
 
             <div class="tab-content">
+
+                <!-- ========== DOCTOR REVIEWS TAB ========== -->
                 <div class="tab-pane fade show active" id="tab-doctors" role="tabpanel">
                     <div class="reviews-grid">
                         @if (Model.DoctorReviews.Count == 0)
@@ -110,6 +112,7 @@
                             @foreach (var r in Model.DoctorReviews)
                             {
                                 var docName = r.Doctor?.User?.FullName ?? "Doctor";
+                                var avatarDoc = Model.AuthorAvatars.TryGetValue(r.AuthorUserId, out var ad) ? ad : null;
                                 <div class="review-card" data-rating="@r.Rating" data-date="@r.CreatedAtUtc.Ticks" data-search="@(docName + " " + (r.Title ?? "") + " " + r.Comment)">
                                     <div class="card-header-custom">
                                         <span class="custom-badge badge-doctor">Dr. @docName</span>
@@ -131,9 +134,18 @@
                                     }
                                     <p class="review-body">@r.Comment</p>
                                     <div class="card-footer-custom">
-                                        <div class="reviewer-avatar">@Licenta.Pages.Patient.Reviews.IndexModel.GetInitial(r.Author.FullName)</div>
+                                        <div class="reviewer-avatar">
+                                            @if (!string.IsNullOrWhiteSpace(avatarDoc))
+                                            {
+                                                <img src="@avatarDoc" alt="@(r.Author?.FullName ?? "Patient")" />
+                                            }
+                                            else
+                                            {
+                                                @Licenta.Pages.Patient.Reviews.IndexModel.GetInitial(r.Author?.FullName)
+                                            }
+                                        </div>
                                         <div class="reviewer-info">
-                                            <div class="reviewer-name">@(r.Author.FullName ?? "Patient")</div>
+                                            <div class="reviewer-name">@(r.Author?.FullName ?? "Patient")</div>
                                             <div class="review-date">@r.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy")</div>
                                         </div>
                                     </div>
@@ -143,6 +155,7 @@
                     </div>
                 </div>
 
+                <!-- ========== PLATFORM REVIEWS TAB ========== -->
                 <div class="tab-pane fade" id="tab-app" role="tabpanel">
                     <div class="reviews-grid">
                         @if (Model.AppReviews.Count == 0)
@@ -153,6 +166,7 @@
                         {
                             @foreach (var r in Model.AppReviews)
                             {
+                                var avatarApp = Model.AuthorAvatars.TryGetValue(r.AuthorUserId, out var aa) ? aa : null;
                                 <div class="review-card" data-rating="@r.Rating" data-date="@r.CreatedAtUtc.Ticks" data-search="@((r.Title ?? "") + " " + r.Comment)">
                                     <div class="card-header-custom">
                                         <span class="custom-badge badge-platform">Platform Review</span>
@@ -174,9 +188,18 @@
                                     }
                                     <p class="review-body">@r.Comment</p>
                                     <div class="card-footer-custom">
-                                        <div class="reviewer-avatar bg-primary text-white">@Licenta.Pages.Patient.Reviews.IndexModel.GetInitial(r.Author.FullName)</div>
+                                        <div class="reviewer-avatar bg-primary text-white">
+                                            @if (!string.IsNullOrWhiteSpace(avatarApp))
+                                            {
+                                                <img src="@avatarApp" alt="@(r.Author?.FullName ?? "Patient")" />
+                                            }
+                                            else
+                                            {
+                                                @Licenta.Pages.Patient.Reviews.IndexModel.GetInitial(r.Author?.FullName)
+                                            }
+                                        </div>
                                         <div class="reviewer-info">
-                                            <div class="reviewer-name">@(r.Author.FullName ?? "Patient")</div>
+                                            <div class="reviewer-name">@(r.Author?.FullName ?? "Patient")</div>
                                             <div class="review-date">@r.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy")</div>
                                         </div>
                                     </div>
@@ -186,6 +209,7 @@
                     </div>
                 </div>
 
+                <!-- ========== PERSONAL (MY REVIEWS) TAB ========== -->
                 <div class="tab-pane fade" id="tab-mine" role="tabpanel">
                     <div class="reviews-grid">
                         @if (Model.MyReviews.Count == 0)

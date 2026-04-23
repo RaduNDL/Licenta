@@ -30,7 +30,7 @@ namespace Licenta.Pages.Patient.Attachments
                 .AsNoTracking()
                 .Include(a => a.Patient)
                 .Include(a => a.Patient!.User)
-                .Where(a => a.Patient != null && a.Patient.UserId == userId)
+                .Where(a => a.Patient != null && a.Patient.UserId == userId && a.Type != "ProfilePhoto")
                 .OrderByDescending(a => a.UploadedAt)
                 .ToListAsync();
         }

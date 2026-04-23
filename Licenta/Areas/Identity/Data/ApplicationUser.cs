@@ -19,7 +19,7 @@ namespace Licenta.Areas.Identity.Data
 
         public PatientProfile? PatientProfile { get; set; }
         public DoctorProfile? DoctorProfile { get; set; }
-
+        public Models.AssistantProfile? AssistantProfile { get; set; }
         public ICollection<UserNotification> Notifications { get; set; } = new List<UserNotification>();
     }
 }

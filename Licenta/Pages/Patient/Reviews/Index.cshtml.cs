@@ -29,6 +29,7 @@ namespace Licenta.Pages.Patient.Reviews
         public IList<Review> DoctorReviews { get; set; } = new List<Review>();
         public IList<Review> MyReviews { get; set; } = new List<Review>();
         public IList<DoctorLite> AvailableDoctors { get; set; } = new List<DoctorLite>();
+        public Dictionary<string, string?> AuthorAvatars { get; set; } = new();
 
         public double AppAverage { get; set; }
         public int AppTotalCount { get; set; }
@@ -250,6 +251,41 @@ namespace Licenta.Pages.Patient.Reviews
                 Average = doctorStats.TryGetValue(d.Id, out var s) ? Math.Round(s.Avg, 1) : 0,
                 Count = doctorStats.TryGetValue(d.Id, out var s2) ? s2.Cnt : 0
             }).ToList();
+
+            await LoadAuthorAvatarsAsync(all);
+        }
+
+        private async Task LoadAuthorAvatarsAsync(List<Review> reviews)
+        {
+            AuthorAvatars = new Dictionary<string, string?>();
+            if (reviews.Count == 0) return;
+
+            var authorUserIds = reviews.Select(r => r.AuthorUserId).Distinct().ToList();
+
+            var patientLookup = await _db.Patients.AsNoTracking()
+                .Where(p => authorUserIds.Contains(p.UserId))
+                .Select(p => new { p.Id, p.UserId })
+                .ToListAsync();
+
+            if (patientLookup.Count == 0) return;
+
+            var patientIdToUserId = patientLookup.ToDictionary(p => p.Id, p => p.UserId);
+            var patientIds = patientLookup.Select(p => p.Id).ToList();
+
+            var photoRows = await _db.MedicalAttachments.AsNoTracking()
+                .Where(a => patientIds.Contains(a.PatientId) && a.Type == "ProfilePhoto")
+                .OrderByDescending(a => a.UploadedAt)
+                .Select(a => new { a.PatientId, a.FilePath })
+                .ToListAsync();
+
+            foreach (var row in photoRows)
+            {
+                if (patientIdToUserId.TryGetValue(row.PatientId, out var userId)
+                    && !AuthorAvatars.ContainsKey(userId))
+                {
+                    AuthorAvatars[userId] = row.FilePath;
+                }
+            }
         }
 
         public static string GetInitial(string? name)

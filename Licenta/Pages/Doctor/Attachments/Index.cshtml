@@ -16,8 +16,8 @@
         @if (Model.PatientId.HasValue)
         {
             <a class="btn btn-primary"
-               asp-page="/Doctor/Attachments/Upload"
-               asp-route-patientId="@Model.PatientId">
+                   asp-page="/Doctor/Attachments/Upload"
+                   asp-route-patientId="@Model.PatientId">
                 <i class="bi bi-cloud-upload me-2"></i>Upload New
             </a>
         }

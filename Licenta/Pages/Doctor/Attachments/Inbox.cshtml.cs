@@ -25,6 +25,7 @@ namespace Licenta.Pages.Doctor.Attachments
         }
 
         public List<MedicalAttachment> Items { get; set; } = new();
+        public Dictionary<Guid, string?> PatientPhotos { get; set; } = new();
         public Guid CurrentDoctorId { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
@@ -52,6 +53,7 @@ namespace Licenta.Pages.Doctor.Attachments
                 .Where(a =>
                     a.Status == AttachmentStatus.Pending &&
                     (a.DoctorId == null || a.DoctorId == doctor.Id) &&
+                    a.Type != "ProfilePhoto" &&
                     (!hasClinic ||
                         (a.Patient != null &&
                          a.Patient.User != null &&
@@ -60,6 +62,23 @@ namespace Licenta.Pages.Doctor.Attachments
                 )
                 .OrderByDescending(a => a.UploadedAt)
                 .ToListAsync();
+
+            var patientIds = Items.Select(a => a.PatientId).Distinct().ToList();
+
+            if (patientIds.Any())
+            {
+                var photos = await _db.MedicalAttachments
+                    .AsNoTracking()
+                    .Where(a => patientIds.Contains(a.PatientId) && a.Type == "ProfilePhoto")
+                    .OrderByDescending(a => a.UploadedAt)
+                    .ToListAsync();
+
+                foreach (var pid in patientIds)
+                {
+                    var photo = photos.FirstOrDefault(a => a.PatientId == pid);
+                    PatientPhotos[pid] = photo?.FilePath;
+                }
+            }
 
             return Page();
         }

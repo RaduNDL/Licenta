@@ -47,9 +47,19 @@
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-2">
-                                            <i class="bi bi-person-fill"></i>
-                                        </div>
+                                        @{
+                                            var hasPhoto = Model.PatientPhotos.TryGetValue(item.PatientId, out var photoUrl) && !string.IsNullOrWhiteSpace(photoUrl);
+                                        }
+                                        @if (hasPhoto)
+                                        {
+                                            <img src="@photoUrl" alt="Patient" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                <i class="bi bi-person-fill"></i>
+                                            </div>
+                                        }
                                         <div>
                                             <div class="fw-bold">@(item.Patient?.User?.FullName ?? "Unknown")</div>
                                             <div class="small text-muted">Patient</div>

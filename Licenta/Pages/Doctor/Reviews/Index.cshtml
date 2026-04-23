@@ -1,0 +1,259 @@
+﻿@page
+@model Licenta.Pages.Doctor.Reviews.IndexModel
+@{
+    ViewData["Title"] = "Patient Feedback";
+
+    string StarsHtml(int rating, string fillClass = "star-filled", string emptyClass = "star-empty")
+    {
+        var sb = new System.Text.StringBuilder();
+        for (int i = 1; i <= 5; i++)
+        {
+            sb.Append(i <= rating
+                ? $"<i class='bi bi-star-fill {fillClass}'></i>"
+                : $"<i class='bi bi-star {emptyClass}'></i>");
+        }
+        return sb.ToString();
+    }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/DoctorReviews.css" asp-append-version="true" />
+}
+
+<div class="doctor-reviews-wrapper">
+
+    <div class="dr-banner">
+        <div class="dr-banner-content">
+            <div class="dr-banner-text">
+                <span class="dr-pill"><i class="bi bi-shield-check me-1"></i> Patient Feedback</span>
+                <h1 class="dr-banner-title">Hello, Dr. @Model.DoctorName</h1>
+                <p class="dr-banner-subtitle">
+                    @if (!string.IsNullOrWhiteSpace(Model.Specialty))
+                    {
+                        <span class="dr-specialty">@Model.Specialty</span>
+                    }
+                    Here's what your patients are saying about the care you provide.
+                </p>
+            </div>
+            <div class="dr-banner-score">
+                <div class="score-circle">
+                    <div class="score-number">@Model.AverageRating.ToString("0.0")</div>
+                    <div class="score-stars">@Html.Raw(StarsHtml((int)Math.Round(Model.AverageRating), "", ""))</div>
+                    <div class="score-label">Based on @Model.TotalReviews review@(Model.TotalReviews == 1 ? "" : "s")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dr-stats-row">
+        <div class="dr-stat-card highlight">
+            <div class="stat-icon-wrap">
+                <i class="bi bi-star-fill"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-title">Average Rating</span>
+                <div class="stat-big">@Model.AverageRating.ToString("0.0") <small>/ 5.0</small></div>
+            </div>
+        </div>
+
+        <div class="dr-stat-card">
+            <div class="stat-icon-wrap blue">
+                <i class="bi bi-chat-square-quote"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-title">Total Reviews</span>
+                <div class="stat-big">@Model.TotalReviews</div>
+            </div>
+        </div>
+
+        <div class="dr-stat-card">
+            <div class="stat-icon-wrap green">
+                <i class="bi bi-calendar-heart"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-title">This Month</span>
+                <div class="stat-big">@Model.ReviewsThisMonth</div>
+            </div>
+        </div>
+
+        <div class="dr-stat-card">
+            <div class="stat-icon-wrap pink">
+                <i class="bi bi-award"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-title">5-Star Reviews</span>
+                <div class="stat-big">@Model.FiveStarCount</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dr-main-grid">
+
+        <aside class="dr-sidebar">
+
+            <div class="dr-panel">
+                <div class="panel-heading">
+                    <h3><i class="bi bi-bar-chart-line me-2"></i>Rating Breakdown</h3>
+                </div>
+                <div class="panel-body">
+                    @if (Model.TotalReviews == 0)
+                    {
+                        <p class="text-muted small mb-0">No ratings yet.</p>
+                    }
+                    else
+                    {
+                        @for (int i = 5; i >= 1; i--)
+                        {
+                            var count = Model.RatingDistribution.ContainsKey(i) ? Model.RatingDistribution[i] : 0;
+                            var pct = Model.RatingPercentages.ContainsKey(i) ? Model.RatingPercentages[i] : 0;
+                            <div class="rating-row">
+                                <div class="rating-row-label">
+                                    <span class="stars-mini">@i <i class="bi bi-star-fill"></i></span>
+                                </div>
+                                <div class="rating-bar">
+                                    <div class="rating-bar-fill" style="width: @pct%"></div>
+                                </div>
+                                <div class="rating-row-count">@count</div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="dr-panel">
+                <div class="panel-heading">
+                    <h3><i class="bi bi-funnel me-2"></i>Filters</h3>
+                </div>
+                <div class="panel-body">
+
+                    <div class="filter-field">
+                        <label>Search</label>
+                        <div class="search-wrap">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="dr-search" placeholder="Search reviews..." />
+                        </div>
+                    </div>
+
+                    <div class="filter-field">
+                        <label>Rating</label>
+                        <div class="pill-group">
+                            <button type="button" class="pill-btn active" data-rating="0">All</button>
+                            @for (int i = 5; i >= 1; i--)
+                            {
+                                <button type="button" class="pill-btn" data-rating="@i">
+                                    @i <i class="bi bi-star-fill"></i>
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="filter-field mb-0">
+                        <label>Sort by</label>
+                        <select id="dr-sort" class="sort-select">
+                            <option value="newest">Most Recent</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="highest">Highest Rating</option>
+                            <option value="lowest">Lowest Rating</option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="dr-info-note">
+                <i class="bi bi-info-circle"></i>
+                <div>
+                    <strong>Read-only view.</strong>
+                    <span>Reviews are written by your patients and can't be modified from this page.</span>
+                </div>
+            </div>
+
+        </aside>
+
+        <main class="dr-reviews-main">
+
+            <div class="reviews-header">
+                <h2><i class="bi bi-chat-heart me-2"></i>Patient Reviews</h2>
+                <span class="review-count-badge">
+                    <span id="dr-visible-count">@Model.TotalReviews</span> of @Model.TotalReviews
+                </span>
+            </div>
+
+            <div id="dr-reviews-list" class="dr-reviews-list">
+                @if (Model.MyReviews.Count == 0)
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h4>No reviews yet</h4>
+                        <p>Your patient reviews will appear here once they start sharing their experiences.</p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var r in Model.MyReviews)
+                    {
+                        var patientAvatar = Model.AuthorAvatars.TryGetValue(r.AuthorUserId, out var pa) ? pa : null;
+                        <article class="dr-review-card"
+                                 data-rating="@r.Rating"
+                                 data-date="@r.CreatedAtUtc.Ticks"
+                                 data-search="@((r.Title ?? "") + " " + r.Comment + " " + (r.Author?.FullName ?? ""))">
+
+                            <div class="review-top">
+                                <div class="reviewer-block">
+                                    <div class="reviewer-avatar-lg">
+                                        @if (!string.IsNullOrWhiteSpace(patientAvatar))
+                                        {
+                                            <img src="@patientAvatar" alt="@(r.Author?.FullName ?? "Patient")" />
+                                        }
+                                        else
+                                        {
+                                            @Licenta.Pages.Doctor.Reviews.IndexModel.GetInitial(r.Author?.FullName)
+                                        }
+                                    </div>
+                                    <div class="reviewer-meta">
+                                        <h5 class="reviewer-fullname">@(r.Author?.FullName ?? "Patient")</h5>
+                                        <div class="review-date-text">
+                                            <i class="bi bi-clock"></i>
+                                            @r.CreatedAtUtc.ToLocalTime().ToString("MMMM dd, yyyy")
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="review-rating-display">
+                                    @Html.Raw(StarsHtml(r.Rating))
+                                    <span class="rating-num">@r.Rating.ToString("0.0")</span>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(r.Title))
+                            {
+                                <h4 class="review-title-text">@r.Title</h4>
+                            }
+
+                            <p class="review-comment-text">@r.Comment</p>
+
+                            @if (r.UpdatedAtUtc.HasValue)
+                            {
+                                <div class="review-edited-note">
+                                    <i class="bi bi-pencil-square"></i>
+                                    Edited on @r.UpdatedAtUtc.Value.ToLocalTime().ToString("MMM dd, yyyy")
+                                </div>
+                            }
+                        </article>
+                    }
+                }
+            </div>
+
+            <div id="dr-no-results" class="empty-state dr-hidden">
+                <i class="bi bi-search"></i>
+                <h4>No matches</h4>
+                <p>Try adjusting your filters to see more reviews.</p>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/DoctorReviews.js" asp-append-version="true"></script>
+}

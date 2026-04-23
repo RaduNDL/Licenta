@@ -18,6 +18,9 @@ namespace Licenta.Pages.Doctor.Attachments
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
 
+        
+        private static readonly string[] HiddenAttachmentTypes = new[] { "ProfilePhoto" };
+
         public IndexModel(AppDbContext db, UserManager<ApplicationUser> userManager)
         {
             _db = db;
@@ -39,11 +42,14 @@ namespace Licenta.Pages.Doctor.Attachments
 
             var q = _db.MedicalAttachments
                 .Include(a => a.Patient).ThenInclude(p => p!.User)
-                .Where(a => a.DoctorId == doctorProfile.Id);
+                .Where(a => a.DoctorId == doctorProfile.Id)
+                .Where(a => !HiddenAttachmentTypes.Contains(a.Type));   
 
             if (!string.IsNullOrWhiteSpace(doctorUser.ClinicId))
             {
-                q = q.Where(a => a.Patient != null && a.Patient.User != null && a.Patient.User.ClinicId == doctorUser.ClinicId);
+                q = q.Where(a => a.Patient != null
+                              && a.Patient.User != null
+                              && a.Patient.User.ClinicId == doctorUser.ClinicId);
             }
 
             if (patientId.HasValue && patientId.Value != Guid.Empty)
