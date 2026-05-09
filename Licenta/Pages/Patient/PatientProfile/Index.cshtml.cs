@@ -1,5 +1,6 @@
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using Licenta.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -21,12 +22,20 @@ namespace Licenta.Pages.Patient.PatientProfile
     {
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IAttachmentStorage _storage;
+
+
         private readonly IWebHostEnvironment _env;
 
-        public IndexModel(AppDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
+        public IndexModel(
+            AppDbContext db,
+            UserManager<ApplicationUser> userManager,
+            IAttachmentStorage storage,
+            IWebHostEnvironment env)
         {
             _db = db;
             _userManager = userManager;
+            _storage = storage;
             _env = env;
         }
 
@@ -162,26 +171,21 @@ namespace Licenta.Pages.Patient.PatientProfile
                 return RedirectToPage();
             }
 
-            var folder = Path.Combine(_env.WebRootPath, "uploads", "patient", patient.Id.ToString(), "profile");
-            Directory.CreateDirectory(folder);
-
-            var fileName = $"patient_{patient.Id:N}_{Guid.NewGuid():N}{ext}";
-            var absPath = Path.Combine(folder, fileName);
-
-            using (var fs = new FileStream(absPath, FileMode.Create))
-                await PhotoFile.CopyToAsync(fs);
-
             await RemoveExistingProfilePhotosAsync(patient.Id);
 
-            var relPath = $"/uploads/patient/{patient.Id}/profile/{fileName}";
+            string storedPath;
+            await using (var stream = PhotoFile.OpenReadStream())
+            {
+                storedPath = await _storage.SaveAsync(stream, PhotoFile.FileName, HttpContext.RequestAborted);
+            }
 
             var attachment = new MedicalAttachment
             {
                 Id = Guid.NewGuid(),
                 PatientId = patient.Id,
                 DoctorId = null,
-                FileName = fileName,
-                FilePath = relPath,
+                FileName = Path.GetFileName(PhotoFile.FileName),
+                FilePath = storedPath,  
                 ContentType = PhotoFile.ContentType ?? "application/octet-stream",
                 Type = "ProfilePhoto",
                 UploadedAt = DateTime.UtcNow,
@@ -277,13 +281,21 @@ namespace Licenta.Pages.Patient.PatientProfile
                 .CountAsync();
         }
 
+     
         private async Task<string?> GetPatientProfilePhotoUrlAsync(Guid patientId)
         {
-            return await _db.MedicalAttachments.AsNoTracking()
+            var att = await _db.MedicalAttachments.AsNoTracking()
                 .Where(a => a.PatientId == patientId && a.Type == "ProfilePhoto")
                 .OrderByDescending(a => a.UploadedAt)
-                .Select(a => a.FilePath)
+                .Select(a => new { a.Id, a.FilePath })
                 .FirstOrDefaultAsync();
+
+            if (att == null) return null;
+
+            if ((att.FilePath ?? "").StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+                return att.FilePath;
+
+            return $"/Files/Attachment?id={att.Id}";
         }
 
         private async Task RemoveExistingProfilePhotosAsync(Guid patientId)
@@ -297,15 +309,25 @@ namespace Licenta.Pages.Patient.PatientProfile
 
             foreach (var a in old)
             {
-                if (!string.IsNullOrWhiteSpace(a.FilePath))
-                    TryDeleteOldPhoto(a.FilePath);
+                if (string.IsNullOrWhiteSpace(a.FilePath)) continue;
+
+                
+                if (!a.FilePath.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+                {
+                    _storage.TryDelete(a.FilePath);
+                }
+                else
+                {
+                    
+                    TryDeleteLegacyPhoto(a.FilePath);
+                }
             }
 
             _db.MedicalAttachments.RemoveRange(old);
             await _db.SaveChangesAsync();
         }
 
-        private void TryDeleteOldPhoto(string webPath)
+        private void TryDeleteLegacyPhoto(string webPath)
         {
             try
             {

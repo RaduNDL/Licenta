@@ -3,8 +3,8 @@ using Licenta.Data;
 using Licenta.Models;
 using Licenta.Services.Ml;
 using Licenta.Services.Ml.Dtos;
+using Licenta.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -28,7 +28,7 @@ namespace Licenta.Pages.Doctor.Predictions
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IMlImagingClient _ml;
-        private readonly IWebHostEnvironment _env;
+        private readonly IAttachmentStorage _storage;
         private readonly MlServiceOptions _mlOpt;
 
         private static readonly JsonSerializerOptions JsonOpts = new JsonSerializerOptions
@@ -42,13 +42,13 @@ namespace Licenta.Pages.Doctor.Predictions
             AppDbContext db,
             UserManager<ApplicationUser> userManager,
             IMlImagingClient ml,
-            IWebHostEnvironment env,
+            IAttachmentStorage storage,
             IOptions<MlServiceOptions> mlOpt)
         {
             _db = db;
             _userManager = userManager;
             _ml = ml;
-            _env = env;
+            _storage = storage;
             _mlOpt = mlOpt.Value;
         }
 
@@ -220,21 +220,14 @@ namespace Licenta.Pages.Doctor.Predictions
             string? validationNotes,
             CancellationToken ct)
         {
-            var uploadsFolder = Path.Combine(
-                _env.ContentRootPath,
-                "Files",
-                "uploads",
-                "predictions",
-                "cbis_ddsm",
-                patientId.ToString());
-
-            Directory.CreateDirectory(uploadsFolder);
-
             var originalName = SanitizeFileName(Path.GetFileName(file.FileName ?? "image"));
-            var uniqueFileName = $"{Guid.NewGuid():N}_{originalName}";
-            var physicalPath = Path.Combine(uploadsFolder, uniqueFileName);
 
-            await System.IO.File.WriteAllBytesAsync(physicalPath, fileBytes, ct);
+
+            string storedPath;
+            await using (var ms = new MemoryStream(fileBytes))
+            {
+                storedPath = await _storage.SaveAsync(ms, originalName, ct);
+            }
 
             var utcNow = DateTime.UtcNow;
 
@@ -246,7 +239,7 @@ namespace Licenta.Pages.Doctor.Predictions
                 ValidatedByDoctorId = doctorId,
                 ValidatedAtUtc = utcNow,
                 FileName = originalName,
-                FilePath = physicalPath,
+                FilePath = storedPath,     
                 ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
                 Type = "CBIS-DDSM Breast Image (Doctor Upload)",
                 Status = status,
@@ -267,7 +260,7 @@ namespace Licenta.Pages.Doctor.Predictions
             string modelId,
             int imageSize,
             Guid attachmentId,
-            IFormFile upload,
+            IFormFile? upload,
             CancellationToken ct)
         {
             var inputJson = JsonSerializer.Serialize(new

@@ -113,5 +113,20 @@ namespace Licenta.Services.Storage
         {
             return new FileStream(GetAbsolutePath(storedPath), FileMode.Open, FileAccess.Read, FileShare.Read);
         }
+
+        public bool TryDelete(string storedPath)
+        {
+            try
+            {
+                var abs = GetAbsolutePath(storedPath);
+                if (!File.Exists(abs)) return false;
+                File.Delete(abs);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

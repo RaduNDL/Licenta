@@ -11,5 +11,8 @@ namespace Licenta.Services.Storage
         string GetAbsolutePath(string storedPath);
         bool Exists(string storedPath);
         Stream OpenRead(string storedPath);
+
+        
+        bool TryDelete(string storedPath);
     }
 }

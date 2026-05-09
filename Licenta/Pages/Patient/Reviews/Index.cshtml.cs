@@ -288,16 +288,23 @@ namespace Licenta.Pages.Patient.Reviews
             var photoRows = await _db.MedicalAttachments.AsNoTracking()
                 .Where(a => patientIds.Contains(a.PatientId) && a.Type == "ProfilePhoto")
                 .OrderByDescending(a => a.UploadedAt)
-                .Select(a => new { a.PatientId, a.FilePath })
+                .Select(a => new { a.Id, a.PatientId, a.FilePath })
                 .ToListAsync();
 
             foreach (var row in photoRows)
             {
-                if (patientIdToUserId.TryGetValue(row.PatientId, out var userId)
-                    && !AuthorAvatars.ContainsKey(userId))
-                {
-                    AuthorAvatars[userId] = row.FilePath;
-                }
+                if (!patientIdToUserId.TryGetValue(row.PatientId, out var userId))
+                    continue;
+
+                if (AuthorAvatars.ContainsKey(userId))
+                    continue;
+
+
+                var url = (row.FilePath ?? "").StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase)
+                    ? row.FilePath
+                    : $"/Files/Attachment?id={row.Id}";
+
+                AuthorAvatars[userId] = url;
             }
         }
 
