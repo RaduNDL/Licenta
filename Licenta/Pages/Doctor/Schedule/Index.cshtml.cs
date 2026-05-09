@@ -29,22 +29,16 @@ namespace Licenta.Pages.Doctor.Schedule
         public string? DoctorName { get; set; }
 
         [BindProperty]
-        public List<DayAvailabilityInput> Days { get; set; } = new();
-
-        [BindProperty]
         public string? ScheduleText { get; set; }
 
-        public class DayAvailabilityInput
+        public List<AvailabilityInterval> SavedIntervals { get; set; } = new();
+
+        public class AvailabilityInterval
         {
             public DayOfWeek DayOfWeek { get; set; }
             public string DayName { get; set; } = "";
-            public bool IsActive { get; set; }
-
-            [DataType(DataType.Time)]
-            public TimeSpan? StartTime { get; set; }
-
-            [DataType(DataType.Time)]
-            public TimeSpan? EndTime { get; set; }
+            public TimeSpan StartTime { get; set; }
+            public TimeSpan EndTime { get; set; }
         }
 
         private static readonly Dictionary<string, DayOfWeek> DayMap =
@@ -74,53 +68,18 @@ namespace Licenta.Pages.Doctor.Schedule
         public async Task<IActionResult> OnGetAsync()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Challenge();
+            if (user == null) return Challenge();
 
-            var doctor = await _db.Doctors
-                .Include(d => d.User)
-                .FirstOrDefaultAsync(d => d.UserId == user.Id);
-
+            var doctor = await _db.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.UserId == user.Id);
             if (doctor == null)
             {
-                var created = new Licenta.Models.DoctorProfile
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id
-                };
-
-                _db.Doctors.Add(created);
+                doctor = new Licenta.Models.DoctorProfile { Id = Guid.NewGuid(), UserId = user.Id };
+                _db.Doctors.Add(doctor);
                 await _db.SaveChangesAsync();
-
-                doctor = await _db.Doctors.Include(d => d.User).FirstOrDefaultAsync(d => d.Id == created.Id);
-                if (doctor == null)
-                    return Page();
             }
 
             DoctorName = doctor.User?.FullName ?? doctor.User?.Email ?? "Doctor";
-
-            await LoadDaysFromDatabaseAsync(doctor.Id);
-
-            var lines = new List<string>();
-            foreach (var d in Days)
-            {
-                if (!d.IsActive)
-                    continue;
-
-                var start = d.StartTime;
-                var end = d.EndTime;
-
-                if (!start.HasValue || !end.HasValue)
-                    continue;
-
-                var name = d.DayName;
-                var startStr = DateTime.Today.Add(start.Value).ToString("HH:mm");
-                var endStr = DateTime.Today.Add(end.Value).ToString("HH:mm");
-
-                lines.Add($"{name} {startStr} - {endStr}");
-            }
-
-            ScheduleText = string.Join(Environment.NewLine, lines);
+            await LoadScheduleAsync(doctor.Id);
 
             return Page();
         }
@@ -128,226 +87,146 @@ namespace Licenta.Pages.Doctor.Schedule
         public async Task<IActionResult> OnPostAsync()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Challenge();
+            if (user == null) return Challenge();
 
             var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
-
-            if (doctor == null)
-            {
-                doctor = new Licenta.Models.DoctorProfile
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id
-                };
-
-                _db.Doctors.Add(doctor);
-                await _db.SaveChangesAsync();
-            }
+            if (doctor == null) return RedirectToPage();
 
             if (string.IsNullOrWhiteSpace(ScheduleText))
             {
-                ModelState.AddModelError(nameof(ScheduleText), "Please enter schedule text.");
-                await LoadDaysFromDatabaseAsync(doctor.Id);
+                return await OnPostClearAsync();
+            }
+
+            if (!TryParseScheduleText(ScheduleText, out var newIntervals, out var error))
+            {
+                ModelState.AddModelError(nameof(ScheduleText), error ?? "Invalid format.");
+                await LoadScheduleAsync(doctor.Id);
                 return Page();
             }
 
-            if (!TryParseScheduleText(ScheduleText, out var parsedDays, out var error))
+            var overlapError = FindOverlap(newIntervals);
+            if (overlapError != null)
             {
-                ModelState.AddModelError(nameof(ScheduleText), error ?? "Could not parse schedule text.");
-                await LoadDaysFromDatabaseAsync(doctor.Id);
+                ModelState.AddModelError(nameof(ScheduleText), overlapError);
+                await LoadScheduleAsync(doctor.Id);
                 return Page();
             }
 
-            Days = parsedDays;
+            var existing = await _db.DoctorAvailabilities.Where(a => a.DoctorId == doctor.Id).ToListAsync();
+            _db.DoctorAvailabilities.RemoveRange(existing);
 
-            var existing = await _db.DoctorAvailabilities
-                .Where(a => a.DoctorId == doctor.Id)
-                .ToListAsync();
-
-            foreach (var day in Days)
+            foreach (var interval in newIntervals)
             {
-                var entity = existing.FirstOrDefault(a => a.DayOfWeek == day.DayOfWeek);
-
-                if (!day.IsActive)
+                _db.DoctorAvailabilities.Add(new DoctorAvailability
                 {
-                    if (entity != null)
-                        _db.DoctorAvailabilities.Remove(entity);
-                    continue;
-                }
-
-                if (day.StartTime == null || day.EndTime == null)
-                {
-                    ModelState.AddModelError(nameof(ScheduleText), $"Please provide valid start and end time for {day.DayName}.");
-                    await LoadDaysFromDatabaseAsync(doctor.Id);
-                    return Page();
-                }
-
-                if (day.EndTime <= day.StartTime)
-                {
-                    ModelState.AddModelError(nameof(ScheduleText), $"End time must be after start time for {day.DayName}.");
-                    await LoadDaysFromDatabaseAsync(doctor.Id);
-                    return Page();
-                }
-
-                if (entity == null)
-                {
-                    entity = new DoctorAvailability
-                    {
-                        DoctorId = doctor.Id,
-                        DayOfWeek = day.DayOfWeek
-                    };
-                    _db.DoctorAvailabilities.Add(entity);
-                }
-
-                entity.IsActive = true;
-                entity.StartTime = day.StartTime.Value;
-                entity.EndTime = day.EndTime.Value;
+                    DoctorId = doctor.Id,
+                    DayOfWeek = interval.DayOfWeek,
+                    StartTime = interval.StartTime,
+                    EndTime = interval.EndTime,
+                    IsActive = true
+                });
             }
 
             await _db.SaveChangesAsync();
+            TempData["StatusMessage"] = "Schedule updated with multiple slots support.";
+            return RedirectToPage();
+        }
+        private static string? FindOverlap(List<AvailabilityInterval> intervals)
+        {
+            var byDay = intervals.GroupBy(i => i.DayOfWeek);
+            foreach (var group in byDay)
+            {
+                var sorted = group.OrderBy(i => i.StartTime).ToList();
+                for (int i = 1; i < sorted.Count; i++)
+                {
+                    if (sorted[i].StartTime < sorted[i - 1].EndTime)
+                    {
+                        return $"Overlapping intervals on {sorted[i].DayName}: " +
+                               $"{sorted[i - 1].StartTime:hh\\:mm}-{sorted[i - 1].EndTime:hh\\:mm} " +
+                               $"and {sorted[i].StartTime:hh\\:mm}-{sorted[i].EndTime:hh\\:mm}.";
+                    }
+                }
+            }
+            return null;
+        }
+        public async Task<IActionResult> OnPostClearAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
 
-            TempData["StatusMessage"] = "Schedule updated successfully.";
+            var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id);
+            if (doctor != null)
+            {
+                var existing = await _db.DoctorAvailabilities.Where(a => a.DoctorId == doctor.Id).ToListAsync();
+                _db.DoctorAvailabilities.RemoveRange(existing);
+                await _db.SaveChangesAsync();
+            }
+
+            TempData["StatusMessage"] = "Schedule cleared successfully.";
             return RedirectToPage();
         }
 
-        private async Task LoadDaysFromDatabaseAsync(Guid doctorId)
+        private async Task LoadScheduleAsync(Guid doctorId)
         {
-            var existing = await _db.DoctorAvailabilities
+            var items = await _db.DoctorAvailabilities
                 .Where(a => a.DoctorId == doctorId)
+                .OrderBy(a => a.DayOfWeek).ThenBy(a => a.StartTime)
                 .ToListAsync();
 
-            Days = Enum.GetValues(typeof(DayOfWeek))
-                .Cast<DayOfWeek>()
-                .OrderBy(d => d)
-                .Select(d =>
-                {
-                    var avail = existing.FirstOrDefault(a => a.DayOfWeek == d);
+            SavedIntervals = items.Select(a => new AvailabilityInterval
+            {
+                DayOfWeek = a.DayOfWeek,
+                DayName = DayDisplayNames[a.DayOfWeek],
+                StartTime = a.StartTime,
+                EndTime = a.EndTime
+            }).ToList();
 
-                    return new DayAvailabilityInput
-                    {
-                        DayOfWeek = d,
-                        DayName = DayDisplayNames.ContainsKey(d) ? DayDisplayNames[d] : d.ToString(),
-                        IsActive = avail?.IsActive ?? false,
-                        StartTime = avail?.StartTime,
-                        EndTime = avail?.EndTime
-                    };
-                })
-                .ToList();
+            var lines = SavedIntervals.Select(i =>
+                $"{i.DayName} {DateTime.Today.Add(i.StartTime):HH:mm} - {DateTime.Today.Add(i.EndTime):HH:mm}");
+
+            ScheduleText = string.Join(Environment.NewLine, lines);
         }
 
-        private bool TryParseScheduleText(string text, out List<DayAvailabilityInput> parsedDays, out string? errorMessage)
+        private bool TryParseScheduleText(string text, out List<AvailabilityInterval> intervals, out string? error)
         {
-            parsedDays = Enum.GetValues(typeof(DayOfWeek))
-                .Cast<DayOfWeek>()
-                .OrderBy(d => d)
-                .Select(d => new DayAvailabilityInput
-                {
-                    DayOfWeek = d,
-                    DayName = DayDisplayNames.ContainsKey(d) ? DayDisplayNames[d] : d.ToString(),
-                    IsActive = false
-                })
-                .ToList();
-
-            var byDay = parsedDays.ToDictionary(d => d.DayOfWeek);
-            errorMessage = null;
-
+            intervals = new List<AvailabilityInterval>();
+            error = null;
             var lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            if (lines.Length == 0)
-            {
-                errorMessage = "Schedule text is empty.";
-                return false;
-            }
-
             var timeRegex = new Regex(@"(\d{1,2})(?::(\d{2}))?\s*(AM|PM|am|pm)?", RegexOptions.Compiled);
 
             foreach (var rawLine in lines)
             {
                 var line = rawLine.Trim();
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
                 var firstSpace = line.IndexOf(' ');
-                if (firstSpace <= 0)
-                {
-                    errorMessage = $"Cannot detect day name in line: '{line}'. Expected something like 'Monday 08:00 - 16:00'.";
-                    return false;
-                }
+                if (firstSpace <= 0) { error = $"Invalid line: {line}"; return false; }
 
                 var dayPart = line[..firstSpace].Trim();
-                var rest = line[firstSpace..].Trim();
+                if (!DayMap.TryGetValue(dayPart, out var dayOfWeek)) { error = $"Unknown day: {dayPart}"; return false; }
 
-                if (!DayMap.TryGetValue(dayPart.ToLowerInvariant(), out var dayOfWeek))
-                {
-                    errorMessage = $"Unknown day name '{dayPart}' in line: '{line}'.";
-                    return false;
-                }
+                var matches = timeRegex.Matches(line[firstSpace..]);
+                if (matches.Count < 2) { error = $"Missing times in: {line}"; return false; }
 
-                var matches = timeRegex.Matches(rest);
-                if (matches.Count < 2)
-                {
-                    errorMessage = $"Could not find both start and end time in line: '{line}'.";
-                    return false;
-                }
+                if (!TryParseTime(matches[0], out var start) || !TryParseTime(matches[1], out var end)) { error = $"Invalid time in: {line}"; return false; }
+                if (end <= start) { error = $"End time must be after start: {line}"; return false; }
 
-                if (!TryParseTimeMatch(matches[0], out var start))
-                {
-                    errorMessage = $"Invalid start time in line: '{line}'.";
-                    return false;
-                }
-
-                if (!TryParseTimeMatch(matches[1], out var end))
-                {
-                    errorMessage = $"Invalid end time in line: '{line}'.";
-                    return false;
-                }
-
-                if (end <= start)
-                {
-                    errorMessage = $"End time must be after start time in line: '{line}'.";
-                    return false;
-                }
-
-                var dayInput = byDay[dayOfWeek];
-                dayInput.IsActive = true;
-                dayInput.StartTime = start;
-                dayInput.EndTime = end;
+                intervals.Add(new AvailabilityInterval { DayOfWeek = dayOfWeek, DayName = DayDisplayNames[dayOfWeek], StartTime = start, EndTime = end });
             }
-
             return true;
         }
 
-        private bool TryParseTimeMatch(Match m, out TimeSpan result)
+        private bool TryParseTime(Match m, out TimeSpan res)
         {
-            result = TimeSpan.Zero;
-
-            if (!m.Success)
-                return false;
-
-            if (!int.TryParse(m.Groups[1].Value, out var hour))
-                return false;
-
-            var minute = 0;
-            if (m.Groups[2].Success && !int.TryParse(m.Groups[2].Value, out minute))
-                return false;
-
-            var ampm = m.Groups[3].Value?.ToLowerInvariant();
-
+            res = TimeSpan.Zero;
+            if (!int.TryParse(m.Groups[1].Value, out var h)) return false;
+            var min = m.Groups[2].Success ? int.Parse(m.Groups[2].Value) : 0;
+            var ampm = m.Groups[3].Value?.ToLower();
             if (!string.IsNullOrEmpty(ampm))
             {
-                if (hour < 1 || hour > 12)
-                    return false;
-
-                if (ampm == "pm" && hour != 12)
-                    hour += 12;
-                if (ampm == "am" && hour == 12)
-                    hour = 0;
+                if (h == 12) h = 0;
+                if (ampm == "pm") h += 12;
             }
-
-            if (hour < 0 || hour > 23 || minute < 0 || minute > 59)
-                return false;
-
-            result = new TimeSpan(hour, minute, 0);
+            if (h < 0 || h > 23 || min < 0 || min > 59) return false;
+            res = new TimeSpan(h, min, 0);
             return true;
         }
     }

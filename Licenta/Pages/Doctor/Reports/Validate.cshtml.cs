@@ -39,15 +39,11 @@ namespace Licenta.Pages.Doctor.Reports
                 return;
             }
 
-            if (currentUser.DoctorProfile == null)
-            {
-                currentUser = await _db.Users
-                    .Include(u => u.DoctorProfile)
-                    .FirstOrDefaultAsync(u => u.Id == currentUser.Id);
-            }
+            var doctor = await _db.Doctors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.UserId == currentUser.Id);
 
-            var doctorId = currentUser?.DoctorProfile?.Id;
-            if (doctorId == null)
+            if (doctor == null)
             {
                 TempData["StatusMessage"] = "Doctor profile not found.";
                 Pending = new();
@@ -55,8 +51,9 @@ namespace Licenta.Pages.Doctor.Reports
             }
 
             Pending = await _db.MedicalRecords
+                .AsNoTracking()
                 .Include(r => r.Patient).ThenInclude(p => p.User)
-                .Where(r => r.DoctorId == doctorId.Value && r.Status == RecordStatus.Draft)
+                .Where(r => r.DoctorId == doctor.Id && r.Status == RecordStatus.Draft)
                 .OrderByDescending(r => r.VisitDateUtc)
                 .ToListAsync();
         }
@@ -70,15 +67,11 @@ namespace Licenta.Pages.Doctor.Reports
                 return RedirectToPage();
             }
 
-            if (currentUser.DoctorProfile == null)
-            {
-                currentUser = await _db.Users
-                    .Include(u => u.DoctorProfile)
-                    .FirstOrDefaultAsync(u => u.Id == currentUser.Id);
-            }
+            var doctor = await _db.Doctors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.UserId == currentUser.Id);
 
-            var doctorId = currentUser?.DoctorProfile?.Id;
-            if (doctorId == null)
+            if (doctor == null)
             {
                 TempData["StatusMessage"] = "Doctor profile not found.";
                 return RedirectToPage();
@@ -86,7 +79,7 @@ namespace Licenta.Pages.Doctor.Reports
 
             var record = await _db.MedicalRecords
                 .Include(r => r.Patient).ThenInclude(p => p.User)
-                .FirstOrDefaultAsync(r => r.Id == recordId && r.DoctorId == doctorId.Value);
+                .FirstOrDefaultAsync(r => r.Id == recordId && r.DoctorId == doctor.Id);
 
             if (record == null)
             {

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Licenta.Pages.Administrator.Users
@@ -115,7 +116,6 @@ namespace Licenta.Pages.Administrator.Users
 
             IdentityResult? createResult = null;
             IdentityResult? addRoleResult = null;
-            string? errorMessage = null;
 
             await strategy.ExecuteAsync(async () =>
             {
@@ -155,6 +155,32 @@ namespace Licenta.Pages.Administrator.Users
                             UserId = user.Id
                         });
                     }
+                    else if (Input.Role == "Assistant")
+                    {
+                        _db.Assistants.Add(new AssistantProfile
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = user.Id
+                        });
+                    }
+
+                    var auditDetails = JsonSerializer.Serialize(new
+                    {
+                        email,
+                        role = Input.Role,
+                        createdBy = admin.Email
+                    });
+
+                    _db.AuditLogs.Add(new AuditLog
+                    {
+                        EventType = AuditEventType.Create,
+                        UserId = admin.Id,
+                        EntityName = nameof(ApplicationUser),
+                        EntityId = user.Id,
+                        OccurredAtUtc = DateTime.UtcNow,
+                        IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                        DetailsJson = auditDetails
+                    });
 
                     await _db.SaveChangesAsync();
                     await tx.CommitAsync();
@@ -177,12 +203,6 @@ namespace Licenta.Pages.Administrator.Users
             {
                 foreach (var e in addRoleResult.Errors)
                     ModelState.AddModelError(string.Empty, e.Description);
-                return Page();
-            }
-
-            if (!string.IsNullOrWhiteSpace(errorMessage))
-            {
-                ModelState.AddModelError(string.Empty, errorMessage);
                 return Page();
             }
 

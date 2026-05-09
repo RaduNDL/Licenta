@@ -171,7 +171,9 @@ namespace Licenta.Areas.Identity.Pages.Account
 
         private async Task<string> ResolveClinicIdAsync()
         {
-            var any = await _db.Users.AsNoTracking()
+            var any = await _db.Users
+                .IgnoreQueryFilters()
+                .AsNoTracking()
                 .Where(x => x.ClinicId != null && x.ClinicId != "")
                 .Select(x => x.ClinicId)
                 .FirstOrDefaultAsync();

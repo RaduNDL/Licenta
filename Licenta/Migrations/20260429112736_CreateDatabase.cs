@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Licenta.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class CreateDatabase : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -67,24 +67,6 @@ namespace Licenta.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AppointmentRescheduleOptions",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    RescheduleRequestId = table.Column<int>(type: "int", nullable: false),
-                    ProposedStartUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ProposedEndUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Location = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
-                    IsChosen = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AppointmentRescheduleOptions", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AppointmentRescheduleRequests",
                 columns: table => new
                 {
@@ -103,18 +85,33 @@ namespace Licenta.Migrations
                     CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ApprovedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RejectedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CancelledAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    RejectedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AppointmentRescheduleRequests", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RescheduleOptions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RescheduleRequestId = table.Column<int>(type: "int", nullable: false),
+                    ProposedStartUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ProposedEndUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Location = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
+                    IsChosen = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RescheduleOptions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AppointmentRescheduleRequests_AppointmentRescheduleOptions_SelectedOptionId",
-                        column: x => x.SelectedOptionId,
-                        principalTable: "AppointmentRescheduleOptions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        name: "FK_RescheduleOptions_AppointmentRescheduleRequests_RescheduleRequestId",
+                        column: x => x.RescheduleRequestId,
+                        principalTable: "AppointmentRescheduleRequests",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -129,7 +126,6 @@ namespace Licenta.Migrations
                     Reason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     VisitStage = table.Column<int>(type: "int", nullable: false),
-                    CancelReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RescheduleReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -239,19 +235,40 @@ namespace Licenta.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Assistants",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ProfileImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Department = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Bio = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Assistants", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Assistants_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AuditLogs",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     EventType = table.Column<int>(type: "int", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    EntityName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    EntityId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    EntityName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    EntityId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     OccurredAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IpAddress = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DetailsJson = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    IpAddress = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: true),
+                    DetailsJson = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -296,8 +313,8 @@ namespace Licenta.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     SenderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     RecipientId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Subject = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Subject = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Body = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     SentAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsRead = table.Column<bool>(type: "bit", nullable: false)
                 },
@@ -323,12 +340,11 @@ namespace Licenta.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    NationalId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    NationalId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UserName = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Phone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -345,14 +361,14 @@ namespace Licenta.Migrations
                 name: "UserActivityLogs",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Action = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    EntityName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    EntityId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Action = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    EntityName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    EntityId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     OccurredAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    MetadataJson = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    MetadataJson = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -456,11 +472,11 @@ namespace Licenta.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ContentType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FilePath = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    FileName = table.Column<string>(type: "nvarchar(260)", maxLength: 260, nullable: false),
+                    ContentType = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Notes = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     UploadedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ValidatedByDoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ValidatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -537,6 +553,7 @@ namespace Licenta.Migrations
                     Notes = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
                     Treatment = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
                     VisitDateUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
                     ValidatedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -547,7 +564,8 @@ namespace Licenta.Migrations
                         name: "FK_MedicalRecords_Appointments_AppointmentId",
                         column: x => x.AppointmentId,
                         principalTable: "Appointments",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_MedicalRecords_Doctors_DoctorId",
                         column: x => x.DoctorId,
@@ -570,11 +588,7 @@ namespace Licenta.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AppointmentId = table.Column<int>(type: "int", nullable: true),
-                    Symptoms = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Temperature = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: true),
-                    HeartRate = table.Column<int>(type: "int", nullable: true),
-                    SystolicBP = table.Column<int>(type: "int", nullable: true),
-                    DiastolicBP = table.Column<int>(type: "int", nullable: true),
                     OxygenSaturation = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true)
@@ -610,11 +624,11 @@ namespace Licenta.Migrations
                     PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AssistantId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     DoctorProfileId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Subject = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Subject = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Body = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    AssistantNote = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    EscalationReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AssistantNote = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    EscalationReason = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -657,7 +671,6 @@ namespace Licenta.Migrations
                     OutputDataJson = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ResultLabel = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: true),
                     Probability = table.Column<float>(type: "real", nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -676,67 +689,6 @@ namespace Licenta.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
-
-            migrationBuilder.CreateTable(
-                name: "Prescriptions",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PatientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    DoctorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    MedicalRecordId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    IssuedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Recommendations = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Prescriptions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Prescriptions_Doctors_DoctorId",
-                        column: x => x.DoctorId,
-                        principalTable: "Doctors",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Prescriptions_MedicalRecords_MedicalRecordId",
-                        column: x => x.MedicalRecordId,
-                        principalTable: "MedicalRecords",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_Prescriptions_Patients_PatientId",
-                        column: x => x.PatientId,
-                        principalTable: "Patients",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PrescriptionItems",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PrescriptionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    MedicationName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Dosage = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Instructions = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Days = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PrescriptionItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PrescriptionItems_Prescriptions_PrescriptionId",
-                        column: x => x.PrescriptionId,
-                        principalTable: "Prescriptions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AppointmentRescheduleOptions_RescheduleRequestId_ProposedStartUtc",
-                table: "AppointmentRescheduleOptions",
-                columns: new[] { "RescheduleRequestId", "ProposedStartUtc" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AppointmentRescheduleRequests_AppointmentId_Status",
@@ -813,6 +765,13 @@ namespace Licenta.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Assistants_UserId",
+                table: "Assistants",
+                column: "UserId",
+                unique: true,
+                filter: "[UserId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_UserId",
                 table: "AuditLogs",
                 column: "UserId");
@@ -820,8 +779,7 @@ namespace Licenta.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_DoctorAvailabilities_DoctorId_DayOfWeek",
                 table: "DoctorAvailabilities",
-                columns: new[] { "DoctorId", "DayOfWeek" },
-                unique: true);
+                columns: new[] { "DoctorId", "DayOfWeek" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Doctors_LicenseNumber",
@@ -923,8 +881,7 @@ namespace Licenta.Migrations
                 name: "IX_Patients_UserId",
                 table: "Patients",
                 column: "UserId",
-                unique: true,
-                filter: "[UserId] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Predictions_DoctorId",
@@ -937,24 +894,9 @@ namespace Licenta.Migrations
                 column: "PatientId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PrescriptionItems_PrescriptionId",
-                table: "PrescriptionItems",
-                column: "PrescriptionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Prescriptions_DoctorId",
-                table: "Prescriptions",
-                column: "DoctorId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Prescriptions_MedicalRecordId",
-                table: "Prescriptions",
-                column: "MedicalRecordId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Prescriptions_PatientId",
-                table: "Prescriptions",
-                column: "PatientId");
+                name: "IX_RescheduleOptions_RescheduleRequestId_ProposedStartUtc",
+                table: "RescheduleOptions",
+                columns: new[] { "RescheduleRequestId", "ProposedStartUtc" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Reviews_AuthorUserId",
@@ -979,9 +921,11 @@ namespace Licenta.Migrations
                 columns: new[] { "Target", "CreatedAtUtc" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_SystemSettings_ClinicName",
-                table: "SystemSettings",
-                column: "ClinicName");
+                name: "IX_Reviews_UniqueApplicationReviewPerUser",
+                table: "Reviews",
+                columns: new[] { "AuthorUserId", "Target" },
+                unique: true,
+                filter: "[Target] = 0 AND [IsDeleted] = 0");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserActivityLogs_UserId",
@@ -992,13 +936,6 @@ namespace Licenta.Migrations
                 name: "IX_UserNotifications_UserId_IsRead_CreatedAtUtc",
                 table: "UserNotifications",
                 columns: new[] { "UserId", "IsRead", "CreatedAtUtc" });
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_AppointmentRescheduleOptions_AppointmentRescheduleRequests_RescheduleRequestId",
-                table: "AppointmentRescheduleOptions",
-                column: "RescheduleRequestId",
-                principalTable: "AppointmentRescheduleRequests",
-                principalColumn: "Id");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_AppointmentRescheduleRequests_Appointments_AppointmentId",
@@ -1023,6 +960,14 @@ namespace Licenta.Migrations
                 principalTable: "Patients",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_AppointmentRescheduleRequests_RescheduleOptions_SelectedOptionId",
+                table: "AppointmentRescheduleRequests",
+                column: "SelectedOptionId",
+                principalTable: "RescheduleOptions",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.SetNull);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Appointments_Doctors_DoctorId",
@@ -1077,12 +1022,24 @@ namespace Licenta.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_AppointmentRescheduleOptions_AppointmentRescheduleRequests_RescheduleRequestId",
-                table: "AppointmentRescheduleOptions");
+                name: "FK_AppointmentRescheduleRequests_Appointments_AppointmentId",
+                table: "AppointmentRescheduleRequests");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_AppointmentRescheduleRequests_Doctors_DoctorId",
+                table: "AppointmentRescheduleRequests");
 
             migrationBuilder.DropForeignKey(
                 name: "FK_AspNetUsers_Doctors_AssignedDoctorId",
                 table: "AspNetUsers");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_AppointmentRescheduleRequests_Patients_PatientId",
+                table: "AppointmentRescheduleRequests");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_AppointmentRescheduleRequests_RescheduleOptions_SelectedOptionId",
+                table: "AppointmentRescheduleRequests");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
@@ -1100,6 +1057,9 @@ namespace Licenta.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "Assistants");
+
+            migrationBuilder.DropTable(
                 name: "AuditLogs");
 
             migrationBuilder.DropTable(
@@ -1115,6 +1075,9 @@ namespace Licenta.Migrations
                 name: "MedicalAttachments");
 
             migrationBuilder.DropTable(
+                name: "MedicalRecords");
+
+            migrationBuilder.DropTable(
                 name: "MlIntakeForms");
 
             migrationBuilder.DropTable(
@@ -1122,9 +1085,6 @@ namespace Licenta.Migrations
 
             migrationBuilder.DropTable(
                 name: "Predictions");
-
-            migrationBuilder.DropTable(
-                name: "PrescriptionItems");
 
             migrationBuilder.DropTable(
                 name: "Reviews");
@@ -1142,28 +1102,22 @@ namespace Licenta.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "Prescriptions");
-
-            migrationBuilder.DropTable(
-                name: "MedicalRecords");
-
-            migrationBuilder.DropTable(
-                name: "AppointmentRescheduleRequests");
-
-            migrationBuilder.DropTable(
-                name: "AppointmentRescheduleOptions");
-
-            migrationBuilder.DropTable(
                 name: "Appointments");
-
-            migrationBuilder.DropTable(
-                name: "Patients");
 
             migrationBuilder.DropTable(
                 name: "Doctors");
 
             migrationBuilder.DropTable(
+                name: "Patients");
+
+            migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "RescheduleOptions");
+
+            migrationBuilder.DropTable(
+                name: "AppointmentRescheduleRequests");
         }
     }
 }

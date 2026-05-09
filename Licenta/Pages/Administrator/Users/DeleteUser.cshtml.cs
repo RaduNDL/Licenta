@@ -1,25 +1,29 @@
-﻿using Licenta.Models;
+﻿using Licenta.Areas.Identity.Data;
+using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Licenta.Areas.Identity.Data;
+
 namespace Licenta.Pages.Administrator.Users
 {
     [Authorize(Roles = "Administrator")]
     public class DeleteUserModel : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly AppDbContext _db;
 
         private const bool PROTECT_DOCTOR = false;
 
-        public DeleteUserModel(UserManager<ApplicationUser> userManager)
+        public DeleteUserModel(UserManager<ApplicationUser> userManager, AppDbContext db)
         {
             _userManager = userManager;
+            _db = db;
         }
 
         [BindProperty] public string UserId { get; set; } = string.Empty;
@@ -34,7 +38,10 @@ namespace Licenta.Pages.Administrator.Users
                 return RedirectToPage("./Index");
             }
 
-            var user = await _userManager.FindByIdAsync(id);
+            var user = await _db.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Id == id);
+
             if (user is null)
             {
                 TempData["StatusMessage"] = "User not found.";
@@ -56,7 +63,10 @@ namespace Licenta.Pages.Administrator.Users
                 return RedirectToPage("./Index");
             }
 
-            var user = await _userManager.FindByIdAsync(UserId);
+            var user = await _db.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Id == UserId);
+
             if (user is null)
             {
                 TempData["StatusMessage"] = "User not found.";
@@ -96,12 +106,9 @@ namespace Licenta.Pages.Administrator.Users
             user.LockoutEnabled = true;
             user.LockoutEnd = DateTimeOffset.MaxValue;
 
-            var result = await _userManager.UpdateAsync(user);
+            await _db.SaveChangesAsync();
 
-            TempData["StatusMessage"] = result.Succeeded
-                ? $"User {user.Email ?? user.UserName} has been deactivated."
-                : $"Error deactivating user: {string.Join("; ", result.Errors.Select(e => e.Description))}";
-
+            TempData["StatusMessage"] = $"User {user.Email ?? user.UserName} has been deactivated.";
             return RedirectToPage("./Index");
         }
 

@@ -23,8 +23,8 @@
 
 @if (TempData["StatusMessage"] is string msg)
 {
-    <div class="alert alert-success rounded-4 shadow-sm border-0 mb-4">
-        <i class="bi bi-check-circle-fill me-2"></i> @msg
+    <div class="alert alert-info rounded-4 shadow-sm border-0 mb-4">
+        <i class="bi bi-info-circle-fill me-2"></i> @msg
     </div>
 }
 
@@ -47,11 +47,14 @@
                         var roles = Model.RolesByUserId.TryGetValue(u.Id, out var rlist) ? rlist : new List<string>();
                         var isLocked = u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow;
                         var isSelf = string.Equals(u.Id, Model.CurrentUserId, StringComparison.Ordinal);
+                        var isDeactivated = Model.IsDeactivated.TryGetValue(u.Id, out var d) && d;
 
-                        <tr>
+                        <tr class="@(isDeactivated ? "table-light text-muted" : "")">
                             <td class="ps-4">
                                 <div>
-                                    <div class="fw-bold text-dark">@(string.IsNullOrWhiteSpace(u.FullName) ? "Unset Name" : u.FullName)</div>
+                                    <div class="fw-bold @(isDeactivated ? "text-muted" : "text-dark")">
+                                        @(string.IsNullOrWhiteSpace(u.FullName) ? "Unset Name" : u.FullName)
+                                    </div>
                                     <div class="small text-muted">@u.Email</div>
                                 </div>
                             </td>
@@ -71,7 +74,11 @@
                                 }
                             </td>
                             <td>
-                                @if (isLocked)
+                                @if (isDeactivated)
+                                {
+                                    <span class="badge bg-secondary text-white"><i class="bi bi-person-x-fill me-1"></i> Deactivated</span>
+                                }
+                                else if (isLocked)
                                 {
                                     <span class="badge bg-danger-subtle text-danger"><i class="bi bi-lock-fill me-1"></i> Blocked</span>
                                 }
@@ -94,17 +101,33 @@
 
                                         @if (!isSelf)
                                         {
-                                            <li>
-                                                <form method="post" asp-page-handler="ToggleLock" asp-route-id="@u.Id">
-                                                    @Html.AntiForgeryToken()
-                                                    <button class="dropdown-item @(isLocked ? "text-success" : "text-danger")">
-                                                        <i class="bi @(isLocked ? "bi-unlock" : "bi-lock") me-2"></i>
-                                                        @(isLocked ? "Unblock Access" : "Block Access")
-                                                    </button>
-                                                </form>
-                                            </li>
                                             <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item text-danger" asp-page="DeleteUser" asp-route-id="@u.Id"><i class="bi bi-trash me-2"></i>Delete User</a></li>
+
+                                            @if (isDeactivated)
+                                            {
+                                                <li>
+                                                    <form method="post" asp-page-handler="Reactivate" asp-route-id="@u.Id">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item text-success">
+                                                            <i class="bi bi-arrow-counterclockwise me-2"></i>Reactivate User
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li>
+                                                    <form method="post" asp-page-handler="ToggleLock" asp-route-id="@u.Id">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item @(isLocked ? "text-success" : "text-danger")">
+                                                            <i class="bi @(isLocked ? "bi-unlock" : "bi-lock") me-2"></i>
+                                                            @(isLocked ? "Unblock Access" : "Block Access")
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item text-danger" asp-page="DeleteUser" asp-route-id="@u.Id"><i class="bi bi-trash me-2"></i>Deactivate User</a></li>
+                                            }
                                         }
                                     </ul>
                                 </div>

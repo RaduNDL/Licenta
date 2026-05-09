@@ -6,96 +6,139 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/approvalsdr.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 }
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h3 class="fw-bold mb-1">Review Appointment Request</h3>
-            <p class="text-muted mb-0">Approve or reject the patient's appointment request.</p>
+<div class="approvals-wrapper">
+    <div class="approvals-container fade-in-up">
+        
+        <div class="approvals-header">
+            <div class="header-titles">
+                <h2 class="title-main">
+                    <div class="icon-box">
+                        <i class="bi bi-file-earmark-medical"></i>
+                    </div>
+                    Review Request
+                </h2>
+                <p class="subtitle">Approve or reject the patient's appointment request.</p>
+            </div>
+            <a asp-page="/Doctor/Appointments/Approvals" class="btn-back">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Approvals</span>
+            </a>
         </div>
-        <a asp-page="/Doctor/Appointments/Approvals" class="btn btn-outline-secondary">
-            Back
-        </a>
+
+        @if (TempData["StatusMessage"] is string status)
+        {
+            <div class="alert alert-success">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>@status</span>
+            </div>
+        }
+
+        @if (!Model.CanView)
+        {
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>You cannot view this request.</span>
+            </div>
+        }
+        else
+        {
+            <div class="details-layout">
+                
+                <div class="detail-card main-info-card">
+                    <div class="card-header-styled">
+                        <i class="bi bi-info-circle"></i>
+                        <h3>Request Details</h3>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-group">
+                            <span class="info-label"><i class="bi bi-person"></i> Patient</span>
+                            <span class="info-value fw-semibold text-main">@Model.PatientName</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label"><i class="bi bi-heart-pulse"></i> Doctor</span>
+                            <span class="info-value">@Model.DoctorName</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label"><i class="bi bi-calendar-plus"></i> Submitted</span>
+                            <span class="info-value">@Model.UploadedAtDisplay</span>
+                        </div>
+                        <div class="info-group">
+                            <span class="info-label"><i class="bi bi-clock-history"></i> Requested slot</span>
+                            <span class="info-value text-primary fw-bold">@Model.RequestedSlotDisplay</span>
+                        </div>
+                    </div>
+
+                    <div class="reason-section mt-4">
+                        <span class="info-label mb-2 d-block"><i class="bi bi-chat-left-text"></i> Reason</span>
+                        <div class="reason-box">
+                            @Model.Reason
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions-column">
+                    <form method="post" asp-page-handler="Approve" class="action-form-card approve-card">
+                        <div class="card-header-action approve-header">
+                            <i class="bi bi-check-circle"></i>
+                            <h4>Approve Request</h4>
+                        </div>
+                        <div class="card-body-action">
+                            <div class="form-group custom-input mb-3">
+                                <label class="form-label">Location</label>
+                                <div class="input-with-icon">
+                                    <i class="bi bi-geo-alt"></i>
+                                    <input asp-for="Location" class="form-control" placeholder="Clinic / Office / Room..." />
+                                </div>
+                                <span asp-validation-for="Location" class="text-danger small-err"></span>
+                            </div>
+
+                            <div class="form-group custom-input mb-4">
+                                <label class="form-label">Optional note to patient</label>
+                                <div class="input-with-icon">
+                                    <i class="bi bi-pencil"></i>
+                                    <input asp-for="DecisionNote" id="DecisionNote_Approve" name="DecisionNote" class="form-control" placeholder="Instructions..." />
+                                </div>
+                                <span asp-validation-for="DecisionNote" class="text-danger small-err"></span>
+                            </div>
+
+                            <button type="submit" class="btn-submit btn-approve">
+                                <i class="bi bi-check2"></i> Confirm Approval
+                            </button>
+                        </div>
+                    </form>
+
+                    <form method="post" asp-page-handler="Reject" class="action-form-card reject-card">
+                        <div class="card-header-action reject-header">
+                            <i class="bi bi-x-circle"></i>
+                            <h4>Reject Request</h4>
+                        </div>
+                        <div class="card-body-action">
+                            <div class="form-group custom-input mb-4">
+                                <label class="form-label">Reason for rejection</label>
+                                <div class="input-with-icon">
+                                    <i class="bi bi-x-octagon"></i>
+                                    <input asp-for="DecisionNote" id="DecisionNote_Reject" name="DecisionNote" class="form-control" placeholder="Explain why..." />
+                                </div>
+                                <span asp-validation-for="DecisionNote" class="text-danger small-err"></span>
+                            </div>
+
+                            <button type="submit" class="btn-submit btn-reject">
+                                <i class="bi bi-x"></i> Reject Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        }
     </div>
-
-    @if (TempData["StatusMessage"] is string status)
-    {
-        <div class="alert alert-info border-0 shadow-sm">@status</div>
-    }
-
-    @if (!Model.CanView)
-    {
-        <div class="alert alert-warning border-0 shadow-sm">
-            You cannot view this request.
-        </div>
-    }
-    else
-    {
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <strong>Patient</strong>
-                        <div>@Model.PatientName</div>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Doctor</strong>
-                        <div>@Model.DoctorName</div>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Submitted</strong>
-                        <div>@Model.UploadedAtDisplay</div>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Requested slot</strong>
-                        <div>@Model.RequestedSlotDisplay</div>
-                    </div>
-                    <div class="col-12">
-                        <strong>Reason</strong>
-                        <div>@Model.Reason</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <form method="post" asp-page-handler="Approve" class="card border-0 shadow-sm mb-3">
-            <div class="card-body">
-                <h5 class="fw-bold mb-3">Approve Request</h5>
-
-                <div class="mb-3">
-                    <label class="form-label">Location</label>
-                    <input asp-for="Location" class="form-control" placeholder="Clinic / Office / Room..." />
-                    <span asp-validation-for="Location" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Optional note</label>
-                    <input asp-for="DecisionNote" class="form-control" placeholder="Optional note..." />
-                    <span asp-validation-for="DecisionNote" class="text-danger"></span>
-                </div>
-
-                <button type="submit" class="btn btn-success">Approve</button>
-                <a asp-page="/Doctor/Appointments/Approvals" class="btn btn-outline-secondary ms-2">Cancel</a>
-            </div>
-        </form>
-
-        <form method="post" asp-page-handler="Reject" class="card border-0 shadow-sm">
-            <div class="card-body">
-                <h5 class="fw-bold mb-3">Reject Request</h5>
-
-                <div class="mb-3">
-                    <label class="form-label">Reason</label>
-                    <input asp-for="DecisionNote" class="form-control" placeholder="Reason for rejection..." />
-                    <span asp-validation-for="DecisionNote" class="text-danger"></span>
-                </div>
-
-                <button type="submit" class="btn btn-danger">Reject</button>
-            </div>
-        </form>
-    }
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/approvalsdr.js" asp-append-version="true"></script>
 }

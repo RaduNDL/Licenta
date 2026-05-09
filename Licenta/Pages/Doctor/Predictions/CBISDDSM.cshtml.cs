@@ -220,11 +220,18 @@ namespace Licenta.Pages.Doctor.Predictions
             string? validationNotes,
             CancellationToken ct)
         {
-            var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "cbis_ddsm");
+            var uploadsFolder = Path.Combine(
+                _env.ContentRootPath,
+                "Files",
+                "uploads",
+                "predictions",
+                "cbis_ddsm",
+                patientId.ToString());
+
             Directory.CreateDirectory(uploadsFolder);
 
-            var originalName = Path.GetFileName(file.FileName ?? "image");
-            var uniqueFileName = $"{Guid.NewGuid()}_{originalName}";
+            var originalName = SanitizeFileName(Path.GetFileName(file.FileName ?? "image"));
+            var uniqueFileName = $"{Guid.NewGuid():N}_{originalName}";
             var physicalPath = Path.Combine(uploadsFolder, uniqueFileName);
 
             await System.IO.File.WriteAllBytesAsync(physicalPath, fileBytes, ct);
@@ -239,7 +246,7 @@ namespace Licenta.Pages.Doctor.Predictions
                 ValidatedByDoctorId = doctorId,
                 ValidatedAtUtc = utcNow,
                 FileName = originalName,
-                FilePath = $"/uploads/cbis_ddsm/{uniqueFileName}",
+                FilePath = physicalPath,
                 ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
                 Type = "CBIS-DDSM Breast Image (Doctor Upload)",
                 Status = status,
@@ -473,6 +480,21 @@ namespace Licenta.Pages.Doctor.Predictions
             }
 
             return s;
+        }
+
+        private static string SanitizeFileName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return "image";
+
+            var cleaned = new string(name
+                .Where(c => char.IsLetterOrDigit(c) || c == '.' || c == '_' || c == '-')
+                .ToArray());
+
+            if (string.IsNullOrWhiteSpace(cleaned) || cleaned.StartsWith('.'))
+                cleaned = "image" + cleaned;
+
+            return cleaned.Length > 80 ? cleaned[^80..] : cleaned;
         }
     }
 }

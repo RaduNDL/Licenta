@@ -37,7 +37,6 @@ namespace Licenta.Models
         public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
         public ICollection<MedicalAttachment> Attachments { get; set; } = new List<MedicalAttachment>();
         public ICollection<Prediction> Predictions { get; set; } = new List<Prediction>();
-        public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
         public ICollection<DoctorAvailability> Availabilities { get; set; } = new List<DoctorAvailability>();
     }
 }

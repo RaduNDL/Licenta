@@ -93,9 +93,9 @@ namespace Licenta.Pages.Doctor.Predictions
 
                     if (attachment != null)
                     {
-                        ImageUrl = attachment.FilePath ?? "";
+                        // IMPORTANT: URL real pentru browser
+                        ImageUrl = Url.Page("/Files/Attachment", new { id = attachment.Id }) ?? "";
 
-                        // fallback GT (functioneaza doar daca filename contine UID)
                         if (string.IsNullOrEmpty(DatasetLabel) && !string.IsNullOrEmpty(attachment.FileName))
                         {
                             var gt = await _ml.GetGroundTruthAsync(attachment.FileName, HttpContext.RequestAborted);
@@ -106,7 +106,7 @@ namespace Licenta.Pages.Doctor.Predictions
 
                 if (!string.IsNullOrWhiteSpace(DatasetLabel) && !string.IsNullOrWhiteSpace(ResultLabel))
                 {
-                    bool isMatch = string.Equals(DatasetLabel, ResultLabel, StringComparison.OrdinalIgnoreCase);
+                    var isMatch = string.Equals(DatasetLabel, ResultLabel, StringComparison.OrdinalIgnoreCase);
                     ValidationStatus = isMatch ? "CORRECT" : "INCORRECT";
                 }
             }

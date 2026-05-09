@@ -51,7 +51,6 @@ namespace Licenta.Models
 
         public float? Probability { get; set; }
 
-        public string? Notes { get; set; }
 
         [Required]
         public PredictionStatus Status { get; set; } = PredictionStatus.Draft;

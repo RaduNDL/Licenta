@@ -64,10 +64,10 @@
                     <i class="fa-regular fa-bell"></i>
                 </div>
                 <div class="kpi-content">
-                    <h3 class="kpi-value">@Model.UnreadMessagesCount</h3>
+                    <h3 class="kpi-value">@Model.UnreadNotificationsCount</h3>
                     <span class="kpi-label">New Notifications</span>
                 </div>
-                @if (Model.UnreadMessagesCount > 0)
+                @if (Model.UnreadNotificationsCount > 0)
                 {
                     <div class="kpi-indicator bg-danger"></div>
                 }

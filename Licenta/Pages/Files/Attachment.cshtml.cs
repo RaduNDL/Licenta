@@ -1,11 +1,15 @@
 using Licenta.Areas.Identity.Data;
+using Licenta.Data;
 using Licenta.Models;
+using Licenta.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Files
 {
@@ -14,11 +18,16 @@ namespace Licenta.Pages.Files
     {
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IAttachmentStorage _attachmentStorage;
 
-        public AttachmentModel(AppDbContext db, UserManager<ApplicationUser> userManager)
+        public AttachmentModel(
+            AppDbContext db,
+            UserManager<ApplicationUser> userManager,
+            IAttachmentStorage attachmentStorage)
         {
             _db = db;
             _userManager = userManager;
+            _attachmentStorage = attachmentStorage;
         }
 
         public async Task<IActionResult> OnGetAsync(Guid id)
@@ -27,7 +36,7 @@ namespace Licenta.Pages.Files
             if (user == null) return Forbid();
 
             var att = await _db.MedicalAttachments
-                .Include(a => a.Patient).ThenInclude(p => p!.User)
+                .Include(a => a.Patient)!.ThenInclude(p => p!.User)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(a => a.Id == id);
 
@@ -58,17 +67,25 @@ namespace Licenta.Pages.Files
 
             if (!hasAccess) return Forbid();
 
-            var path = att.FilePath ?? "";
-
-         
-            if (string.IsNullOrWhiteSpace(path) || !Path.IsPathRooted(path) || path.StartsWith("/uploads", StringComparison.OrdinalIgnoreCase))
+            var normalized = _attachmentStorage.NormalizeLegacyPath(att.FilePath);
+            if (string.IsNullOrWhiteSpace(normalized))
                 return NotFound();
 
-            if (!System.IO.File.Exists(path))
-                return NotFound();
+            if (!_attachmentStorage.Exists(normalized))
+                return NotFound("Attachment file is missing on disk.");
 
-            return PhysicalFile(
-                path,
+            Stream stream;
+            try
+            {
+                stream = _attachmentStorage.OpenRead(normalized);
+            }
+            catch
+            {
+                return BadRequest("Invalid attachment path.");
+            }
+
+            return File(
+                stream,
                 att.ContentType ?? "application/octet-stream",
                 att.FileName ?? "file");
         }

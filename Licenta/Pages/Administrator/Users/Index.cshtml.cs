@@ -1,4 +1,5 @@
-﻿using Licenta.Models;
+﻿using Licenta.Areas.Identity.Data;
+using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Licenta.Areas.Identity.Data;
+
 namespace Licenta.Pages.Administrator.Users
 {
     [Authorize(Roles = "Administrator")]
@@ -17,34 +18,44 @@ namespace Licenta.Pages.Administrator.Users
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly AppDbContext _db;
 
         private const bool PROTECT_DOCTOR_FROM_LOCK = true;
 
-        public IndexModel(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+        public IndexModel(
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            AppDbContext db)
         {
             _userManager = userManager;
             _roleManager = roleManager;
+            _db = db;
         }
 
         public List<ApplicationUser> Users { get; private set; } = new();
         public Dictionary<string, List<string>> RolesByUserId { get; private set; } = new();
         public string? CurrentUserId { get; private set; }
+        public Dictionary<string, bool> IsDeactivated { get; private set; } = new();
 
         public async Task<IActionResult> OnGetAsync()
         {
             CurrentUserId = _userManager.GetUserId(User);
 
-            Users = await _userManager.Users
+            Users = await _db.Users
+                .IgnoreQueryFilters()
                 .AsNoTracking()
-                .OrderBy(u => u.Email ?? u.UserName)
+                .OrderBy(u => u.IsSoftDeleted)
+                .ThenBy(u => u.Email ?? u.UserName)
                 .ToListAsync();
 
             RolesByUserId = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            IsDeactivated = new Dictionary<string, bool>(StringComparer.Ordinal);
 
             foreach (var u in Users)
             {
                 var roles = await _userManager.GetRolesAsync(u);
                 RolesByUserId[u.Id] = roles.OrderBy(r => r).ToList();
+                IsDeactivated[u.Id] = u.IsSoftDeleted;
             }
 
             return Page();
@@ -52,13 +63,14 @@ namespace Licenta.Pages.Administrator.Users
 
         public async Task<IActionResult> OnPostExportAsync()
         {
-            var users = await _userManager.Users
+            var users = await _db.Users
+                .IgnoreQueryFilters()
                 .AsNoTracking()
                 .OrderBy(u => u.Email ?? u.UserName)
                 .ToListAsync();
 
             var sb = new StringBuilder();
-            sb.AppendLine("Id,Email,FullName,Roles,IsLocked");
+            sb.AppendLine("Id,Email,FullName,Roles,IsLocked,IsDeactivated");
 
             foreach (var u in users)
             {
@@ -70,7 +82,8 @@ namespace Licenta.Pages.Administrator.Users
                     Quote(u.Email ?? u.UserName ?? string.Empty),
                     Quote(u.FullName ?? string.Empty),
                     Quote(string.Join(";", roles)),
-                    Quote(isLocked ? "1" : "0"));
+                    Quote(isLocked ? "1" : "0"),
+                    Quote(u.IsSoftDeleted ? "1" : "0"));
 
                 sb.AppendLine(line);
             }
@@ -79,8 +92,34 @@ namespace Licenta.Pages.Administrator.Users
             return File(bytes, "text/csv", "users.csv");
         }
 
-        private static string Quote(string? s)
-            => "\"" + (s ?? string.Empty).Replace("\"", "\"\"") + "\"";
+        public async Task<IActionResult> OnPostReactivateAsync(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                TempData["StatusMessage"] = "Invalid user id.";
+                return RedirectToPage();
+            }
+
+            var user = await _db.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user is null)
+            {
+                TempData["StatusMessage"] = "User not found.";
+                return RedirectToPage();
+            }
+
+            user.IsSoftDeleted = false;
+            user.LockoutEnabled = true;
+            user.LockoutEnd = null;
+            user.AccessFailedCount = 0;
+
+            await _db.SaveChangesAsync();
+
+            TempData["StatusMessage"] = $"User {user.Email ?? user.UserName} has been reactivated.";
+            return RedirectToPage();
+        }
 
         public async Task<IActionResult> OnPostToggleLockAsync(string id)
         {
@@ -131,6 +170,9 @@ namespace Licenta.Pages.Administrator.Users
             TempData["StatusMessage"] = message;
             return RedirectToPage();
         }
+
+        private static string Quote(string? s)
+            => "\"" + (s ?? string.Empty).Replace("\"", "\"\"") + "\"";
 
         private static bool IsLocked(ApplicationUser user)
             => user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow;

@@ -23,7 +23,11 @@ namespace Licenta.Pages.Patient.Form
         private readonly IWebHostEnvironment _env;
         private readonly INotificationService _notifier;
 
-        public PreConsultationModel(AppDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env, INotificationService notifier)
+        public PreConsultationModel(
+            AppDbContext db,
+            UserManager<ApplicationUser> userManager,
+            IWebHostEnvironment env,
+            INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
@@ -84,14 +88,19 @@ namespace Licenta.Pages.Patient.Form
                 Notes = Input.Notes
             });
 
-            var folder = Path.Combine(_env.WebRootPath, "uploads", "patient", patient.Id.ToString(), "forms");
+            var folder = Path.Combine(
+                _env.ContentRootPath,
+                "Files",
+                "uploads",
+                "patient",
+                patient.Id.ToString(),
+                "forms");
+
             Directory.CreateDirectory(folder);
 
             var safeName = $"preconsult_{DateTime.UtcNow:yyyyMMdd_HHmmssfff}_{Guid.NewGuid():N}.json";
             var fullPath = Path.Combine(folder, safeName);
             await System.IO.File.WriteAllTextAsync(fullPath, payload);
-
-            var relPath = $"/uploads/patient/{patient.Id}/forms/{safeName}";
 
             var att = new MedicalAttachment
             {
@@ -99,7 +108,7 @@ namespace Licenta.Pages.Patient.Form
                 PatientId = patient.Id,
                 DoctorId = user.AssignedDoctorId,
                 FileName = safeName,
-                FilePath = relPath,
+                FilePath = fullPath,
                 ContentType = "application/json",
                 Type = "PreConsultationForm",
                 UploadedAt = DateTime.UtcNow,
@@ -115,7 +124,9 @@ namespace Licenta.Pages.Patient.Form
 
             if (user.AssignedDoctorId.HasValue)
             {
-                var doctorUser = await _db.Users.FirstOrDefaultAsync(u => u.DoctorProfile != null && u.DoctorProfile.Id == user.AssignedDoctorId.Value);
+                var doctorUser = await _db.Users.FirstOrDefaultAsync(
+                    u => u.DoctorProfile != null && u.DoctorProfile.Id == user.AssignedDoctorId.Value);
+
                 if (doctorUser != null)
                 {
                     await _notifier.NotifyAsync(

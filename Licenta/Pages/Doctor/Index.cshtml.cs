@@ -28,7 +28,7 @@ namespace Licenta.Pages.Doctor
         public string DoctorName { get; set; } = "Doctor";
         public int TodayAppointmentsCount { get; set; }
         public int PendingDocsCount { get; set; }
-        public int UnreadMessagesCount { get; set; }
+        public int UnreadNotificationsCount { get; set; }
         public int PendingApprovalsCount { get; set; }
 
         public List<TodayAppointmentVm> TodayAppointments { get; set; } = new();
@@ -110,12 +110,10 @@ namespace Licenta.Pages.Doctor
                             && a.DoctorId == doctorId)
                 .CountAsync(ct);
 
-            var unreadNotifs = await _db.UserNotifications
+            UnreadNotificationsCount = await _db.UserNotifications
                 .AsNoTracking()
                 .Where(n => n.UserId == user.Id && !n.IsRead)
                 .CountAsync(ct);
-
-            UnreadMessagesCount = unreadNotifs;
 
             var nowUtc = DateTime.UtcNow;
             var notes = await _db.UserNotifications

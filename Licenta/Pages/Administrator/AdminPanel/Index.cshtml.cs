@@ -60,76 +60,74 @@ namespace Licenta.Pages.Administrator.AdminPanel
             ActiveDoctorsCount = doctorUsers.Count(u => !IsLocked(u) && !u.IsSoftDeleted);
 
             var sinceUtc = DateTime.UtcNow.AddDays(-7);
-
             var allEvents = ReadAuditEventsFromFiles(_env.ContentRootPath, sinceUtc);
 
             var signInEvents = allEvents
-            .Where(e => string.Equals(e.AuditType, "SignIn", StringComparison.OrdinalIgnoreCase))
-            .ToList();
+                .Where(e => string.Equals(e.AuditType, "SignIn", StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
             RecentSecurityEvents = signInEvents.Count;
 
             RecentLogins = signInEvents
-            .OrderByDescending(e => e.TimestampUtc)
-            .Take(12)
-            .Select(e => new LoginEventVm
-            {
-                UserName = string.IsNullOrWhiteSpace(e.UserName)
-            ? (e.UserId ?? "Unknown")
-            : e.UserName!,
-                RoleOrScheme = string.IsNullOrWhiteSpace(e.Scheme) ? "Identity.Application" : e.Scheme!,
-                TimestampUtc = DateTime.SpecifyKind(e.TimestampUtc, DateTimeKind.Utc),
-                Success = e.Success
-            })
-            .ToList();
+                .OrderByDescending(e => e.TimestampUtc)
+                .Take(12)
+                .Select(e => new LoginEventVm
+                {
+                    UserName = string.IsNullOrWhiteSpace(e.UserName)
+                        ? (e.UserId ?? "Unknown")
+                        : e.UserName!,
+                    RoleOrScheme = string.IsNullOrWhiteSpace(e.Scheme) ? "Identity.Application" : e.Scheme!,
+                    TimestampUtc = DateTime.SpecifyKind(e.TimestampUtc, DateTimeKind.Utc),
+                    Success = e.Success
+                })
+                .ToList();
 
             NewestUsers = await BuildNewestUsersAsync();
             StorageUsage = ComputeUploadsUsagePercent(_env.WebRootPath);
         }
 
+        // Citeste din AuditLogs (scris de Create.cshtml.cs).
+        // Daca tabelul e gol (useri creati inainte de acest fix), cade pe fallback by ID.
         private async Task<List<NewestUserVm>> BuildNewestUsersAsync()
         {
             try
             {
-                var created = await _context.AuditLogs
-                .AsNoTracking()
-                .Where(a => a.EventType == AuditEventType.Create && a.EntityName == nameof(ApplicationUser))
-                .OrderByDescending(a => a.OccurredAtUtc)
-                .Take(80)
-                .Select(a => new { a.EntityId, a.OccurredAtUtc })
-                .ToListAsync();
+                var auditEntries = await _context.AuditLogs
+                    .AsNoTracking()
+                    .Where(a => a.EventType == AuditEventType.Create
+                             && a.EntityName == nameof(ApplicationUser)
+                             && a.EntityId != null)
+                    .OrderByDescending(a => a.OccurredAtUtc)
+                    .Take(80)
+                    .Select(a => new { a.EntityId, a.OccurredAtUtc })
+                    .ToListAsync();
 
-                if (created.Count == 0)
+                if (auditEntries.Count == 0)
                     return await FallbackNewestUsersAsync();
 
-                var orderedUserIds = created
-                .Where(x => !string.IsNullOrWhiteSpace(x.EntityId))
-                .Select(x => x.EntityId!)
-                .Distinct()
-                .ToList();
-
-                if (orderedUserIds.Count == 0)
-                    return await FallbackNewestUsersAsync();
+                var userIds = auditEntries
+                    .Select(x => x.EntityId!)
+                    .Distinct()
+                    .ToList();
 
                 var users = await _context.Users
-                .AsNoTracking()
-                .Where(u => orderedUserIds.Contains(u.Id))
-                .ToListAsync();
+                    .AsNoTracking()
+                    .Where(u => userIds.Contains(u.Id))
+                    .ToListAsync();
 
                 var byId = users.ToDictionary(u => u.Id, u => u, StringComparer.Ordinal);
-                var createdByUserId = created
-                .Where(x => !string.IsNullOrWhiteSpace(x.EntityId))
-                .GroupBy(x => x.EntityId!, StringComparer.Ordinal)
-                .ToDictionary(g => g.Key, g => g.Max(x => x.OccurredAtUtc), StringComparer.Ordinal);
+
+                var createdAt = auditEntries
+                    .GroupBy(x => x.EntityId!, StringComparer.Ordinal)
+                    .ToDictionary(g => g.Key, g => g.Min(x => x.OccurredAtUtc), StringComparer.Ordinal);
 
                 var vms = new List<NewestUserVm>();
-                foreach (var userId in orderedUserIds)
+                foreach (var userId in userIds)
                 {
-                    if (!byId.TryGetValue(userId, out var u))
-                        continue;
+                    if (!byId.TryGetValue(userId, out var u)) continue;
 
                     var roles = await _userManager.GetRolesAsync(u);
-                    createdByUserId.TryGetValue(userId, out var when);
+                    createdAt.TryGetValue(userId, out var when);
 
                     vms.Add(new NewestUserVm
                     {
@@ -139,14 +137,10 @@ namespace Licenta.Pages.Administrator.AdminPanel
                         Role = roles.FirstOrDefault() ?? "-"
                     });
 
-                    if (vms.Count >= 8)
-                        break;
+                    if (vms.Count >= 8) break;
                 }
 
-                if (vms.Count == 0)
-                    return await FallbackNewestUsersAsync();
-
-                return vms;
+                return vms.Count > 0 ? vms : await FallbackNewestUsersAsync();
             }
             catch
             {
@@ -154,14 +148,15 @@ namespace Licenta.Pages.Administrator.AdminPanel
             }
         }
 
+        // Fallback: ordoneaza dupa ID (GUID/string descrescator ≈ cei mai noi)
         private async Task<List<NewestUserVm>> FallbackNewestUsersAsync()
         {
             var users = await _context.Users
-            .AsNoTracking()
-            .Where(u => !u.IsSoftDeleted)
-            .OrderByDescending(u => u.Id)
-            .Take(8)
-            .ToListAsync();
+                .AsNoTracking()
+                .Where(u => !u.IsSoftDeleted)
+                .OrderByDescending(u => u.Id)
+                .Take(8)
+                .ToListAsync();
 
             var vms = new List<NewestUserVm>(users.Count);
             foreach (var u in users)
@@ -179,15 +174,14 @@ namespace Licenta.Pages.Administrator.AdminPanel
         }
 
         private static bool IsLocked(ApplicationUser user)
-        => user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow;
+            => user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow;
 
         private static int ComputeUploadsUsagePercent(string webRootPath)
         {
             try
             {
                 var uploads = Path.Combine(webRootPath, "uploads");
-                if (!Directory.Exists(uploads))
-                    return 0;
+                if (!Directory.Exists(uploads)) return 0;
 
                 long totalBytes = 0;
                 foreach (var file in Directory.EnumerateFiles(uploads, "*", SearchOption.AllDirectories))
@@ -198,11 +192,10 @@ namespace Licenta.Pages.Administrator.AdminPanel
                 const long capacityBytes = 5L * 1024L * 1024L * 1024L;
                 return (int)Math.Round(Math.Clamp((double)totalBytes / capacityBytes * 100.0, 0.0, 100.0));
             }
-            catch
-            {
-                return 0;
-            }
+            catch { return 0; }
         }
+
+        // ── Citire audit events din fisiere Serilog (pentru Security Audit Log) ──
 
         private sealed class AuditEvent
         {
@@ -220,13 +213,12 @@ namespace Licenta.Pages.Administrator.AdminPanel
             try
             {
                 var logsDir = Path.Combine(contentRootPath, "Logs");
-                if (!Directory.Exists(logsDir))
-                    return result;
+                if (!Directory.Exists(logsDir)) return result;
 
                 var files = Directory.EnumerateFiles(logsDir, "audit-*.json", SearchOption.TopDirectoryOnly)
-                .OrderByDescending(f => f, StringComparer.OrdinalIgnoreCase)
-                .Take(20)
-                .ToList();
+                    .OrderByDescending(f => f, StringComparer.OrdinalIgnoreCase)
+                    .Take(20)
+                    .ToList();
 
                 foreach (var file in files)
                 {
@@ -234,56 +226,41 @@ namespace Licenta.Pages.Administrator.AdminPanel
                     {
                         foreach (var line in System.IO.File.ReadLines(file))
                         {
-                            if (string.IsNullOrWhiteSpace(line))
-                                continue;
-
+                            if (string.IsNullOrWhiteSpace(line)) continue;
                             try
                             {
                                 using var doc = JsonDocument.Parse(line);
                                 var root = doc.RootElement;
 
                                 var ts = TryGetString(root, "@t")
-                                ?? TryGetString(root, "TimestampUtc")
-                                ?? TryGetString(root, "Timestamp");
+                                    ?? TryGetString(root, "TimestampUtc")
+                                    ?? TryGetString(root, "Timestamp");
 
-                                if (!TryParseTimestampUtc(ts, out var tsUtc))
-                                    continue;
-
-                                if (tsUtc < sinceUtc)
+                                if (!TryParseTimestampUtc(ts, out var tsUtc) || tsUtc < sinceUtc)
                                     continue;
 
                                 var auditType = TryGetString(root, "AuditType");
-
                                 if (string.IsNullOrWhiteSpace(auditType))
                                 {
                                     var mt = TryGetString(root, "@mt") ?? TryGetString(root, "@m") ?? "";
-                                    if (mt.Contains("SignIn", StringComparison.OrdinalIgnoreCase))
-                                        auditType = "SignIn";
-                                    else if (mt.Contains("HTTP", StringComparison.OrdinalIgnoreCase))
-                                        auditType = "Request";
-                                    else
-                                        auditType = "Other";
+                                    auditType = mt.Contains("SignIn", StringComparison.OrdinalIgnoreCase) ? "SignIn"
+                                        : mt.Contains("HTTP", StringComparison.OrdinalIgnoreCase) ? "Request"
+                                        : "Other";
                                 }
 
-                                var userId = TryGetString(root, "UserId");
-                                var userName = TryGetString(root, "UserName") ?? TryGetString(root, "Email");
-                                var scheme = TryGetString(root, "Scheme")
-                                ?? TryGetString(root, "AuthScheme")
-                                ?? TryGetString(root, "Provider");
-
                                 bool success = true;
-                                if (TryGetBool(root, "Success", out var b))
-                                    success = b;
-                                else if (auditType.Contains("Fail", StringComparison.OrdinalIgnoreCase))
-                                    success = false;
+                                if (TryGetBool(root, "Success", out var b)) success = b;
+                                else if (auditType.Contains("Fail", StringComparison.OrdinalIgnoreCase)) success = false;
 
                                 result.Add(new AuditEvent
                                 {
                                     TimestampUtc = tsUtc,
                                     AuditType = auditType,
-                                    UserId = userId,
-                                    UserName = userName,
-                                    Scheme = scheme,
+                                    UserId = TryGetString(root, "UserId"),
+                                    UserName = TryGetString(root, "UserName") ?? TryGetString(root, "Email"),
+                                    Scheme = TryGetString(root, "Scheme")
+                                        ?? TryGetString(root, "AuthScheme")
+                                        ?? TryGetString(root, "Provider"),
                                     Success = success
                                 });
                             }
@@ -294,15 +271,12 @@ namespace Licenta.Pages.Administrator.AdminPanel
                 }
             }
             catch { }
-
             return result;
         }
 
         private static string? TryGetString(JsonElement root, string name)
         {
-            if (!root.TryGetProperty(name, out var p))
-                return null;
-
+            if (!root.TryGetProperty(name, out var p)) return null;
             return p.ValueKind switch
             {
                 JsonValueKind.String => p.GetString(),
@@ -316,9 +290,7 @@ namespace Licenta.Pages.Administrator.AdminPanel
         private static bool TryGetBool(JsonElement root, string name, out bool value)
         {
             value = false;
-            if (!root.TryGetProperty(name, out var p))
-                return false;
-
+            if (!root.TryGetProperty(name, out var p)) return false;
             if (p.ValueKind == JsonValueKind.True) { value = true; return true; }
             if (p.ValueKind == JsonValueKind.False) { value = false; return true; }
             if (p.ValueKind == JsonValueKind.String && bool.TryParse(p.GetString(), out var b)) { value = b; return true; }
@@ -328,18 +300,17 @@ namespace Licenta.Pages.Administrator.AdminPanel
         private static bool TryParseTimestampUtc(string? s, out DateTime utc)
         {
             utc = default;
-            if (string.IsNullOrWhiteSpace(s))
-                return false;
+            if (string.IsNullOrWhiteSpace(s)) return false;
 
             if (DateTimeOffset.TryParse(s, CultureInfo.InvariantCulture,
-            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dto))
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dto))
             {
                 utc = dto.UtcDateTime;
                 return true;
             }
 
             if (DateTime.TryParse(s, CultureInfo.InvariantCulture,
-            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt))
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt))
             {
                 utc = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
                 return true;

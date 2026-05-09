@@ -14,17 +14,14 @@ namespace Licenta.Data
     {
         public static async Task SeedAsync(IServiceProvider services)
         {
-            using var scope = services.CreateScope();
-
-            var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var config = services.GetRequiredService<IConfiguration>();
+            var db = services.GetRequiredService<AppDbContext>();
+            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 
             var settings = await db.SystemSettings.FirstOrDefaultAsync();
             if (settings != null && settings.IdentitySeeded)
                 return;
-
-            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
             string[] roles = { "Administrator", "Doctor", "Assistant", "Patient" };
             foreach (var role in roles)
@@ -47,18 +44,15 @@ namespace Licenta.Data
             var patientEmail = config["SeedAccounts:PatientEmail"] ?? "patient@gmail.com";
             var patientPassword = config["SeedAccounts:PatientPassword"] ?? throw new InvalidOperationException("SeedAccounts:PatientPassword is not configured.");
 
-            var sharedClinicId = await EnsureSharedClinicIdAsync(userManager, assistantEmail);
+            var sharedClinicId = await EnsureSharedClinicIdAsync(db, assistantEmail);
 
-            var admin = await EnsureUserInRole(userManager, adminEmail, adminPassword,
+            var admin = await EnsureUserInRole(db, userManager, adminEmail, adminPassword,
                 "System Administrator", "Administrator", sharedClinicId);
-
-            var doctorUser = await EnsureUserInRole(userManager, doctorEmail, doctorPassword,
+            var doctorUser = await EnsureUserInRole(db, userManager, doctorEmail, doctorPassword,
                 "Default Doctor", "Doctor", sharedClinicId);
-
-            var assistantUser = await EnsureUserInRole(userManager, assistantEmail, assistantPassword,
+            var assistantUser = await EnsureUserInRole(db, userManager, assistantEmail, assistantPassword,
                 "Default Assistant", "Assistant", sharedClinicId);
-
-            var patientUser = await EnsureUserInRole(userManager, patientEmail, patientPassword,
+            var patientUser = await EnsureUserInRole(db, userManager, patientEmail, patientPassword,
                 "Default Patient", "Patient", sharedClinicId);
 
             await EnsureDoctorProfileAsync(db, doctorUser);
@@ -67,24 +61,29 @@ namespace Licenta.Data
             if (settings != null)
             {
                 settings.IdentitySeeded = true;
-                await db.SaveChangesAsync();
             }
-            else
-            {
-                await db.SaveChangesAsync();
-            }
+
+            await db.SaveChangesAsync();
         }
-        private static async Task<string> EnsureSharedClinicIdAsync(UserManager<ApplicationUser> userManager, string assistantEmail)
+
+        private static async Task<string> EnsureSharedClinicIdAsync(AppDbContext db, string assistantEmail)
         {
-            var assistant = await userManager.FindByEmailAsync(assistantEmail);
-            var cid = (assistant?.ClinicId ?? "").Trim();
+            var normalizedEmail = assistantEmail.Trim().ToUpperInvariant();
+
+            var cid = await db.Users
+                .IgnoreQueryFilters()
+                .Where(u => u.NormalizedEmail == normalizedEmail && u.ClinicId != null && u.ClinicId != "")
+                .Select(u => u.ClinicId)
+                .FirstOrDefaultAsync();
+
             if (!string.IsNullOrWhiteSpace(cid))
-                return cid;
+                return cid.Trim();
 
             return GenerateClinicId();
         }
 
         private static async Task<ApplicationUser> EnsureUserInRole(
+            AppDbContext db,
             UserManager<ApplicationUser> userManager,
             string email,
             string password,
@@ -92,7 +91,11 @@ namespace Licenta.Data
             string role,
             string clinicId)
         {
-            var user = await userManager.FindByEmailAsync(email);
+            var normalizedEmail = email.Trim().ToUpperInvariant();
+
+            var user = await db.Users
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
 
             if (user == null)
             {
@@ -114,7 +117,7 @@ namespace Licenta.Data
             {
                 var needUpdate = false;
 
-                if (user.EmailConfirmed != true)
+                if (!user.EmailConfirmed)
                 {
                     user.EmailConfirmed = true;
                     needUpdate = true;
@@ -160,7 +163,10 @@ namespace Licenta.Data
 
         private static async Task EnsureDoctorProfileAsync(AppDbContext db, ApplicationUser doctorUser)
         {
-            var existing = await db.Doctors.FirstOrDefaultAsync(d => d.UserId == doctorUser.Id);
+            var existing = await db.Doctors
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(d => d.UserId == doctorUser.Id);
+
             if (existing != null) return;
 
             db.Doctors.Add(new DoctorProfile
@@ -172,7 +178,10 @@ namespace Licenta.Data
 
         private static async Task EnsurePatientProfileAsync(AppDbContext db, ApplicationUser patientUser)
         {
-            var existing = await db.Patients.FirstOrDefaultAsync(p => p.UserId == patientUser.Id);
+            var existing = await db.Patients
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.UserId == patientUser.Id);
+
             if (existing != null) return;
 
             db.Patients.Add(new PatientProfile

@@ -12,6 +12,5 @@ namespace Licenta.Models
         public DateTime ProposedEndUtc { get; set; }
         public string Location { get; set; } = "Clinic";
         public bool IsChosen { get; set; }
-        public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     }
 }

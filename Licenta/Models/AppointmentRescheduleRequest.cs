@@ -16,6 +16,7 @@ namespace Licenta.Models
         public DoctorProfile Doctor { get; set; } = null!;
 
         public AppointmentRescheduleStatus Status { get; set; } = AppointmentRescheduleStatus.Requested;
+        public ICollection<AppointmentRescheduleOption> Options { get; set; } = new List<AppointmentRescheduleOption>();
 
         public string Reason { get; set; } = string.Empty;
         public string PreferredWindows { get; set; } = string.Empty;
@@ -33,6 +34,5 @@ namespace Licenta.Models
 
         public DateTime? ApprovedAtUtc { get; set; }
         public DateTime? RejectedAtUtc { get; set; }
-        public DateTime? CancelledAtUtc { get; set; }
     }
 }

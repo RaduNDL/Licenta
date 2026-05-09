@@ -21,7 +21,6 @@ namespace Licenta.Models
         public AppointmentStatus Status { get; set; }
         public VisitStage VisitStage { get; set; } = VisitStage.NotArrived;
 
-        public string? CancelReason { get; set; }
         public string? RescheduleReason { get; set; }
 
         public DateTime CreatedAtUtc { get; set; }

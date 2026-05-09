@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-04-26T13:31:11.308719Z",
+  "ClinicId": "CL-F17C6185",
+  "PatientUserId": "d38cfef9-332d-4b52-abbb-643cafba2946",
+  "PatientProfileId": "6d14abf1-ab7e-45c2-b04b-e265a7b2a2e5",
+  "SelectedDoctorId": "99f13a79-fd1d-4f2d-8539-98ceb1583a0f",
+  "SelectedLocalIso": "2026-04-30T11:30",
+  "SelectedScheduledUtc": "2026-04-30T08:30:00Z",
+  "Reason": "Tedt"
+}

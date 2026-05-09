@@ -26,7 +26,8 @@ namespace Licenta.Models
         [MaxLength(200)]
         public string? ContentType { get; set; }
 
-        public DateTime UploadedAt { get; set; }
+        public DateTime UploadedAt { get; set; } = DateTime.UtcNow; 
+
         public AttachmentStatus Status { get; set; }
 
         [MaxLength(2000)]

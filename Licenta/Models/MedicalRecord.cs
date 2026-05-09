@@ -16,7 +16,7 @@ namespace Licenta.Models
         public DoctorProfile Doctor { get; set; } = default!;
 
         public int? AppointmentId { get; set; }
-        public Appointment? Appointment { get; set; }
+        public Appointment? Appointment { get; set; }   
 
         [Required, StringLength(200)]
         public string Diagnosis { get; set; } = string.Empty;
@@ -31,8 +31,8 @@ namespace Licenta.Models
         public string? Treatment { get; set; }
 
         public DateTime VisitDateUtc { get; set; }
+        public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
         public RecordStatus Status { get; set; } = RecordStatus.Draft;
-
         public DateTime? ValidatedAtUtc { get; set; }
     }
 }

@@ -1,11 +1,13 @@
-﻿using Licenta.Models;
+﻿using Licenta.Areas.Identity.Data;
+using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
-using Licenta.Areas.Identity.Data;
+
 namespace Licenta.Pages.Administrator.Users
 {
     [Authorize(Roles = "Administrator")]
@@ -82,16 +84,41 @@ namespace Licenta.Pages.Administrator.Users
                 return RedirectToPage("./Index");
             }
 
-            var emailToSet = Input.Email.Trim();
-            var existing = await _userManager.FindByEmailAsync(emailToSet);
-            if (existing != null && existing.Id != user.Id)
+            var emailToSet = (Input.Email ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(emailToSet))
             {
-                ModelState.AddModelError("Input.Email", "Another user with this email already exists.");
+                ModelState.AddModelError("Input.Email", "Email is required.");
                 return Page();
             }
 
-            user.Email = emailToSet;
-            user.UserName = emailToSet;
+            var emailChanged = !string.Equals(user.Email ?? string.Empty, emailToSet, StringComparison.OrdinalIgnoreCase);
+
+            if (emailChanged)
+            {
+                var existing = await _userManager.FindByEmailAsync(emailToSet);
+                if (existing != null && existing.Id != user.Id)
+                {
+                    ModelState.AddModelError("Input.Email", "Another user with this email already exists.");
+                    return Page();
+                }
+
+                var setEmailResult = await _userManager.SetEmailAsync(user, emailToSet);
+                if (!setEmailResult.Succeeded)
+                {
+                    foreach (var error in setEmailResult.Errors)
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    return Page();
+                }
+
+                var setUserNameResult = await _userManager.SetUserNameAsync(user, emailToSet);
+                if (!setUserNameResult.Succeeded)
+                {
+                    foreach (var error in setUserNameResult.Errors)
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    return Page();
+                }
+            }
+
             user.FullName = (Input.FullName ?? string.Empty).Trim();
             user.EmailConfirmed = Input.EmailConfirmed;
 

@@ -4,6 +4,7 @@ using Licenta.Data;
 using Licenta.Services;
 using Licenta.Services.Ml;
 using Licenta.Services.Prediction;
+using Licenta.Services.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -36,10 +37,7 @@ namespace Licenta
 
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console()
-                .WriteTo.File(
-                    new CompactJsonFormatter(),
-                    Path.Combine(logsDir, "audit-.json"),
-                    rollingInterval: RollingInterval.Day)
+                .WriteTo.File(new CompactJsonFormatter(), Path.Combine(logsDir, "audit-.json"), rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
             builder.Host.UseSerilog();
@@ -56,7 +54,6 @@ namespace Licenta
                     options.SignIn.RequireConfirmedAccount = false;
                     options.User.RequireUniqueEmail = true;
 
-             
                     options.Password.RequiredLength = 1;
                     options.Password.RequireDigit = false;
                     options.Password.RequireUppercase = false;
@@ -84,18 +81,16 @@ namespace Licenta
                 o.IdleTimeout = TimeSpan.FromHours(8);
             });
 
+            builder.Services.Configure<AttachmentStorageOptions>(
+                builder.Configuration.GetSection("AttachmentStorage"));
+            builder.Services.AddScoped<IAttachmentStorage, AttachmentStorage>();
+
             var uploadLimitMb = builder.Configuration.GetValue<long?>("SystemSettings:MaxUploadMb") ?? 50;
             var uploadLimitBytes = uploadLimitMb * 1024L * 1024L;
 
-            builder.Services.Configure<FormOptions>(o =>
-            {
-                o.MultipartBodyLengthLimit = uploadLimitBytes;
-            });
+            builder.Services.Configure<FormOptions>(o => { o.MultipartBodyLengthLimit = uploadLimitBytes; });
 
-            builder.WebHost.ConfigureKestrel(o =>
-            {
-                o.Limits.MaxRequestBodySize = uploadLimitBytes;
-            });
+            builder.WebHost.ConfigureKestrel(o => { o.Limits.MaxRequestBodySize = uploadLimitBytes; });
 
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
             {
@@ -104,14 +99,12 @@ namespace Licenta
                     ForwardedHeaders.XForwardedProto |
                     ForwardedHeaders.XForwardedHost;
 
-                
                 options.KnownNetworks.Clear();
                 options.KnownProxies.Clear();
             });
 
             builder.Services.AddScoped<INotificationService, NotificationService>();
             builder.Services.AddSingleton<IPdfService, PdfService>();
-
             builder.Services.AddSingleton<IPredictionTargetRegistry, PredictionTargetRegistry>();
 
             builder.Services.Configure<MlServiceOptions>(
@@ -122,10 +115,8 @@ namespace Licenta
             builder.Services.AddHttpClient<IMlImagingClient, MlImagingClient>((sp, client) =>
             {
                 var opt = sp.GetRequiredService<IOptions<MlServiceOptions>>().Value;
-
                 var baseUrl = (opt.BaseUrl ?? "http://127.0.0.1:8001").Trim();
                 if (!baseUrl.EndsWith('/')) baseUrl += "/";
-
                 client.BaseAddress = new Uri(baseUrl);
                 client.Timeout = TimeSpan.FromSeconds(Math.Clamp(opt.TimeoutSeconds, 2, 120));
             }).SetHandlerLifetime(TimeSpan.FromMinutes(5));
@@ -133,10 +124,8 @@ namespace Licenta
             builder.Services.AddHttpClient<IMlLabResultClient, MlLabResultClient>((sp, client) =>
             {
                 var opt = sp.GetRequiredService<IOptions<MlServiceOptions>>().Value;
-
                 var baseUrl = (opt.BaseUrl ?? "http://127.0.0.1:8001").Trim();
                 if (!baseUrl.EndsWith('/')) baseUrl += "/";
-
                 client.BaseAddress = new Uri(baseUrl);
                 client.Timeout = TimeSpan.FromSeconds(Math.Clamp(opt.TimeoutSeconds, 2, 120));
             }).SetHandlerLifetime(TimeSpan.FromMinutes(5));
@@ -149,22 +138,19 @@ namespace Licenta
             {
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
-                app.UseHttpsRedirection();
             }
 
+            app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseRouting();
-
             app.UseSession();
-
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseAuditMiddleware();
 
             app.MapRazorPages();
-
             app.MapHub<NotificationHub>("/hubs/notifications");
 
             if (app.Environment.IsDevelopment())
@@ -177,16 +163,12 @@ namespace Licenta
                         {
                             using var scope = app.Services.CreateScope();
                             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
                             await SystemSettingsSeeder.SeedAsync(db);
                             await IdentitySeed.SeedAsync(scope.ServiceProvider);
                         }
                         catch (Exception ex)
                         {
-                            var logger = app.Services
-                                .GetRequiredService<ILoggerFactory>()
-                                .CreateLogger("StartupSeed");
-
+                            var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("StartupSeed");
                             logger.LogError(ex, "Startup seed failed");
                         }
                     });
@@ -194,10 +176,7 @@ namespace Licenta
             }
 
             var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
-            app.Lifetime.ApplicationStarted.Register(() =>
-            {
-                logger.LogInformation("Application started successfully");
-            });
+            app.Lifetime.ApplicationStarted.Register(() => { logger.LogInformation("Application started successfully"); });
 
             await app.RunAsync();
         }

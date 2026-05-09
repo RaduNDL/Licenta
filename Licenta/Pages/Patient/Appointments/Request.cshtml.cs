@@ -293,13 +293,13 @@ namespace Licenta.Pages.Patient.Appointments
 
                 if (slots.Count > 0)
                 {
-                    var grouped = slots.GroupBy(s => DateTime.Parse(s).ToString("yyyy-MM-dd"));
+                    var grouped = slots.GroupBy(s => DateTime.Parse(s, CultureInfo.InvariantCulture).ToString("yyyy-MM-dd"));
                     foreach (var g in grouped)
                     {
                         docUi.DaysAndSlots[g.Key] = g.Select(s => new SlotUiModel
                         {
                             Key = $"{d.Id:N}|{s}",
-                            TimeDisplay = DateTime.Parse(s).ToString("HH:mm"),
+                            TimeDisplay = DateTime.Parse(s, CultureInfo.InvariantCulture).ToString("HH:mm"),
                             LocalIso = s
                         }).ToList();
                     }

@@ -1,14 +1,18 @@
-﻿using Licenta.Areas.Identity.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.IO;
-using System.Linq;
 
 namespace Licenta.Pages.Doctor.Attachments
 {
@@ -118,7 +122,10 @@ namespace Licenta.Pages.Doctor.Attachments
 
             var uploadsRoot = Path.Combine(
                 _env.ContentRootPath,
-                "Files", "uploads", "doctor", doctor.Id.ToString());
+                "Files",
+                "uploads",
+                "doctor",
+                doctor.Id.ToString());
 
             Directory.CreateDirectory(uploadsRoot);
 
@@ -138,7 +145,7 @@ namespace Licenta.Pages.Doctor.Attachments
                 PatientId = ModelInput.PatientId,
                 DoctorId = doctor.Id,
                 FileName = originalName,
-                FilePath = absolutePath,                       
+                FilePath = absolutePath,
                 Type = string.IsNullOrWhiteSpace(ModelInput.Type) ? "Medical Document" : ModelInput.Type.Trim(),
                 UploadedAt = DateTime.UtcNow,
                 ContentType = ModelInput.File.ContentType,
@@ -160,10 +167,10 @@ namespace Licenta.Pages.Doctor.Attachments
 
             var q = _db.Patients.Include(p => p.User).AsQueryable();
             if (!string.IsNullOrWhiteSpace(clinicId))
-                q = q.Where(p => p.User.ClinicId == clinicId);
+                q = q.Where(p => p.User != null && p.User.ClinicId == clinicId);
 
             var patients = await q
-                .OrderBy(p => p.User.FullName ?? p.User.Email)
+                .OrderBy(p => p.User!.FullName ?? p.User.Email)
                 .ToListAsync();
 
             Patients = new SelectList(
@@ -188,7 +195,7 @@ namespace Licenta.Pages.Doctor.Attachments
             if (string.IsNullOrWhiteSpace(cleaned) || cleaned.StartsWith('.'))
                 cleaned = "file" + (string.IsNullOrEmpty(Path.GetExtension(cleaned)) ? fallbackExt : "");
 
-           return cleaned.Length > 80 ? cleaned[^80..] : cleaned;
+            return cleaned.Length > 80 ? cleaned[^80..] : cleaned;
         }
     }
 }

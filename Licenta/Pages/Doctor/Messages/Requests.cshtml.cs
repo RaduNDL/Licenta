@@ -47,38 +47,42 @@ public class RequestsModel : PageModel
                 string.IsNullOrWhiteSpace(a.FullName) ? (a.Email ?? "Assistant") : a.FullName))
             .ToList();
 
-        Requests = await _db.PatientMessageRequests
+        var rawRequests = await _db.PatientMessageRequests
             .AsNoTracking()
-            .Include(r => r.Patient)
+            .Include(r => r.Patient).ThenInclude(p => p.User)
             .Where(r =>
                 r.DoctorProfileId == doctorProfile.Id &&
                 r.Status == PatientMessageRequestStatus.WaitingDoctorApproval)
             .OrderByDescending(r => r.CreatedAt)
-            .Select(r => new RequestVm(
-                r.Id,
-                string.IsNullOrWhiteSpace(r.Patient.FullName)
-                    ? (r.Patient.Email ?? "Patient")
-                    : r.Patient.FullName,
-                string.IsNullOrWhiteSpace(r.Subject)
-                    ? "No subject"
-                    : r.Subject,
-                string.IsNullOrWhiteSpace(r.AssistantNote)
-                    ? (string.IsNullOrWhiteSpace(r.EscalationReason)
-                        ? (string.IsNullOrWhiteSpace(r.Body) ? "-" : r.Body)
-                        : r.EscalationReason)
-                    : r.AssistantNote,
-                r.CreatedAt.ToLocalTime()
-            ))
             .ToListAsync();
 
-        Requests = Requests
-            .Select(r => new RequestVm(
-                r.Id,
-                string.IsNullOrWhiteSpace(r.PatientName) ? "Patient" : r.PatientName.Trim(),
-                string.IsNullOrWhiteSpace(r.Subject) ? "No subject" : r.Subject.Trim(),
-                string.IsNullOrWhiteSpace(r.Details) ? "-" : r.Details.Trim(),
-                r.CreatedAtLocal
-            ))
+        Requests = rawRequests
+            .Select(r =>
+            {
+                var fullName = r.Patient?.User?.FullName;
+                var email = r.Patient?.User?.Email;
+
+                var patientName = string.IsNullOrWhiteSpace(fullName)
+                    ? (string.IsNullOrWhiteSpace(email) ? "Patient" : email!.Trim())
+                    : fullName!.Trim();
+
+                var subject = string.IsNullOrWhiteSpace(r.Subject)
+                    ? "No subject"
+                    : r.Subject.Trim();
+
+                var details = !string.IsNullOrWhiteSpace(r.AssistantNote)
+                    ? r.AssistantNote.Trim()
+                    : (!string.IsNullOrWhiteSpace(r.EscalationReason)
+                        ? r.EscalationReason.Trim()
+                        : (!string.IsNullOrWhiteSpace(r.Body) ? r.Body.Trim() : "-"));
+
+                return new RequestVm(
+                    r.Id,
+                    patientName,
+                    subject,
+                    details,
+                    r.CreatedAt.ToLocalTime());
+            })
             .ToList();
     }
 

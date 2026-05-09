@@ -1,31 +1,339 @@
-﻿    @page "{id:int}"
-    @model Licenta.Pages.Patient.Appointments.RescheduleModel
-    @{
-        ViewData["Title"] = "Reschedule Appointment";
-    }
+﻿@page "{id:int}"
+@model Licenta.Pages.Patient.Appointments.RescheduleModel
+@{
+    ViewData["Title"] = "Reschedule Appointment";
+}
 
-    @section Styles {
-        <link rel="stylesheet" href="~/css/Reschedule.css" asp-append-version="true" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    }
+@section Styles {
+    <link rel="stylesheet" href="~/css/Reschedule.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+}
 
-    <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="mb-1 fw-bold" style="color: #111827;">Modify Appointment</h2>
-                <p class="text-muted mb-0">Select a new date and time for your consultation.</p>
-            </div>
-            <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">
-                My Appointments
-            </a>
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold" style="color: #111827;">Modify Appointment</h2>
+            <p class="text-muted mb-0">
+                @if (Model.ViewMode == RescheduleModel.PageViewMode.ProposedOptions)
+                {
+                    <span>The doctor has proposed alternative time slots — pick the one that suits you.</span>
+                }
+                else if (Model.ViewMode == RescheduleModel.PageViewMode.RequestPending)
+                {
+                    <span>Your reschedule request is being processed.</span>
+                }
+                else
+                {
+                    <span>Select a new date and time for your consultation.</span>
+                }
+            </p>
         </div>
+        <a asp-page="/Patient/Appointments/Index" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> My Appointments
+        </a>
+    </div>
 
-        @if (TempData["StatusMessage"] is string statusMsg)
+    @if (TempData["StatusMessage"] is string statusMsg)
+    {
+        <div class="alert alert-info border-0 shadow-sm">@Html.Raw(statusMsg)</div>
+    }
+
+    @if (Model.ViewMode == RescheduleModel.PageViewMode.RequestPending && Model.PendingRequest != null)
+    {
+        var req = Model.PendingRequest;
+        var statusLabel = req.Status switch
         {
-            <div class="alert alert-info border-0 shadow-sm">@statusMsg</div>
-        }
+            AppointmentRescheduleStatus.Requested => ("Waiting for doctor", "warning", "fa-clock"),
+            AppointmentRescheduleStatus.PatientSelected => ("Waiting for approval", "info", "fa-hourglass-half"),
+            _ => ("In progress", "secondary", "fa-circle-info")
+        };
 
-        @if (!Model.CanRequest)
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="wizard-step">
+                    <div class="step-header">
+                        <div class="step-number" style="background-color:#6b7280;">
+                            <i class="fa-solid fa-@statusLabel.Item3" style="font-size:0.8rem;"></i>
+                        </div>
+                        <h5 class="mb-0">Reschedule Request Status</h5>
+                    </div>
+
+                    <div class="alert alert-@statusLabel.Item2 border-0 d-flex align-items-center mb-4">
+                        <i class="fa-solid fa-@statusLabel.Item3 me-2 fs-5"></i>
+                        <span class="fw-bold">@statusLabel.Item1</span>
+                    </div>
+
+                    <div class="current-info-box">
+                        <div class="info-row">
+                            <i class="fa-regular fa-calendar-xmark text-danger"></i>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.7rem;">Original appointment</small>
+                                <span class="fw-bold text-decoration-line-through">
+                                    @req.OldScheduledAtUtc.ToLocalTime().ToString("ddd dd MMM yyyy, HH:mm")
+                                </span>
+                            </div>
+                        </div>
+
+                        @if (req.NewScheduledAtUtc.HasValue)
+                        {
+                            <div class="info-row mt-3">
+                                <i class="fa-regular fa-calendar-check text-success"></i>
+                                <div>
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.7rem;">Requested new time</small>
+                                    <span class="fw-bold text-success">
+                                        @req.NewScheduledAtUtc.Value.ToLocalTime().ToString("ddd dd MMM yyyy, HH:mm")
+                                    </span>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(req.Reason))
+                        {
+                            <div class="info-row mt-3">
+                                <i class="fa-solid fa-comment-dots text-muted"></i>
+                                <div>
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.7rem;">Your reason</small>
+                                    <span>@req.Reason</span>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(req.DoctorDecisionNote))
+                        {
+                            <div class="info-row mt-3">
+                                <i class="fa-solid fa-user-doctor text-primary"></i>
+                                <div>
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.7rem;">Doctor's note</small>
+                                    <span>@req.DoctorDecisionNote</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-4 text-muted small text-center">
+                        <i class="fa-solid fa-circle-info me-1"></i>
+                        You'll receive a notification when the doctor responds.
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.ViewMode == RescheduleModel.PageViewMode.ProposedOptions && Model.PendingRequest != null)
+    {
+        var req = Model.PendingRequest;
+
+        <form method="post" asp-page-handler="SelectOption">
+            <div class="row g-4">
+
+                <div class="col-lg-4">
+                    <div class="wizard-step">
+                        <div class="step-header">
+                            <div class="step-number">1</div>
+                            <h5 class="mb-0">Original Details</h5>
+                        </div>
+
+                        <div class="current-info-box">
+                            <div class="info-row">
+                                <i class="fa-solid fa-user-doctor text-primary"></i>
+                                <div>
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.7rem;">Doctor</small>
+                                    <span class="fw-bold">@Model.DoctorName</span>
+                                </div>
+                            </div>
+                            <div class="info-row mt-3">
+                                <i class="fa-regular fa-calendar-xmark text-danger"></i>
+                                <div>
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.7rem;">Old Date & Time</small>
+                                    <span class="fw-bold text-decoration-line-through">@Model.CurrentScheduledAtDisplay</span>
+                                </div>
+                            </div>
+                            <div class="info-row mt-3">
+                                <i class="fa-solid fa-location-dot text-secondary"></i>
+                                <div>
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.7rem;">Location</small>
+                                    <span class="fw-bold">@Model.Location</span>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(req.Reason))
+                            {
+                                <div class="info-row mt-3">
+                                    <i class="fa-solid fa-comment-dots text-muted"></i>
+                                    <div>
+                                        <small class="text-muted d-block text-uppercase fw-bold" style="font-size:0.7rem;">Your reason</small>
+                                        <span class="text-muted">@req.Reason</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="wizard-step">
+                        <div class="step-header">
+                            <div class="step-number">2</div>
+                            <h5 class="mb-0">Doctor's Proposed Slots</h5>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(req.DoctorDecisionNote))
+                        {
+                            <div class="alert alert-light border mb-3 small">
+                                <i class="fa-solid fa-user-doctor me-1 text-primary"></i>
+                                <strong>Note from doctor:</strong> @req.DoctorDecisionNote
+                            </div>
+                        }
+
+                        <div class="d-flex flex-column gap-2">
+                            @foreach (var option in Model.ProposedOptions)
+                            {
+                                var localStart = option.ProposedStartUtc.ToLocalTime();
+                                var localEnd = option.ProposedEndUtc.ToLocalTime();
+
+                                <label class="option-card" for="opt_@option.Id">
+                                    <input type="radio"
+                                           name="SelectedOptionId"
+                                           id="opt_@option.Id"
+                                           value="@option.Id"
+                                           class="option-radio"
+                                           required />
+                                    <div class="option-card-body">
+                                        <div class="option-date fw-bold">
+                                            @localStart.ToString("dddd, dd MMMM yyyy")
+                                        </div>
+                                        <div class="option-time text-primary fw-bold fs-5">
+                                            @localStart.ToString("HH:mm") – @localEnd.ToString("HH:mm")
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(option.Location) && option.Location != "Clinic")
+                                        {
+                                            <div class="option-location text-muted small mt-1">
+                                                <i class="fa-solid fa-location-dot me-1"></i>@option.Location
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="option-check">
+                                        <i class="fa-solid fa-circle-check"></i>
+                                    </div>
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="wizard-step disabled-step" id="step3confirm">
+                        <div class="step-header">
+                            <div class="step-number">3</div>
+                            <h5 class="mb-0">Confirm Selection</h5>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="alert alert-info border-0 mb-0 d-flex align-items-center">
+                                <i class="fa-regular fa-calendar-check me-2 fs-5"></i>
+                                <span id="optionSelectionText" class="fw-bold">No slot selected</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 fs-6 fw-bold py-2" id="confirmOptionBtn" disabled>
+                            <i class="fa-solid fa-check me-1"></i> Confirm Selection
+                        </button>
+
+                        <p class="text-muted small mt-3 mb-0 text-center">
+                            <i class="fa-solid fa-circle-info me-1"></i>
+                            The doctor will approve your selection.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+
+        <style>
+                .option-card {
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                    background: #ffffff;
+                    border: 2px solid #e5e7eb;
+                    border-radius: 10px;
+                    padding: 14px 16px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    user-select: none;
+                }
+
+                    .option-card:hover {
+                        border-color: #4f46e5;
+                        background: #f5f3ff;
+                    }
+
+                    .option-card:has(.option-radio:checked) {
+                        border-color: #4f46e5;
+                        background: #eef2ff;
+                        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+                    }
+
+                        .option-card:has(.option-radio:checked) .option-check {
+                            color: #4f46e5;
+                            opacity: 1;
+                        }
+
+                .option-radio {
+                    position: absolute;
+                    opacity: 0;
+                    width: 0;
+                    height: 0;
+                }
+
+                .option-card-body {
+                    flex: 1;
+                }
+
+                .option-date {
+                    font-size: 0.85rem;
+                    color: #374151;
+                }
+
+                .option-time {
+                    line-height: 1.2;
+                }
+
+                .option-check {
+                    font-size: 1.4rem;
+                    color: #d1d5db;
+                    opacity: 0.4;
+                    transition: all 0.2s;
+                }
+        </style>
+
+        <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const radios = document.querySelectorAll('.option-radio');
+                    const step3 = document.getElementById('step3confirm');
+                    const confirmBtn = document.getElementById('confirmOptionBtn');
+                    const selectionText = document.getElementById('optionSelectionText');
+
+                    radios.forEach(function (radio) {
+                        radio.addEventListener('change', function () {
+                            if (!this.checked) return;
+
+                            var label = this.closest('.option-card');
+                            var dateText = label.querySelector('.option-date')?.textContent?.trim() ?? '';
+                            var timeText = label.querySelector('.option-time')?.textContent?.trim() ?? '';
+
+                            selectionText.textContent = dateText + ' at ' + timeText;
+                            step3.classList.remove('disabled-step');
+                            confirmBtn.disabled = false;
+                        });
+                    });
+                });
+        </script>
+    }
+
+    @if (Model.ViewMode == RescheduleModel.PageViewMode.SlotPicker)
+    {
+        if (!Model.CanRequest)
         {
             <div class="alert alert-warning border-0 shadow-sm">
                 <i class="fa-solid fa-triangle-exclamation me-2"></i>
@@ -82,11 +390,8 @@
                                 <h5 class="mb-0">Choose New Date and Time</h5>
                             </div>
 
-                            <div id="datesContainer" class="d-flex flex-wrap mb-3">
-                            </div>
-
-                            <div id="timesContainer" class="d-flex flex-wrap">
-                            </div>
+                            <div id="datesContainer" class="d-flex flex-wrap mb-3"></div>
+                            <div id="timesContainer" class="d-flex flex-wrap"></div>
                         </div>
                     </div>
 
@@ -106,13 +411,16 @@
                             </div>
 
                             <div class="mb-4">
-                                <label class="form-label fw-semibold">Reason for Rescheduling <span class="text-danger">*</span></label>
-                                <textarea class="form-control" asp-for="InputReason" rows="4" placeholder="Briefly explain why you need to reschedule..."></textarea>
+                                <label class="form-label fw-semibold">
+                                    Reason for Rescheduling <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control" asp-for="InputReason" rows="4"
+                                          placeholder="Briefly explain why you need to reschedule..."></textarea>
                                 <span class="text-danger small mt-1 d-block" asp-validation-for="InputReason"></span>
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100 fs-6 fw-bold py-2" id="submitBtn">
-                                Submit Reschedule
+                                <i class="fa-solid fa-paper-plane me-1"></i> Submit Reschedule
                             </button>
                         </div>
                     </div>
@@ -120,14 +428,18 @@
                 </div>
             </form>
         }
-    </div>
+    }
 
-    @section Scripts {
-        <partial name="_ValidationScriptsPartial" />
+</div>
 
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    @if (Model.ViewMode == RescheduleModel.PageViewMode.SlotPicker && Model.CanRequest)
+    {
         <script>
             const doctorData = @Html.Raw(Model.DoctorSlotsJson);
         </script>
-
         <script src="~/js/Reschedule.js" asp-append-version="true"></script>
     }
+}

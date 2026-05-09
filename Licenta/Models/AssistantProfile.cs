@@ -16,10 +16,5 @@ namespace Licenta.Models
         public string? Phone { get; set; }
         public string? Bio { get; set; }
 
-        [NotMapped]
-        public string FullName => User?.FullName ?? string.Empty;
-
-        [NotMapped]
-        public string Email => User?.Email ?? string.Empty;
     }
 }

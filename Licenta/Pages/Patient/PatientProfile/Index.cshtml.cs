@@ -258,10 +258,10 @@ namespace Licenta.Pages.Patient.PatientProfile
 
         private async Task LoadStatsAsync(string userId, Guid patientId)
         {
-            var now = DateTime.Now;
+            var nowUtc = DateTime.UtcNow;
 
             StatsUpcomingAppointments = await _db.Appointments.AsNoTracking()
-                .Where(a => a.PatientId == patientId && a.Status != AppointmentStatus.Cancelled && a.ScheduledAt >= now)
+                .Where(a => a.PatientId == patientId && a.Status != AppointmentStatus.Cancelled && a.ScheduledAt >= nowUtc)
                 .CountAsync();
 
             StatsMedicalRecords = await _db.MedicalRecords.AsNoTracking()
