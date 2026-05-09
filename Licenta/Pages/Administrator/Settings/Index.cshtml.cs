@@ -97,9 +97,8 @@ namespace Licenta.Pages.Administrator.Settings
             }
 
             s.ClinicName = (Input.ClinicName ?? "").Trim();
-            s.MaxUploadMb = Clamp(Input.MaxUploadMb, 1, 200);
-
-            s.PasswordMinLength = Clamp(Input.PasswordMinLength, 4, 128);
+            s.MaxUploadMb = Math.Clamp(Input.MaxUploadMb, 1, 200);
+            s.PasswordMinLength = Math.Clamp(Input.PasswordMinLength, 4, 128);
             s.RequireDigit = Input.RequireDigit;
             s.RequireUppercase = Input.RequireUppercase;
             s.RequireSpecialChar = Input.RequireSpecialChar;
@@ -166,8 +165,5 @@ namespace Licenta.Pages.Administrator.Settings
             if (s != null)
                 Input.LogoPath = s.LogoPath;
         }
-
-        private static int Clamp(int v, int min, int max)
-            => v < min ? min : (v > max ? max : v);
     }
 }
