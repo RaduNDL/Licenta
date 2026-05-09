@@ -3,8 +3,8 @@ using Licenta.Data;
 using Licenta.Models;
 using Licenta.Services.Ml;
 using Licenta.Services.Ml.Dtos;
+using Licenta.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -24,7 +24,7 @@ namespace Licenta.Pages.Doctor.Predictions
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IMlImagingClient _ml;
-        private readonly IWebHostEnvironment _env;
+        private readonly IAttachmentStorage _storage;
         private readonly MlServiceOptions _mlOpt;
 
         private static readonly JsonSerializerOptions JsonOpts = new JsonSerializerOptions { WriteIndented = true };
@@ -33,13 +33,13 @@ namespace Licenta.Pages.Doctor.Predictions
             AppDbContext db,
             UserManager<ApplicationUser> userManager,
             IMlImagingClient ml,
-            IWebHostEnvironment env,
+            IAttachmentStorage storage,
             IOptions<MlServiceOptions> mlOpt)
         {
             _db = db;
             _userManager = userManager;
             _ml = ml;
-            _env = env;
+            _storage = storage;
             _mlOpt = mlOpt.Value;
         }
 
@@ -92,10 +92,7 @@ namespace Licenta.Pages.Doctor.Predictions
                 return Page();
             }
 
-            var relPath = (att.FilePath ?? "").TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString());
-            var physicalPath = Path.Combine(_env.WebRootPath, relPath);
-
-            if (!System.IO.File.Exists(physicalPath))
+            if (string.IsNullOrWhiteSpace(att.FilePath) || !_storage.Exists(att.FilePath))
             {
                 ErrorMessage = "Attachment file is missing on disk.";
                 return Page();
@@ -108,7 +105,7 @@ namespace Licenta.Pages.Doctor.Predictions
             var requireQuality = false;
 
             ImagingPredictResponse result;
-            await using (var fs = System.IO.File.OpenRead(physicalPath))
+            await using (var fs = _storage.OpenRead(att.FilePath))
             {
                 result = await _ml.PredictImagingAsync(
                     fs,
@@ -138,7 +135,6 @@ namespace Licenta.Pages.Doctor.Predictions
             }, JsonOpts);
 
             var outputJson = JsonSerializer.Serialize(result, JsonOpts);
-
             var safeLabel = string.IsNullOrWhiteSpace(result.Label) ? "UNKNOWN" : result.Label;
 
             var pred = new Prediction
@@ -153,8 +149,6 @@ namespace Licenta.Pages.Doctor.Predictions
                 Probability = (float?)result.EffectiveProbabilitySafe,
                 InputDataJson = inputJson,
                 OutputDataJson = outputJson,
-
-                
                 Status = PredictionStatus.Accepted,
                 ValidatedAtUtc = DateTime.UtcNow
             };

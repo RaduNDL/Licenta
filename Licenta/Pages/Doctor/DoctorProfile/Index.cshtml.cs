@@ -83,9 +83,7 @@ namespace Licenta.Pages.Doctor.DoctorProfile
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
-            {
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
-            }
 
             var doctor = await EnsureDoctorProfileAsync(user.Id);
 
@@ -117,9 +115,7 @@ namespace Licenta.Pages.Doctor.DoctorProfile
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
-            {
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
-            }
 
             var doctor = await EnsureDoctorProfileAsync(user.Id);
 
@@ -138,37 +134,18 @@ namespace Licenta.Pages.Doctor.DoctorProfile
             if (!updateUserResult.Succeeded)
             {
                 foreach (var error in updateUserResult.Errors)
-                {
                     ModelState.AddModelError(string.Empty, error.Description);
-                }
 
                 await HydrateHeaderAsync(user.Id, doctor.Id);
                 return Page();
             }
 
-            doctor.Specialty = string.IsNullOrWhiteSpace(Input.Specialty)
-                ? null
-                : Input.Specialty.Trim();
-
-            doctor.LicenseNumber = string.IsNullOrWhiteSpace(Input.LicenseNumber)
-                ? null
-                : Input.LicenseNumber.Trim();
-
-            doctor.Languages = string.IsNullOrWhiteSpace(Input.Languages)
-                ? null
-                : Input.Languages.Trim();
-
-            doctor.Bio = string.IsNullOrWhiteSpace(Input.Bio)
-                ? null
-                : Input.Bio.Trim();
-
-            doctor.OfficeAddress = string.IsNullOrWhiteSpace(Input.OfficeAddress)
-                ? null
-                : Input.OfficeAddress.Trim();
-
-            doctor.City = string.IsNullOrWhiteSpace(Input.City)
-                ? null
-                : Input.City.Trim();
+            doctor.Specialty = string.IsNullOrWhiteSpace(Input.Specialty) ? null : Input.Specialty.Trim();
+            doctor.LicenseNumber = string.IsNullOrWhiteSpace(Input.LicenseNumber) ? null : Input.LicenseNumber.Trim();
+            doctor.Languages = string.IsNullOrWhiteSpace(Input.Languages) ? null : Input.Languages.Trim();
+            doctor.Bio = string.IsNullOrWhiteSpace(Input.Bio) ? null : Input.Bio.Trim();
+            doctor.OfficeAddress = string.IsNullOrWhiteSpace(Input.OfficeAddress) ? null : Input.OfficeAddress.Trim();
+            doctor.City = string.IsNullOrWhiteSpace(Input.City) ? null : Input.City.Trim();
 
             await _db.SaveChangesAsync();
 
@@ -180,9 +157,7 @@ namespace Licenta.Pages.Doctor.DoctorProfile
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
-            {
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
-            }
 
             var doctor = await EnsureDoctorProfileAsync(user.Id);
 
@@ -200,13 +175,13 @@ namespace Licenta.Pages.Doctor.DoctorProfile
 
             var allowedExtensions = new[] { ".png", ".jpg", ".jpeg", ".webp" };
             var extension = Path.GetExtension(PhotoFile.FileName).ToLowerInvariant();
-
             if (!allowedExtensions.Contains(extension))
             {
                 TempData["ErrorMessage"] = "Invalid file format. Please use PNG, JPG, JPEG, or WEBP.";
                 return RedirectToPage();
             }
 
+            
             var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "doctors");
             Directory.CreateDirectory(uploadsFolder);
 
@@ -219,9 +194,7 @@ namespace Licenta.Pages.Doctor.DoctorProfile
             }
 
             if (!string.IsNullOrWhiteSpace(doctor.ProfileImagePath))
-            {
                 TryDeleteOldPhoto(doctor.ProfileImagePath);
-            }
 
             doctor.ProfileImagePath = "/uploads/doctors/" + fileName;
             await _db.SaveChangesAsync();
@@ -234,9 +207,7 @@ namespace Licenta.Pages.Doctor.DoctorProfile
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
-            {
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
-            }
 
             var doctor = await EnsureDoctorProfileAsync(user.Id);
 
@@ -255,28 +226,22 @@ namespace Licenta.Pages.Doctor.DoctorProfile
         {
             var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
             if (doctor != null)
-            {
                 return doctor;
-            }
 
-            var createdDoctor = new DoctorProfileEntity
+            var created = new DoctorProfileEntity
             {
                 Id = Guid.NewGuid(),
                 UserId = userId
             };
 
-            _db.Doctors.Add(createdDoctor);
+            _db.Doctors.Add(created);
             await _db.SaveChangesAsync();
-
-            return createdDoctor;
+            return created;
         }
 
         private async Task HydrateHeaderAsync(string userId, Guid doctorId)
         {
-            var user = await _db.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == userId);
-
+            var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId);
             if (user != null)
             {
                 Email = user.Email ?? user.UserName ?? string.Empty;
@@ -284,43 +249,33 @@ namespace Licenta.Pages.Doctor.DoctorProfile
                 DisplayName = user.FullName ?? user.Email ?? "Doctor";
             }
 
-            var doctor = await _db.Doctors
-                .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.Id == doctorId);
-
+            var doctor = await _db.Doctors.AsNoTracking().FirstOrDefaultAsync(d => d.Id == doctorId);
             if (doctor != null)
             {
                 ProfileImageUrl = doctor.ProfileImagePath;
-                DisplaySubtitle = string.IsNullOrWhiteSpace(doctor.Specialty)
-                    ? "Doctor"
-                    : doctor.Specialty;
-
+                DisplaySubtitle = string.IsNullOrWhiteSpace(doctor.Specialty) ? "Doctor" : doctor.Specialty;
                 await LoadStatsAsync(userId, doctorId);
             }
         }
 
         private async Task LoadStatsAsync(string userId, Guid doctorId)
         {
-            StatsAppointments = await _db.Appointments
-                .AsNoTracking()
+            StatsAppointments = await _db.Appointments.AsNoTracking()
                 .Where(a => a.DoctorId == doctorId && a.Status != AppointmentStatus.Cancelled)
                 .CountAsync();
 
-            StatsPatients = await _db.Patients
-                .AsNoTracking()
+            StatsPatients = await _db.Patients.AsNoTracking()
                 .Where(p => p.User != null && (p.User.ClinicId ?? string.Empty) == (ClinicId ?? string.Empty))
                 .CountAsync();
 
-            StatsPendingAttachments = await _db.MedicalAttachments
-                .AsNoTracking()
+            StatsPendingAttachments = await _db.MedicalAttachments.AsNoTracking()
                 .Where(a =>
                     a.DoctorId == doctorId &&
                     a.Status == AttachmentStatus.Pending &&
                     a.Type != "AppointmentRequest")
                 .CountAsync();
 
-            StatsUnreadMessages = await _db.InternalMessages
-                .AsNoTracking()
+            StatsUnreadMessages = await _db.InternalMessages.AsNoTracking()
                 .Where(m => m.RecipientId == userId && !m.IsRead)
                 .CountAsync();
         }
@@ -330,22 +285,15 @@ namespace Licenta.Pages.Doctor.DoctorProfile
             try
             {
                 if (!webPath.StartsWith("/uploads/doctors/", StringComparison.OrdinalIgnoreCase))
-                {
                     return;
-                }
 
                 var relativePath = webPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
                 var absolutePath = Path.Combine(_env.WebRootPath, relativePath);
 
                 if (System.IO.File.Exists(absolutePath))
-                {
                     System.IO.File.Delete(absolutePath);
-                }
             }
-            catch
-            {
-                
-            }
+            catch { }
         }
     }
 }

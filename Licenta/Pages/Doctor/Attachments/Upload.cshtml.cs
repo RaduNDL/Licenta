@@ -5,8 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
+using Licenta.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -28,13 +28,13 @@ namespace Licenta.Pages.Doctor.Attachments
 
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IWebHostEnvironment _env;
+        private readonly IAttachmentStorage _storage;
 
-        public UploadModel(AppDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
+        public UploadModel(AppDbContext db, UserManager<ApplicationUser> userManager, IAttachmentStorage storage)
         {
             _db = db;
             _userManager = userManager;
-            _env = env;
+            _storage = storage;
         }
 
         public class InputModel
@@ -120,24 +120,13 @@ namespace Licenta.Pages.Doctor.Attachments
                     return Forbid();
             }
 
-            var uploadsRoot = Path.Combine(
-                _env.ContentRootPath,
-                "Files",
-                "uploads",
-                "doctor",
-                doctor.Id.ToString());
-
-            Directory.CreateDirectory(uploadsRoot);
+            string storedPath;
+            await using (var stream = ModelInput.File.OpenReadStream())
+            {
+                storedPath = await _storage.SaveAsync(stream, ModelInput.File.FileName, HttpContext.RequestAborted);
+            }
 
             var originalName = Path.GetFileName(ModelInput.File.FileName);
-            var sanitized = SanitizeFileName(originalName, fallbackExt: ext);
-            var fileName = $"{Guid.NewGuid():N}_{sanitized}";
-            var absolutePath = Path.Combine(uploadsRoot, fileName);
-
-            await using (var stream = System.IO.File.Create(absolutePath))
-            {
-                await ModelInput.File.CopyToAsync(stream);
-            }
 
             var attachment = new MedicalAttachment
             {
@@ -145,7 +134,7 @@ namespace Licenta.Pages.Doctor.Attachments
                 PatientId = ModelInput.PatientId,
                 DoctorId = doctor.Id,
                 FileName = originalName,
-                FilePath = absolutePath,
+                FilePath = storedPath,       
                 Type = string.IsNullOrWhiteSpace(ModelInput.Type) ? "Medical Document" : ModelInput.Type.Trim(),
                 UploadedAt = DateTime.UtcNow,
                 ContentType = ModelInput.File.ContentType,
@@ -181,21 +170,6 @@ namespace Licenta.Pages.Doctor.Attachments
 
             if (selectedId.HasValue)
                 ModelInput.PatientId = selectedId.Value;
-        }
-
-        private static string SanitizeFileName(string name, string fallbackExt)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                return "file" + fallbackExt;
-
-            var cleaned = new string(name
-                .Where(c => char.IsLetterOrDigit(c) || c == '.' || c == '_' || c == '-')
-                .ToArray());
-
-            if (string.IsNullOrWhiteSpace(cleaned) || cleaned.StartsWith('.'))
-                cleaned = "file" + (string.IsNullOrEmpty(Path.GetExtension(cleaned)) ? fallbackExt : "");
-
-            return cleaned.Length > 80 ? cleaned[^80..] : cleaned;
         }
     }
 }

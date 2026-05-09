@@ -1,13 +1,14 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Licenta.Services;
+using Licenta.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -20,18 +21,18 @@ namespace Licenta.Pages.Patient.Form
     {
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IWebHostEnvironment _env;
+        private readonly IAttachmentStorage _storage;
         private readonly INotificationService _notifier;
 
         public PreConsultationModel(
             AppDbContext db,
             UserManager<ApplicationUser> userManager,
-            IWebHostEnvironment env,
+            IAttachmentStorage storage,
             INotificationService notifier)
         {
             _db = db;
             _userManager = userManager;
-            _env = env;
+            _storage = storage;
             _notifier = notifier;
         }
 
@@ -88,19 +89,13 @@ namespace Licenta.Pages.Patient.Form
                 Notes = Input.Notes
             });
 
-            var folder = Path.Combine(
-                _env.ContentRootPath,
-                "Files",
-                "uploads",
-                "patient",
-                patient.Id.ToString(),
-                "forms");
-
-            Directory.CreateDirectory(folder);
-
             var safeName = $"preconsult_{DateTime.UtcNow:yyyyMMdd_HHmmssfff}_{Guid.NewGuid():N}.json";
-            var fullPath = Path.Combine(folder, safeName);
-            await System.IO.File.WriteAllTextAsync(fullPath, payload);
+
+            string storedPath;
+            await using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(payload)))
+            {
+                storedPath = await _storage.SaveAsync(ms, safeName, HttpContext.RequestAborted);
+            }
 
             var att = new MedicalAttachment
             {
@@ -108,7 +103,7 @@ namespace Licenta.Pages.Patient.Form
                 PatientId = patient.Id,
                 DoctorId = user.AssignedDoctorId,
                 FileName = safeName,
-                FilePath = fullPath,
+                FilePath = storedPath,       
                 ContentType = "application/json",
                 Type = "PreConsultationForm",
                 UploadedAt = DateTime.UtcNow,
