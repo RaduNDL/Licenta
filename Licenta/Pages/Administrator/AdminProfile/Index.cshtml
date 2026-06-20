@@ -8,8 +8,7 @@
     <link rel="stylesheet" href="~/css/AdminProfile.css" asp-append-version="true" />
 }
 
-<div class="container py-4" style="max-width: 900px;">
-
+<div class="container py-4" style="max-width: 1100px;">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
             <h3 class="mb-0 fw-bold">Administrator Profile</h3>
@@ -34,11 +33,7 @@
     }
 
     <div class="row g-4">
-
-        <!-- Coloana stanga: card profil + upload poza -->
-        <div class="col-lg-4">
-
-            <!-- Card identitate -->
+        <div class="col-lg-5">
             <div class="card profile-card mb-4">
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3 mb-3">
@@ -57,9 +52,9 @@
                                 <i class="bi bi-camera-fill"></i>
                             </label>
                         </div>
-                        <div>
+                        <div class="profile-info-wrap">
                             <div class="fw-bold fs-6">@Model.FullName</div>
-                            <div class="text-muted small">@Model.Email</div>
+                            <div class="text-muted small" title="@Model.Email">@Model.Email</div>
                             <span class="badge bg-danger-subtle text-danger mt-1">Administrator</span>
                         </div>
                     </div>
@@ -73,7 +68,6 @@
                 </div>
             </div>
 
-            <!-- Card upload poza -->
             <div class="card profile-card">
                 <div class="card-body">
                     <h6 class="fw-bold mb-3"><i class="bi bi-camera me-2 text-danger"></i>Profile Photo</h6>
@@ -82,24 +76,21 @@
                         @Html.AntiForgeryToken()
 
                         <div class="photo-upload-zone" id="uploadZone">
-                            <input type="file" id="photoFileInput" name="PhotoFile"
-                                   accept=".png,.jpg,.jpeg,.webp" />
+                            <input type="file" id="photoFileInput" name="PhotoFile" accept=".png,.jpg,.jpeg,.webp" />
                             <i class="bi bi-cloud-upload text-muted fs-3 d-block mb-2"></i>
                             <div class="small text-muted">Click or drag to upload</div>
                             <div class="text-muted" style="font-size:.75rem;">PNG, JPG, WEBP · max 2 MB</div>
                             <img id="photoPreview" class="photo-preview" src="" alt="Preview" />
                         </div>
 
-                        <button type="submit" class="btn btn-danger w-100 mt-3 btn-sm"
-                                id="uploadBtn" style="display:none;">
+                        <button type="submit" class="btn btn-danger w-100 mt-3 btn-sm" id="uploadBtn" style="display:none;">
                             <i class="bi bi-upload me-1"></i> Save Photo
                         </button>
                     </form>
 
                     @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
                     {
-                        <form method="post" asp-page-handler="RemovePhoto" class="mt-2"
-                              onsubmit="return confirm('Remove profile photo?')">
+                        <form method="post" asp-page-handler="RemovePhoto" class="mt-2" onsubmit="return confirm('Remove profile photo?')">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-outline-secondary w-100 btn-sm">
                                 <i class="bi bi-trash3 me-1"></i> Remove Photo
@@ -110,35 +101,35 @@
             </div>
         </div>
 
-        <!-- Coloana dreapta: date cont -->
-        <div class="col-lg-8">
+        <div class="col-lg-7">
             <div class="card profile-card">
                 <div class="card-body p-4 profile-form">
                     <h5 class="fw-bold mb-4"><i class="bi bi-person-gear me-2 text-danger"></i>Account Details</h5>
 
-                    <form method="post">
+                    <form method="post" asp-page-handler="SaveProfile">
                         @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>
 
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label asp-for="Input.FullName" class="form-label"></label>
                                 <input asp-for="Input.FullName" class="form-control" />
                                 <span asp-validation-for="Input.FullName" class="text-danger small"></span>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label asp-for="Input.PhoneNumber" class="form-label"></label>
                                 <input asp-for="Input.PhoneNumber" class="form-control" />
                                 <span asp-validation-for="Input.PhoneNumber" class="text-danger small"></span>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label class="form-label">Email</label>
                                 <input class="form-control" value="@Model.Email" disabled />
                                 <div class="form-text">Email cannot be changed here.</div>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label class="form-label">Username</label>
                                 <input class="form-control" value="@Model.UserName" disabled />
                             </div>

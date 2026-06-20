@@ -69,12 +69,27 @@
         {
             fullName = currentUser.FullName ?? currentUser.UserName ?? "User";
 
-            if (User.IsInRole("Doctor"))
+            if (User.IsInRole("Administrator"))
             {
-                avatarUrl = await Db.Doctors.AsNoTracking()
+                avatarUrl = NormalizeWebPath(currentUser.ProfileImagePath);
+            }
+            else if (User.IsInRole("Doctor"))
+            {
+                var docPath = await Db.Doctors.AsNoTracking()
                     .Where(d => d.UserId == currentUser.Id)
                     .Select(d => d.ProfileImagePath)
                     .FirstOrDefaultAsync();
+
+                avatarUrl = NormalizeWebPath(docPath);
+            }
+            else if (User.IsInRole("Assistant"))
+            {
+                var asstPath = await Db.Assistants.AsNoTracking()
+                    .Where(a => a.UserId == currentUser.Id)
+                    .Select(a => a.ProfileImagePath)
+                    .FirstOrDefaultAsync();
+
+                avatarUrl = NormalizeWebPath(asstPath);
             }
             else if (User.IsInRole("Patient"))
             {
@@ -83,11 +98,24 @@
                     .Select(p => p.Id)
                     .FirstOrDefaultAsync();
 
-                avatarUrl = await Db.MedicalAttachments.AsNoTracking()
-                    .Where(a => a.PatientId == patientId && a.Type == "ProfilePhoto")
-                    .OrderByDescending(a => a.UploadedAt)
-                    .Select(a => a.FilePath)
-                    .FirstOrDefaultAsync();
+                if (patientId != Guid.Empty)
+                {
+                    var att = await Db.MedicalAttachments.AsNoTracking()
+                        .Where(a => a.PatientId == patientId && a.Type == "ProfilePhoto")
+                        .OrderByDescending(a => a.UploadedAt)
+                        .Select(a => new { a.Id, a.FilePath })
+                        .FirstOrDefaultAsync();
+
+                    if (att != null)
+                    {
+                        var fp = (att.FilePath ?? "").Trim().Replace("\\", "/");
+                        if (!fp.StartsWith("/")) fp = "/" + fp;
+
+                        avatarUrl = fp.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase)
+                            ? fp
+                            : $"/Files/Attachment?id={att.Id}";
+                    }
+                }
             }
 
             var sinceUtc = DateTime.UtcNow.AddDays(-30);
@@ -104,6 +132,14 @@
     }
 
     var initial = string.IsNullOrWhiteSpace(fullName) ? "U" : fullName.Substring(0, 1).ToUpper();
+
+    string? NormalizeWebPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return null;
+        var p = path.Trim().Replace("\\", "/");
+        if (!p.StartsWith("/")) p = "/" + p;
+        return p;
+    }
 }
 
 <!DOCTYPE html>
@@ -379,28 +415,28 @@
                                     <span class="profile-name">@fullName</span>
                                     <span class="profile-role">@roleLabel</span>
                                 </div>
-                                <div class="avatar-sm">
+                                <div class="avatar-sm" style="width: 40px; height: 40px; min-width: 40px;">
                                     @if (!string.IsNullOrWhiteSpace(avatarUrl))
                                     {
-                                        <img src="@avatarUrl" alt="Avatar" />
+                                        <img src="@avatarUrl" alt="Avatar" style="width:100%; height:100%; object-fit:cover; border-radius:50%; display: block;" />
                                     }
                                     else
                                     {
-                                        <span>@initial</span>
+                                        <span style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; border-radius: 50%; background-color: #e5e7eb; color: #374151; font-weight: 600;">@initial</span>
                                     }
                                 </div>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end profile-menu">
                                 <li>
                                     <div class="profile-menu-head">
-                                        <div class="avatar-md">
+                                        <div class="avatar-md" style="width: 50px; height: 50px;">
                                             @if (!string.IsNullOrWhiteSpace(avatarUrl))
                                             {
-                                                <img src="@avatarUrl" alt="Avatar" />
+                                                <img src="@avatarUrl" alt="Avatar" style="width:100%; height:100%; object-fit:cover; border-radius:50%; display: block;" />
                                             }
                                             else
                                             {
-                                                <span>@initial</span>
+                                                <span style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; border-radius: 50%; background-color: #e5e7eb; color: #374151; font-weight: 600;">@initial</span>
                                             }
                                         </div>
                                         <div class="profile-menu-info">

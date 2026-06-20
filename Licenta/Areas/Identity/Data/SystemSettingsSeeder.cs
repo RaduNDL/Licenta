@@ -12,7 +12,7 @@ namespace Licenta.Areas.Identity.Data
             {
                 db.SystemSettings.Add(new SystemSetting
                 {
-                    ClinicName = "LicentaMed Clinic",
+                    ClinicName = "ClinIQ",
                     MaxUploadMb = 20,
                     PasswordMinLength = 6,
                     RequireDigit = true,

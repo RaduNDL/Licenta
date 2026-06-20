@@ -1,10 +1,4 @@
-﻿/* ═══════════════════════════════════════════════
-   AdminProfile.css
-   E:\Facultate\Licenta\Licenta\Licenta\wwwroot\css\AdminProfile.css
-   ═══════════════════════════════════════════════ */
-
-/* ── Avatar wrap ── */
-.profile-avatar-wrap {
+﻿.profile-avatar-wrap {
     position: relative;
     width: 96px;
     height: 96px;
@@ -31,7 +25,6 @@
         font-weight: 700;
     }
 
-/* ── Camera button peste avatar ── */
 .avatar-edit-btn {
     position: absolute;
     bottom: 2px;
@@ -55,7 +48,6 @@
         background: #b02a37;
     }
 
-/* ── Upload zone ── */
 .photo-upload-zone {
     border: 2px dashed #dee2e6;
     border-radius: 12px;
@@ -76,7 +68,6 @@
         display: none;
     }
 
-/* ── Preview ── */
 .photo-preview {
     display: none;
     max-width: 120px;
@@ -87,7 +78,6 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* ── Card overrides ── */
 .profile-card {
     border: none;
     border-radius: 16px;
@@ -98,7 +88,6 @@
         padding: 1.5rem;
     }
 
-/* ── Form labels ── */
 .profile-form .form-label {
     font-weight: 600;
     font-size: 0.85rem;
@@ -117,14 +106,12 @@
     color: #6b7280;
 }
 
-/* ── Section divider ── */
 .profile-section-divider {
     border: none;
     border-top: 1px solid #f0f0f0;
     margin: 1.5rem 0;
 }
 
-/* ── Status alerts ── */
 .profile-alert {
     border: none;
     border-radius: 10px;
@@ -160,3 +147,15 @@
     color: #991b1b;
     border-left: 3px solid #f87171;
 }
+
+.profile-info-wrap {
+    min-width: 0;
+    flex: 1;
+}
+
+    .profile-info-wrap .fw-bold,
+    .profile-info-wrap .text-muted {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }

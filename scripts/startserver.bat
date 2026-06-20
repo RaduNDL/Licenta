@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
-title LicentaMed - Backend + Python + Cloudflare Quick Tunnel
+title ClinIQ - Backend + Python + Cloudflare Quick Tunnel
 color 0B
 
 rem =========================================================
-rem CONFIG — modifica doar aici daca se schimba ceva
+rem CONFIG
 rem =========================================================
 set "APP_DIR=E:\Facultate\Licenta\Licenta\Licenta"
 set "PY_DIR=E:\Facultate\Licenta\Licenta\Python"
@@ -19,7 +19,7 @@ set "ML_HOST=127.0.0.1"
 set "ML_PORT=8001"
 set "ML_URL=http://%ML_HOST%:%ML_PORT%"
 
-set "CONFIGURATION=Debug"
+set "CONFIGURATION=Release"
 set "FRAMEWORK=net9.0"
 set "APP_DLL=%APP_DIR%\bin\%CONFIGURATION%\%FRAMEWORK%\Licenta.dll"
 
@@ -52,19 +52,16 @@ if not exist "%APP_DIR%\Licenta.csproj" (
     echo   %APP_DIR%
     goto :fail
 )
-
 if not exist "%PY_EXE%" (
     echo ERROR: Cannot find Python executable at:
     echo   %PY_EXE%
     goto :fail
 )
-
 if not exist "%PY_DIR%\src\run_server.py" (
     echo ERROR: Cannot find run_server.py at:
     echo   %PY_DIR%\src\run_server.py
     goto :fail
 )
-
 if "%UNBLOCK_BEFORE_BUILD%"=="1" (
     if not exist "%UNBLOCK_SCRIPT%" (
         echo ERROR: Cannot find unblock script at:
@@ -74,23 +71,12 @@ if "%UNBLOCK_BEFORE_BUILD%"=="1" (
 )
 
 where dotnet >nul 2>&1
-if errorlevel 1 (
-    echo ERROR: dotnet is not available in PATH.
-    goto :fail
-)
-
+if errorlevel 1 ( echo ERROR: dotnet not in PATH. & goto :fail )
 where powershell >nul 2>&1
-if errorlevel 1 (
-    echo ERROR: powershell is not available in PATH.
-    goto :fail
-)
-
+if errorlevel 1 ( echo ERROR: powershell not in PATH. & goto :fail )
 if "%START_CLOUDFLARE%"=="1" (
     where cloudflared >nul 2>&1
-    if errorlevel 1 (
-        echo ERROR: cloudflared is not available in PATH.
-        goto :fail
-    )
+    if errorlevel 1 ( echo ERROR: cloudflared not in PATH. & goto :fail )
 )
 
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%" >nul 2>&1
@@ -112,7 +98,7 @@ taskkill /F /IM cloudflared.exe >nul 2>&1
 timeout /t 2 /nobreak >nul
 
 rem =========================================================
-rem PREGATIRE CLOUDFLARE QUICK TUNNEL
+rem CLOUDFLARE CONFIG BACKUP
 rem =========================================================
 echo [3/10] Preparing Cloudflare Quick Tunnel...
 if "%START_CLOUDFLARE%"=="1" (
@@ -136,7 +122,6 @@ set "ASPNETCORE_URLS=%APP_URL%"
 set "ASPNETCORE_FORWARDEDHEADERS_ENABLED=true"
 set "PYTHONUNBUFFERED=1"
 set "ML_LOG_LEVEL=info"
-
 set "MlServiceOptions__BaseUrl=%ML_URL%"
 set "MlServiceOptions__AutoStartPythonServer=false"
 set "MlServiceOptions__PythonExecutablePath=%PY_EXE%"
@@ -145,7 +130,7 @@ set "MlServiceOptions__PythonScriptPath=src\run_server.py"
 set "MlServiceOptions__TimeoutSeconds=120"
 
 rem =========================================================
-rem UNBLOCK FISIERE SURSA
+rem UNBLOCK
 rem =========================================================
 if "%UNBLOCK_BEFORE_BUILD%"=="1" (
     echo [5/10] Unblocking trusted project files...
@@ -153,7 +138,7 @@ if "%UNBLOCK_BEFORE_BUILD%"=="1" (
 )
 
 rem =========================================================
-rem CURATA BIN/OBJ
+rem CLEAN
 rem =========================================================
 echo [6/10] Cleaning old build artifacts...
 if "%CLEAN_BEFORE_BUILD%"=="1" (
@@ -162,7 +147,7 @@ if "%CLEAN_BEFORE_BUILD%"=="1" (
 )
 
 rem =========================================================
-rem BUILD BACKEND
+rem BUILD
 rem =========================================================
 echo [7/10] Building backend...
 cd /d "%APP_DIR%"
@@ -172,7 +157,6 @@ if errorlevel 1 (
     call :tail "%APP_LOG%" 40
     goto :fail
 )
-
 if not exist "%APP_DLL%" (
     echo ERROR: Cannot find backend DLL after build:
     echo   %APP_DLL%
@@ -180,21 +164,15 @@ if not exist "%APP_DLL%" (
     goto :fail
 )
 
+rem Unblock DLL-ul proaspat compilat
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "try { Unblock-File -Path '%APP_DLL%'; Remove-Item -LiteralPath '%APP_DLL%:Zone.Identifier' -Force -ErrorAction SilentlyContinue } catch {}" >> "%DIAG_LOG%" 2>&1
-
-call :check_motw "%APP_DLL%"
-if errorlevel 1 (
-    echo ERROR: Backend DLL is still blocked by Windows ^(Zone.Identifier^).
-    echo Check: %DIAG_LOG%
-    goto :fail
-)
+    "Get-ChildItem -Path '%APP_DIR%\bin' -Recurse -Force -File | ForEach-Object { try { Unblock-File -Path $_.FullName } catch {}; try { Remove-Item -LiteralPath ($_.FullName + ':Zone.Identifier') -Force -ErrorAction SilentlyContinue } catch {} }" >> "%DIAG_LOG%" 2>&1
 
 rem =========================================================
-rem PORNESTE SERVER PYTHON ML
+rem PYTHON ML
 rem =========================================================
 echo [8/10] Starting Python ML server...
-start "Licenta-ML" /B cmd /C "cd /d ""%PY_DIR%"" && ""%PY_EXE%"" ""src\run_server.py"" >> ""%ML_LOG%"" 2>&1"
+start "ClinIQ-ML" /B cmd /C "cd /d ""%PY_DIR%"" && ""%PY_EXE%"" ""src\run_server.py"" >> ""%ML_LOG%"" 2>&1"
 
 call :wait_http "%ML_URL%/api/status" 60 "ML server"
 if errorlevel 1 (
@@ -205,10 +183,10 @@ if errorlevel 1 (
 echo   ML server OK.
 
 rem =========================================================
-rem PORNESTE BACKEND .NET
+rem BACKEND .NET
 rem =========================================================
-echo [9/10] Starting Licenta backend...
-start "Licenta-Backend" /B cmd /C "cd /d ""%APP_DIR%"" && dotnet exec ""%APP_DLL%"" >> ""%APP_LOG%"" 2>&1"
+echo [9/10] Starting ClinIQ backend...
+start "ClinIQ-Backend" /B cmd /C "cd /d ""%APP_DIR%"" && dotnet exec ""%APP_DLL%"" >> ""%APP_LOG%"" 2>&1"
 
 call :wait_http "%APP_URL%/" 60 "Backend"
 if errorlevel 1 (
@@ -219,17 +197,15 @@ if errorlevel 1 (
 echo   Backend OK.
 
 rem =========================================================
-rem PORNESTE CLOUDFLARE TUNNEL
+rem CLOUDFLARE
 rem =========================================================
 if "%START_CLOUDFLARE%"=="1" (
     echo [10/10] Starting Cloudflare Quick Tunnel...
     del /f /q "%CF_LOG%" >nul 2>&1
-    start "Licenta-Cloudflare" /MIN cmd /C "cloudflared tunnel --url ""%APP_URL%"" --no-autoupdate > ""%CF_LOG%"" 2>&1"
-
+    start "ClinIQ-Cloudflare" /MIN cmd /C "cloudflared tunnel --url ""%APP_URL%"" --no-autoupdate > ""%CF_LOG%"" 2>&1"
     call :wait_trycloudflare "%CF_LOG%" 120
     if errorlevel 1 (
         echo WARNING: Tunnel started but public URL could not be extracted.
-        echo   Check: %CF_LOG%
         call :tail "%CF_LOG%" 20
     )
 ) else (
@@ -241,7 +217,7 @@ rem GATA
 rem =========================================================
 echo.
 echo ============================================================
-echo  TOTUL RULEAZA
+echo  CLINIQ - TOTUL RULEAZA
 echo ============================================================
 echo.
 echo   Local app   : %APP_URL%
@@ -256,8 +232,6 @@ if defined PUBLIC_URL (
     echo.
     echo   Public URL  : !PUBLIC_URL!
     echo.
-    echo   Trimite acest link oamenilor cu care vrei sa testezi.
-    echo   Fiecare browser are sesiune separata.
 ) else (
     echo   Public URL  : ^<vezi cloudflare.log^>
 )
@@ -272,7 +246,7 @@ if /I "%STOP_CMD%"=="Q" goto :shutdown
 goto :stop_prompt
 
 rem =========================================================
-rem SUBROUTINE: kill_port
+rem SUBROUTINES
 rem =========================================================
 :kill_port
 for /f "tokens=5" %%P in ('netstat -aon ^| findstr /R /C:":%~1 .*LISTENING"') do (
@@ -280,15 +254,11 @@ for /f "tokens=5" %%P in ('netstat -aon ^| findstr /R /C:":%~1 .*LISTENING"') do
 )
 exit /b 0
 
-rem =========================================================
-rem SUBROUTINE: wait_http
-rem =========================================================
 :wait_http
 set "WAIT_URL=%~1"
 set "WAIT_TRIES=%~2"
 set "WAIT_NAME=%~3"
 set "READY="
-
 for /L %%I in (1,1,%WAIT_TRIES%) do (
     powershell -NoProfile -ExecutionPolicy Bypass -Command ^
         "try { $r = Invoke-WebRequest -UseBasicParsing -Uri '%WAIT_URL%' -TimeoutSec 3; exit 0 } catch { if ($_.Exception.Response -ne $null) { exit 0 } else { exit 1 } }" >nul 2>&1
@@ -298,21 +268,15 @@ for /L %%I in (1,1,%WAIT_TRIES%) do (
     )
     timeout /t 1 /nobreak >nul
 )
-
 :wait_http_done
 if defined READY exit /b 0
 echo ERROR: %WAIT_NAME% is not responding at %WAIT_URL%
 exit /b 1
 
-rem =========================================================
-rem SUBROUTINE: wait_trycloudflare
-rem Foloseste PowerShell regex ca sa extraga doar URL-ul curat
-rem =========================================================
 :wait_trycloudflare
 set "TRY_FILE=%~1"
 set "TRY_SECONDS=%~2"
 set "PUBLIC_URL="
-
 for /L %%I in (1,1,%TRY_SECONDS%) do (
     if exist "%TRY_FILE%" (
         for /f "usebackq delims=" %%U in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$f='%TRY_FILE%'; if (Test-Path $f) { $m = Select-String -Path $f -Pattern 'https://[a-z0-9-]+\.trycloudflare\.com' | Select-Object -First 1; if ($m) { $r = [regex]::Match($m.Line, 'https://[a-z0-9-]+\.trycloudflare\.com'); if ($r.Success) { Write-Output $r.Value } } }"`) do (
@@ -324,9 +288,6 @@ for /L %%I in (1,1,%TRY_SECONDS%) do (
 )
 exit /b 1
 
-rem =========================================================
-rem SUBROUTINE: check_motw
-rem =========================================================
 :check_motw
 set "CHECK_FILE=%~1"
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
@@ -334,9 +295,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 if errorlevel 1 exit /b 1
 exit /b 0
 
-rem =========================================================
-rem SUBROUTINE: tail
-rem =========================================================
 :tail
 set "TAIL_FILE=%~1"
 set "TAIL_LINES=%~2"
@@ -347,9 +305,6 @@ echo ===============================================
 echo.
 exit /b 0
 
-rem =========================================================
-rem SUBROUTINE: restore_cloudflare_config
-rem =========================================================
 :restore_cloudflare_config
 if exist "%CF_CONFIG_YML_BAK%" (
     if exist "%CF_CONFIG_YML%" del /f /q "%CF_CONFIG_YML%" >nul 2>&1
@@ -361,9 +316,6 @@ if exist "%CF_CONFIG_YAML_BAK%" (
 )
 exit /b 0
 
-rem =========================================================
-rem SHUTDOWN
-rem =========================================================
 :shutdown
 echo.
 echo Stopping all processes...
@@ -375,9 +327,6 @@ echo Done. La revedere!
 endlocal
 exit /b 0
 
-rem =========================================================
-rem FAIL
-rem =========================================================
 :fail
 echo.
 echo Startup failed. Logs:

@@ -52,8 +52,6 @@ namespace Licenta.Pages.Administrator.AdminProfile
             public string? PhoneNumber { get; set; }
         }
 
-        // ── OnGet ──────────────────────────────────────────────────────
-
         public async Task<IActionResult> OnGetAsync()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -63,9 +61,7 @@ namespace Licenta.Pages.Administrator.AdminProfile
             return Page();
         }
 
-        // ── OnPost (save profile info) ─────────────────────────────────
-
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPostSaveProfileAsync()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
@@ -114,8 +110,6 @@ namespace Licenta.Pages.Administrator.AdminProfile
             return RedirectToPage();
         }
 
-        // ── OnPostUploadPhoto ──────────────────────────────────────────
-
         public async Task<IActionResult> OnPostUploadPhotoAsync()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -150,7 +144,6 @@ namespace Licenta.Pages.Administrator.AdminProfile
             using (var stream = new FileStream(fullPath, FileMode.Create))
                 await PhotoFile.CopyToAsync(stream);
 
-            // Sterge poza veche
             if (!string.IsNullOrWhiteSpace(user.ProfileImagePath))
                 TryDeleteOldPhoto(user.ProfileImagePath);
 
@@ -160,8 +153,6 @@ namespace Licenta.Pages.Administrator.AdminProfile
             TempData["StatusMessage"] = "Profile photo updated successfully.";
             return RedirectToPage();
         }
-
-        // ── OnPostRemovePhoto ──────────────────────────────────────────
 
         public async Task<IActionResult> OnPostRemovePhotoAsync()
         {
@@ -178,8 +169,6 @@ namespace Licenta.Pages.Administrator.AdminProfile
             TempData["StatusMessage"] = "Profile photo removed.";
             return RedirectToPage();
         }
-
-        // ── Helpers ────────────────────────────────────────────────────
 
         private async Task LoadAsync(ApplicationUser user)
         {

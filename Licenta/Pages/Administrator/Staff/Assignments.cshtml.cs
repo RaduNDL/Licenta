@@ -6,10 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Licenta.Areas.Admin.Pages.Staff
 {
@@ -49,21 +45,35 @@ namespace Licenta.Areas.Admin.Pages.Staff
 
         public async Task<IActionResult> OnPostAssignAsync(Guid doctorId, string assistantId)
         {
-            if (doctorId == Guid.Empty || string.IsNullOrEmpty(assistantId)) return RedirectToPage();
+            if (doctorId == Guid.Empty || string.IsNullOrWhiteSpace(assistantId))
+                return RedirectToPage();
 
-            var assistant = await _userManager.FindByIdAsync(assistantId);
-            if (assistant != null)
+            var doctorExists = await _db.Doctors.AnyAsync(d => d.Id == doctorId);
+            if (!doctorExists)
             {
-                assistant.AssignedDoctorId = doctorId;
-                await _userManager.UpdateAsync(assistant);
-                TempData["StatusMessage"] = "Assistant assigned successfully.";
+                TempData["StatusMessage"] = "Doctor not found.";
+                return RedirectToPage();
             }
 
+            var assistant = await _userManager.FindByIdAsync(assistantId);
+            if (assistant == null || assistant.IsSoftDeleted || !await _userManager.IsInRoleAsync(assistant, "Assistant"))
+            {
+                TempData["StatusMessage"] = "Assistant not found.";
+                return RedirectToPage();
+            }
+
+            assistant.AssignedDoctorId = doctorId;
+            await _userManager.UpdateAsync(assistant);
+
+            TempData["StatusMessage"] = "Assistant assigned successfully.";
             return RedirectToPage();
         }
 
         public async Task<IActionResult> OnPostRemoveAsync(string assistantId)
         {
+            if (string.IsNullOrWhiteSpace(assistantId))
+                return RedirectToPage();
+
             var assistant = await _userManager.FindByIdAsync(assistantId);
             if (assistant != null)
             {
@@ -78,35 +88,71 @@ namespace Licenta.Areas.Admin.Pages.Staff
         private async Task LoadDataAsync()
         {
             DoctorAssignments = await _db.Doctors
+                .AsNoTracking()
                 .Include(d => d.User)
                 .Include(d => d.Assistants)
                 .Where(d => d.User != null && !d.User.IsSoftDeleted)
                 .Select(d => new DoctorAssignmentVm
                 {
                     DoctorId = d.Id,
-                    DoctorName = d.User.FullName ?? d.User.Email ?? "Unknown",
-                    Specialty = d.Specialty ?? "General",
+                    DoctorName = DisplayName(d.User),
+                    Specialty = string.IsNullOrWhiteSpace(d.Specialty) ? "General" : d.Specialty.Trim(),
                     AssignedAssistants = d.Assistants
                         .Where(a => !a.IsSoftDeleted)
                         .Select(a => new AssistantVm
                         {
                             Id = a.Id,
-                            Name = a.FullName ?? a.Email ?? "Unknown"
-                        }).ToList()
-                }).ToListAsync();
+                            Name = DisplayName(a)
+                        })
+                        .ToList()
+                })
+                .ToListAsync();
 
-            var allAssistants = await _userManager.GetUsersInRoleAsync("Assistant");
+            var assistantRoleId = await _db.Roles
+                .Where(r => r.Name == "Assistant")
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
 
-            var unassignedAssistants = allAssistants
-                .Where(u => !u.IsSoftDeleted && u.AssignedDoctorId == null)
+            var unassignedAssistants = await _db.Users
+                .AsNoTracking()
+                .Where(u =>
+                    !u.IsSoftDeleted &&
+                    u.AssignedDoctorId == null &&
+                    _db.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == assistantRoleId))
+                .OrderBy(u => u.FullName)
+                .ThenBy(u => u.Email)
                 .Select(u => new
                 {
                     Id = u.Id,
-                    Name = u.FullName ?? u.Email ?? "Unknown"
+                    Name = DisplayName(u)
                 })
-                .ToList();
+                .ToListAsync();
 
             AvailableAssistants = new SelectList(unassignedAssistants, "Id", "Name");
+        }
+
+        private static string DisplayName(ApplicationUser? user)
+        {
+            if (user == null)
+                return "Unknown";
+
+            var fullName = (user.FullName ?? string.Empty).Trim();
+
+            if (!string.IsNullOrWhiteSpace(fullName) &&
+                !fullName.Equals("Default Assistant", StringComparison.OrdinalIgnoreCase) &&
+                !fullName.Equals("Default Doctor", StringComparison.OrdinalIgnoreCase) &&
+                !fullName.Equals("Default Patient", StringComparison.OrdinalIgnoreCase))
+            {
+                return fullName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(user.UserName))
+                return user.UserName.Trim();
+
+            if (!string.IsNullOrWhiteSpace(user.Email))
+                return user.Email.Trim();
+
+            return "Unknown";
         }
     }
 }

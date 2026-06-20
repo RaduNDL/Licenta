@@ -81,7 +81,7 @@ namespace Licenta.Pages.Patient.Reviews
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
-            NormalizeInput();
+            NormalizeInputForCreate();
 
             if (!ModelState.IsValid)
             {
@@ -89,6 +89,7 @@ namespace Licenta.Pages.Patient.Reviews
                 return Page();
             }
 
+            // block duplicates (also protected by DB unique indexes)
             if (Input.Target == ReviewTarget.Application)
             {
                 var alreadyAppReview = await _db.Reviews
@@ -151,14 +152,7 @@ namespace Licenta.Pages.Patient.Reviews
                 return RedirectToPage();
             }
 
-            NormalizeInput();
-
-            if (!ModelState.IsValid)
-            {
-                await LoadDataAsync();
-                return Page();
-            }
-
+            // Load the existing review to prevent changing Target/DoctorId via client-side tampering
             var review = await _db.Reviews
                 .FirstOrDefaultAsync(r => r.Id == Input.Id && r.AuthorUserId == user.Id);
 
@@ -167,6 +161,23 @@ namespace Licenta.Pages.Patient.Reviews
                 StatusMessage = "Review not found or you are not allowed to edit it.";
                 StatusType = "danger";
                 return RedirectToPage();
+            }
+
+            // Enforce original target/doctor
+            Input.Target = review.Target;
+            Input.DoctorId = review.DoctorId;
+
+            // Validate only fields user is allowed to edit
+            if (Input.Rating < 1 || Input.Rating > 5)
+                ModelState.AddModelError(nameof(Input) + "." + nameof(Input.Rating), "Please choose a rating between 1 and 5 stars.");
+
+            if (string.IsNullOrWhiteSpace(Input.Comment) || Input.Comment.Trim().Length < 3)
+                ModelState.AddModelError(nameof(Input) + "." + nameof(Input.Comment), "Comment must be between 3 and 2000 characters.");
+
+            if (!ModelState.IsValid)
+            {
+                await LoadDataAsync();
+                return Page();
             }
 
             review.Rating = Input.Rating;
@@ -206,8 +217,9 @@ namespace Licenta.Pages.Patient.Reviews
             return RedirectToPage();
         }
 
-        private void NormalizeInput()
+        private void NormalizeInputForCreate()
         {
+            // doctor selection required only for doctor target
             if (Input.Target == ReviewTarget.Application)
             {
                 Input.DoctorId = null;
@@ -222,6 +234,9 @@ namespace Licenta.Pages.Patient.Reviews
             {
                 ModelState.AddModelError(nameof(Input) + "." + nameof(Input.Rating), "Please choose a rating between 1 and 5 stars.");
             }
+
+            if (Input.Title != null) Input.Title = Input.Title.Trim();
+            if (Input.Comment != null) Input.Comment = Input.Comment.Trim();
         }
 
         private async Task LoadDataAsync()
@@ -250,6 +265,7 @@ namespace Licenta.Pages.Patient.Reviews
                 .ToListAsync();
 
             var doctorStats = DoctorReviews
+                .Where(r => r.DoctorId.HasValue)
                 .GroupBy(r => r.DoctorId!.Value)
                 .ToDictionary(
                     g => g.Key,
@@ -298,7 +314,6 @@ namespace Licenta.Pages.Patient.Reviews
 
                 if (AuthorAvatars.ContainsKey(userId))
                     continue;
-
 
                 var url = (row.FilePath ?? "").StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase)
                     ? row.FilePath

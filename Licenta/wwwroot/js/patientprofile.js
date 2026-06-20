@@ -1,59 +1,98 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
-
+﻿document.addEventListener('DOMContentLoaded', () => {
+ 
     const tabKey = 'medflow_patient_active_tab';
-    const tabs = document.querySelectorAll('button[data-bs-toggle="pill"]');
+    const tabButtons = document.querySelectorAll('button[data-bs-toggle="pill"]');
 
-    const activeTabId = localStorage.getItem(tabKey);
-    if (activeTabId) {
-        const tabTrigger = document.querySelector(`button[data-bs-target="${activeTabId}"]`);
-        if (tabTrigger) {
-            const tab = new bootstrap.Tab(tabTrigger);
-            tab.show();
+    try {
+        const activeTabId = localStorage.getItem(tabKey);
+        if (activeTabId) {
+            const tabTrigger = document.querySelector(`button[data-bs-target="${activeTabId}"]`);
+            if (tabTrigger && window.bootstrap?.Tab) {
+                new bootstrap.Tab(tabTrigger).show();
+            }
         }
+    } catch {
+      
     }
 
-    tabs.forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function (event) {
-            localStorage.setItem(tabKey, event.target.getAttribute('data-bs-target'));
+    tabButtons.forEach(btn => {
+        btn.addEventListener('shown.bs.tab', (event) => {
+            try {
+                const target = event.target?.getAttribute('data-bs-target');
+                if (target) localStorage.setItem(tabKey, target);
+            } catch {
+              
+            }
         });
     });
 
     const fileInput = document.getElementById('fileInput');
     const fileNameDisplay = document.getElementById('fileName');
     const uploadBtn = document.getElementById('uploadBtn');
-    const avatarImg = document.querySelector('.profile-avatar img');
-    const avatarFallback = document.querySelector('.profile-avatar .avatar-fallback');
+
+    const avatarContainer = document.querySelector('.profile-avatar');
+    if (!avatarContainer) return;
+
+    const getOrCreateAvatarImg = () => {
+        let img = avatarContainer.querySelector('img');
+        const fallback = avatarContainer.querySelector('.avatar-fallback');
+
+        if (!img) {
+            img = document.createElement('img');
+            
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.style.display = 'block';
+
+            avatarContainer.appendChild(img);
+        }
+
+        if (fallback) fallback.style.display = 'none';
+        return img;
+    };
+
+    const allowedMimeTypes = new Set([
+        'image/png',
+        'image/jpeg',
+        'image/webp'
+    ]);
 
     if (fileInput) {
-        fileInput.addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            if (file) {
-                fileNameDisplay.textContent = file.name;
-                uploadBtn.style.display = 'block';
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
 
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    if (avatarImg) {
-                        avatarImg.src = e.target.result;
-                    } else if (avatarFallback) {
-                        avatarFallback.style.display = 'none';
-                        let tempImg = document.createElement('img');
-                        tempImg.src = e.target.result;
-                        document.querySelector('.profile-avatar').appendChild(tempImg);
-                    }
-                }
-                reader.readAsDataURL(file);
+            if (fileNameDisplay) fileNameDisplay.textContent = file.name;
+            if (uploadBtn) uploadBtn.style.display = 'block';
+
+            if (!allowedMimeTypes.has(file.type)) {
+              
+                if (fileNameDisplay) fileNameDisplay.textContent = '';
+                if (uploadBtn) uploadBtn.style.display = 'none';
+                fileInput.value = '';
+
+                alert('Format invalid. Folosește PNG / JPG / WEBP.');
+                return;
             }
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = getOrCreateAvatarImg();
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
         });
     }
 
+    
     const alerts = document.querySelectorAll('.alert');
     if (alerts.length > 0) {
         setTimeout(() => {
-            alerts.forEach(alert => {
-                alert.style.transition = "opacity 0.5s ease";
-                alert.style.opacity = "0";
-                setTimeout(() => alert.remove(), 500);
+            alerts.forEach((alertEl) => {
+                alertEl.style.transition = 'opacity 0.5s ease';
+                alertEl.style.opacity = '0';
+                setTimeout(() => alertEl.remove(), 500);
             });
         }, 5000);
     }

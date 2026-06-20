@@ -86,8 +86,7 @@ namespace Licenta.Pages.Administrator.AdminPanel
             StorageUsage = ComputeUploadsUsagePercent(_env.WebRootPath);
         }
 
-        // Citeste din AuditLogs (scris de Create.cshtml.cs).
-        // Daca tabelul e gol (useri creati inainte de acest fix), cade pe fallback by ID.
+       
         private async Task<List<NewestUserVm>> BuildNewestUsersAsync()
         {
             try
@@ -148,7 +147,6 @@ namespace Licenta.Pages.Administrator.AdminPanel
             }
         }
 
-        // Fallback: ordoneaza dupa ID (GUID/string descrescator ≈ cei mai noi)
         private async Task<List<NewestUserVm>> FallbackNewestUsersAsync()
         {
             var users = await _context.Users
@@ -195,7 +193,6 @@ namespace Licenta.Pages.Administrator.AdminPanel
             catch { return 0; }
         }
 
-        // ── Citire audit events din fisiere Serilog (pentru Security Audit Log) ──
 
         private sealed class AuditEvent
         {

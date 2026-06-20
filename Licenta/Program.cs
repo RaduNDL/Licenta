@@ -54,7 +54,6 @@ namespace Licenta
                     options.SignIn.RequireConfirmedAccount = false;
                     options.User.RequireUniqueEmail = true;
 
-                    // Minimul de siguranta - DynamicPasswordValidator citeste regulile reale din SystemSettings
                     options.Password.RequiredLength = 6;
                     options.Password.RequireDigit = false;
                     options.Password.RequireUppercase = false;

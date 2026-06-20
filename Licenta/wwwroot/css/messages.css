@@ -29,15 +29,16 @@
     display: flex;
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     height: 100%;
     border: 1px solid var(--border-color);
 }
 
 .chat-sidebar {
-    width: 350px;
-    min-width: 300px;
+    width: 370px;
+    min-width: 320px;
+    max-width: 420px;
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -46,17 +47,24 @@
 
 .sidebar-header {
     height: var(--header-height);
-    padding: 0 1.25rem;
+    padding: 0 1rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     border-bottom: 1px solid var(--border-color);
     background-color: #f8f9fa;
 }
 
+    .sidebar-header h5 {
+        min-width: 0;
+        white-space: nowrap;
+    }
+
 .sidebar-actions {
     display: flex;
     gap: 0.5rem;
+    flex-shrink: 0;
 }
 
 .btn-action-circle {
@@ -74,7 +82,15 @@
 .conversation-list {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
 }
+
+    .conversation-list > .d-flex {
+        width: 100%;
+        min-width: 0;
+        align-items: stretch;
+        border-bottom: 1px solid #f1f3f5;
+    }
 
 .empty-conversation {
     text-align: center;
@@ -92,12 +108,15 @@
 .conversation-item {
     display: flex;
     align-items: center;
-    padding: 15px 20px;
+    min-width: 0;
+    width: 100%;
+    padding: 14px 14px !important;
     cursor: pointer;
-    border-bottom: 1px solid #f8f9fa;
     transition: 0.2s;
     text-decoration: none !important;
     color: inherit;
+    overflow: hidden;
+    border-bottom: none;
 }
 
     .conversation-item:hover {
@@ -107,51 +126,76 @@
     .conversation-item.active {
         background-color: var(--active-conversation-bg);
         border-left: 4px solid var(--primary-color);
+        padding-left: 10px !important;
     }
 
 .avatar-circle {
-    width: 50px;
-    height: 50px;
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
     background-color: #e9ecef;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     color: #6c757d;
-    margin-right: 15px;
-    flex-shrink: 0;
+    margin-right: 12px;
+    flex: 0 0 46px;
 }
 
 .conversation-info {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
+    overflow: hidden;
 }
 
 .conversation-top {
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
     margin-bottom: 4px;
 }
 
 .conversation-name {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
     font-weight: 700;
     color: #212529;
-    font-size: 1rem;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .conversation-meta {
-    font-size: 0.75rem;
+    flex: 0 0 auto;
+    max-width: 88px;
+    font-size: 0.72rem;
     color: #adb5bd;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .conversation-preview {
-    font-size: 0.85rem;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    font-size: 0.84rem;
+    line-height: 1.35;
     color: #6c757d;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+    .conversation-preview .badge {
+        vertical-align: middle;
+    }
 
 .chat-main {
     flex: 1;
@@ -161,6 +205,7 @@
     background-image: radial-gradient(#dee2e6 1px, transparent 1px);
     background-size: 25px 25px;
     position: relative;
+    min-width: 0;
 }
 
 .chat-header {
@@ -169,6 +214,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 1rem;
     background-color: #ffffff;
     border-bottom: 1px solid var(--border-color);
     z-index: 10;
@@ -178,6 +224,7 @@
 .chat-partner-info {
     display: flex;
     align-items: center;
+    min-width: 0;
 }
 
 .avatar-header {
@@ -190,6 +237,7 @@
     align-items: center;
     justify-content: center;
     margin-right: 12px;
+    flex: 0 0 40px;
 }
 
 .mobile-back-btn {
@@ -228,7 +276,8 @@
     position: relative;
     font-size: 0.95rem;
     line-height: 1.5;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    overflow-wrap: anywhere;
 }
 
 .message-row.mine .message-bubble {
@@ -244,6 +293,10 @@
     border: 1px solid #f0f0f0;
 }
 
+.message-text {
+    white-space: pre-wrap;
+}
+
 .message-time {
     font-size: 0.65rem;
     color: var(--timestamp-color);
@@ -256,6 +309,12 @@
     padding: 1.25rem;
     background-color: #f0f2f5;
     border-top: 1px solid var(--border-color);
+}
+
+.chat-send-error {
+    margin-bottom: 0.75rem;
+    color: #dc3545;
+    font-size: 0.9rem;
 }
 
 .chat-input-wrapper {
@@ -277,6 +336,7 @@
     flex: 1;
     outline: none;
     font-size: 1rem;
+    min-width: 0;
 }
 
 .btn-send {
@@ -319,6 +379,7 @@
 .chat-actions {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
     overflow: visible;
 }
 
@@ -330,10 +391,6 @@
         opacity: 1;
         visibility: visible;
     }
-
-.conversation-item {
-    padding-right: 45px !important;
-}
 
 .delete-chat-form {
     position: absolute;
@@ -384,7 +441,7 @@
     list-style: none;
     background-color: #fff;
     background-clip: padding-box;
-    border: 1px solid rgba(0,0,0,.15);
+    border: 1px solid rgba(0, 0, 0, .15);
     border-radius: 0.5rem;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
@@ -444,6 +501,7 @@
     .chat-sidebar {
         width: 100%;
         min-width: 100%;
+        max-width: none;
         display: flex;
     }
 
@@ -466,13 +524,27 @@
     }
 
     .conversation-item {
-        padding: 12px 15px;
+        padding: 12px 14px !important;
     }
 
     .avatar-circle {
-        width: 45px;
-        height: 45px;
-        margin-right: 12px;
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+        margin-right: 10px;
+    }
+
+    .conversation-name {
+        font-size: 0.92rem;
+    }
+
+    .conversation-meta {
+        max-width: 76px;
+        font-size: 0.68rem;
+    }
+
+    .conversation-preview {
+        font-size: 0.8rem;
     }
 
     .chat-header {

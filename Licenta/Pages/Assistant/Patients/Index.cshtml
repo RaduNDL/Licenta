@@ -68,9 +68,16 @@
                                 <tr>
                                     <td class="ps-4">
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar-initials bg-gradient-info text-white me-3">
-                                                @((p.User.FullName ?? "?").Substring(0, 1).ToUpper())
-                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(Model.PatientPhotos.GetValueOrDefault(p.Id)))
+                                            {
+                                                <img src="@Model.PatientPhotos[p.Id]" alt="Avatar" class="me-3" style="width:40px; height:40px; border-radius:50%; object-fit:cover;" />
+                                            }
+                                            else
+                                            {
+                                                <div class="avatar-initials bg-gradient-info text-white me-3">
+                                                    @((p.User.FullName ?? "?").Substring(0, 1).ToUpper())
+                                                </div>
+                                            }
                                             <div class="d-flex flex-column">
                                                 <span class="fw-bold text-dark">@p.User.FullName</span>
                                                 <span class="text-xs text-muted">ID: @p.User.Id.ToString().Substring(0, 8)...</span>

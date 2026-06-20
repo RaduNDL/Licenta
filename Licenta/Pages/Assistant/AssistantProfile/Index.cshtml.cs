@@ -86,10 +86,10 @@ namespace Licenta.Pages.Assistant.AssistantProfile
                 Bio = assistant.Bio
             };
 
-            ProfileImageUrl = assistant.ProfileImagePath;
+            ProfileImageUrl = NormalizeWebPath(assistant.ProfileImagePath);
             DisplaySubtitle = string.IsNullOrWhiteSpace(Input.Department) ? "Assistant" : Input.Department;
 
-            await LoadStatsAsync(user.Id);
+            await LoadStatsAsync(user.Id, user.ClinicId ?? string.Empty);
 
             return Page();
         }
@@ -233,13 +233,13 @@ namespace Licenta.Pages.Assistant.AssistantProfile
                 Input.Bio = assistant.Bio;
 
                 DisplaySubtitle = string.IsNullOrWhiteSpace(Input.Department) ? "Assistant" : Input.Department;
-                ProfileImageUrl = assistant.ProfileImagePath;
+                ProfileImageUrl = NormalizeWebPath(assistant.ProfileImagePath);
 
-                await LoadStatsAsync(userId);
+                await LoadStatsAsync(userId, ClinicId ?? string.Empty);
             }
         }
 
-        private async Task LoadStatsAsync(string userId)
+        private async Task LoadStatsAsync(string userId, string clinicId)
         {
             StatsAppointments = await _db.Appointments.AsNoTracking()
                 .Where(a => a.Status != AppointmentStatus.Cancelled)
@@ -250,7 +250,7 @@ namespace Licenta.Pages.Assistant.AssistantProfile
                 .CountAsync();
 
             StatsPatients = await _db.Patients.AsNoTracking()
-                .Where(p => p.User != null && (p.User.ClinicId ?? string.Empty) == (ClinicId ?? string.Empty))
+                .Where(p => p.User != null && (p.User.ClinicId ?? string.Empty) == (clinicId ?? string.Empty))
                 .CountAsync();
 
             StatsUnreadMessages = await _db.InternalMessages.AsNoTracking()
@@ -258,21 +258,30 @@ namespace Licenta.Pages.Assistant.AssistantProfile
                 .CountAsync();
         }
 
+        private static string? NormalizeWebPath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return null;
+            var p = path.Trim().Replace("\\", "/");
+            if (!p.StartsWith("/")) p = "/" + p;
+            return p;
+        }
+
         private void TryDeleteOldPhoto(string webPath)
         {
             try
             {
-                if (!webPath.StartsWith("/uploads/assistants/", StringComparison.OrdinalIgnoreCase))
+                if (string.IsNullOrWhiteSpace(webPath)) return;
+
+                var p = webPath.Trim().Replace("\\", "/");
+                if (!p.StartsWith("/uploads/assistants/", StringComparison.OrdinalIgnoreCase))
                     return;
 
-                var rel = webPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                var rel = p.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
                 var abs = Path.Combine(_env.WebRootPath, rel);
                 if (System.IO.File.Exists(abs))
                     System.IO.File.Delete(abs);
             }
-            catch
-            {
-            }
+            catch { }
         }
     }
 }

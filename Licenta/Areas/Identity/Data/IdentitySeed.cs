@@ -35,13 +35,13 @@ namespace Licenta.Data
                 }
             }
 
-            var adminEmail = config["SeedAccounts:AdminEmail"] ?? "admin@gmail.com";
+            var adminEmail = config["SeedAccounts:AdminEmail"] ?? "alexandru.constantin@cliniq.ro";
             var adminPassword = config["SeedAccounts:AdminPassword"] ?? throw new InvalidOperationException("SeedAccounts:AdminPassword is not configured.");
-            var doctorEmail = config["SeedAccounts:DoctorEmail"] ?? "doctor@gmail.com";
+            var doctorEmail = config["SeedAccounts:DoctorEmail"] ?? "andrei.ionescu@cliniq.ro";
             var doctorPassword = config["SeedAccounts:DoctorPassword"] ?? throw new InvalidOperationException("SeedAccounts:DoctorPassword is not configured.");
-            var assistantEmail = config["SeedAccounts:AssistantEmail"] ?? "assistant@gmail.com";
+            var assistantEmail = config["SeedAccounts:AssistantEmail"] ?? "elena.dumitrescu@cliniq.ro";
             var assistantPassword = config["SeedAccounts:AssistantPassword"] ?? throw new InvalidOperationException("SeedAccounts:AssistantPassword is not configured.");
-            var patientEmail = config["SeedAccounts:PatientEmail"] ?? "patient@gmail.com";
+            var patientEmail = config["SeedAccounts:PatientEmail"] ?? "maria.popescu@gmail.com";
             var patientPassword = config["SeedAccounts:PatientPassword"] ?? throw new InvalidOperationException("SeedAccounts:PatientPassword is not configured.");
 
             var sharedClinicId = await EnsureSharedClinicIdAsync(db, assistantEmail);

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace Licenta.Pages.Doctor.Messages;
 
@@ -44,12 +45,14 @@ public class RequestsModel : PageModel
             .Where(a => !a.IsSoftDeleted)
             .Select(a => new AssistantVm(
                 a.Id,
-                string.IsNullOrWhiteSpace(a.FullName) ? (a.Email ?? "Assistant") : a.FullName))
+                DisplayPersonName(a, "Assistant")))
+            .OrderBy(a => a.Name)
             .ToList();
 
         var rawRequests = await _db.PatientMessageRequests
             .AsNoTracking()
-            .Include(r => r.Patient).ThenInclude(p => p.User)
+            .Include(r => r.Patient)
+                .ThenInclude(p => p.User)
             .Where(r =>
                 r.DoctorProfileId == doctorProfile.Id &&
                 r.Status == PatientMessageRequestStatus.WaitingDoctorApproval)
@@ -59,12 +62,7 @@ public class RequestsModel : PageModel
         Requests = rawRequests
             .Select(r =>
             {
-                var fullName = r.Patient?.User?.FullName;
-                var email = r.Patient?.User?.Email;
-
-                var patientName = string.IsNullOrWhiteSpace(fullName)
-                    ? (string.IsNullOrWhiteSpace(email) ? "Patient" : email!.Trim())
-                    : fullName!.Trim();
+                var patientName = DisplayPersonName(r.Patient?.User, "Patient");
 
                 var subject = string.IsNullOrWhiteSpace(r.Subject)
                     ? "No subject"
@@ -118,7 +116,7 @@ public class RequestsModel : PageModel
                 patientUser,
                 NotificationType.System,
                 "Consultation Started",
-                $"Dr. {doctorUser.FullName ?? doctorUser.Email} has accepted your message request.",
+                $"Dr. {DisplayPersonName(doctorUser, "Doctor")} has accepted your message request.",
                 actionUrl: $"/Patient/Messages/Inbox?requestId={req.Id}&kind=Doctor",
                 actionText: "Open Chat",
                 relatedEntity: "PatientMessageRequest",
@@ -158,7 +156,7 @@ public class RequestsModel : PageModel
                 patientUser,
                 NotificationType.System,
                 "Request Rejected",
-                $"Dr. {doctorUser.FullName ?? doctorUser.Email} has declined your message request.",
+                $"Dr. {DisplayPersonName(doctorUser, "Doctor")} has declined your message request.",
                 actionUrl: "/Patient/Messages/RequestList",
                 actionText: "View Status",
                 relatedEntity: "PatientMessageRequest",
@@ -225,14 +223,84 @@ public class RequestsModel : PageModel
             chosen,
             NotificationType.System,
             "New Delegated Request",
-            $"Dr. {doctorUser.FullName ?? doctorUser.Email} delegated a patient request: {req.Subject}",
+            $"Dr. {DisplayPersonName(doctorUser, "Doctor")} delegated a patient request: {req.Subject}",
             actionUrl: "/Assistant/Messages/Requests/Index",
             actionText: "View Request",
             relatedEntity: "PatientMessageRequest",
             relatedEntityId: req.Id.ToString()
         );
 
-        TempData["StatusMessage"] = "Request delegated.";
+        TempData["StatusMessage"] = $"Request delegated to {DisplayPersonName(chosen, "Assistant")}.";
         return RedirectToPage();
+    }
+
+    private static string DisplayPersonName(ApplicationUser? user, string fallback)
+    {
+        if (user == null)
+            return fallback;
+
+        var fullName = Clean(user.FullName);
+
+        if (IsUsableName(fullName))
+            return fullName;
+
+        var userName = Clean(user.UserName);
+        if (IsUsableName(userName) && !LooksLikeEmail(userName))
+            return userName;
+
+        var email = Clean(user.Email);
+        if (!string.IsNullOrWhiteSpace(email))
+            return NameFromEmail(email);
+
+        return fallback;
+    }
+
+    private static string Clean(string? value)
+        => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
+
+    private static bool IsUsableName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        var blocked = new[]
+        {
+            "Default Assistant",
+            "Default Doctor",
+            "Default Patient",
+            "Assistant",
+            "Doctor",
+            "Patient",
+            "Unknown"
+        };
+
+        return !blocked.Any(x => value.Equals(x, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool LooksLikeEmail(string value)
+        => value.Contains('@') && value.Contains('.');
+
+    private static string NameFromEmail(string email)
+    {
+        var localPart = email.Split('@')[0];
+
+        var parts = localPart
+            .Replace(".", " ")
+            .Replace("_", " ")
+            .Replace("-", " ")
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .ToList();
+
+        if (!parts.Any())
+            return "User";
+
+        var textInfo = CultureInfo.CurrentCulture.TextInfo;
+
+        return string.Join(" ", parts.Select(p =>
+        {
+            var lower = p.ToLowerInvariant();
+            return textInfo.ToTitleCase(lower);
+        }));
     }
 }

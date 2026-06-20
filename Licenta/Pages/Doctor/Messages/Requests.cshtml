@@ -1,5 +1,6 @@
 ﻿@page
 @model Licenta.Pages.Doctor.Messages.RequestsModel
+
 @{
     ViewData["Title"] = "Doctor Requests";
 }
@@ -22,6 +23,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="col-auto">
                 <a asp-page="/Doctor/Messages/Inbox" class="btn btn-light btn-back fw-semibold shadow-sm">
                     <i class="bi bi-arrow-left me-2"></i>Back to Inbox
@@ -64,16 +66,19 @@
                                 {
                                     var patientName = string.IsNullOrWhiteSpace(r.PatientName) ? "Patient" : r.PatientName.Trim();
                                     var patientInitial = patientName.Substring(0, 1).ToUpper();
-                                    var subject = string.IsNullOrWhiteSpace(r.Subject) ? "No subject" : r.Subject;
-                                    var details = string.IsNullOrWhiteSpace(r.Details) ? "-" : r.Details;
+                                    var subject = string.IsNullOrWhiteSpace(r.Subject) ? "No subject" : r.Subject.Trim();
+                                    var details = string.IsNullOrWhiteSpace(r.Details) ? "-" : r.Details.Trim();
 
                                     <tr>
                                         <td class="ps-4">
                                             <div class="d-flex flex-column">
                                                 <span class="fw-bold text-dark date-text">@r.CreatedAtLocal.ToString("MMM dd, yyyy")</span>
-                                                <span class="text-muted small time-text"><i class="bi bi-clock me-1"></i>@r.CreatedAtLocal.ToString("HH:mm")</span>
+                                                <span class="text-muted small time-text">
+                                                    <i class="bi bi-clock me-1"></i>@r.CreatedAtLocal.ToString("HH:mm")
+                                                </span>
                                             </div>
                                         </td>
+
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="avatar-circle bg-primary text-white shadow-sm me-3">
@@ -85,11 +90,13 @@
                                                 </div>
                                             </div>
                                         </td>
+
                                         <td>
-                                            <span class="badge custom-badge bg-light text-dark border">
+                                            <span class="badge custom-badge bg-light text-dark border" title="@subject">
                                                 <i class="bi bi-tag-fill text-muted me-1"></i> @subject
                                             </span>
                                         </td>
+
                                         <td>
                                             <p class="text-muted small mb-0 details-text"
                                                    data-bs-toggle="tooltip"
@@ -98,6 +105,7 @@
                                                 @details
                                             </p>
                                         </td>
+
                                         <td class="text-end pe-4">
                                             <div class="d-flex justify-content-end gap-2 action-buttons">
                                                 @if (Model.Assistants.Any())
@@ -105,6 +113,7 @@
                                                     <form method="post" asp-page-handler="Delegate" class="action-form d-flex gap-2 align-items-center">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="id" value="@r.Id" />
+
                                                         <select name="assistantId" class="form-select form-select-sm" style="max-width:220px;" required>
                                                             <option value="" disabled selected>Select assistant</option>
                                                             @foreach (var a in Model.Assistants)
@@ -112,6 +121,7 @@
                                                                 <option value="@a.Id">@a.Name</option>
                                                             }
                                                         </select>
+
                                                         <button class="btn btn-warning btn-action shadow-sm text-dark" type="submit">
                                                             <i class="bi bi-person-gear me-1"></i> Delegate
                                                         </button>

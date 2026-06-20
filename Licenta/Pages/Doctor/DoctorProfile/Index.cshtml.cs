@@ -103,7 +103,7 @@ namespace Licenta.Pages.Doctor.DoctorProfile
                 City = doctor.City
             };
 
-            ProfileImageUrl = doctor.ProfileImagePath;
+            ProfileImageUrl = NormalizeWebPath(doctor.ProfileImagePath);
             DisplaySubtitle = string.IsNullOrWhiteSpace(Input.Specialty) ? "Doctor" : Input.Specialty;
 
             await LoadStatsAsync(user.Id, doctor.Id);
@@ -181,7 +181,6 @@ namespace Licenta.Pages.Doctor.DoctorProfile
                 return RedirectToPage();
             }
 
-            
             var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "doctors");
             Directory.CreateDirectory(uploadsFolder);
 
@@ -252,7 +251,7 @@ namespace Licenta.Pages.Doctor.DoctorProfile
             var doctor = await _db.Doctors.AsNoTracking().FirstOrDefaultAsync(d => d.Id == doctorId);
             if (doctor != null)
             {
-                ProfileImageUrl = doctor.ProfileImagePath;
+                ProfileImageUrl = NormalizeWebPath(doctor.ProfileImagePath);
                 DisplaySubtitle = string.IsNullOrWhiteSpace(doctor.Specialty) ? "Doctor" : doctor.Specialty;
                 await LoadStatsAsync(userId, doctorId);
             }
@@ -280,14 +279,25 @@ namespace Licenta.Pages.Doctor.DoctorProfile
                 .CountAsync();
         }
 
+        private static string? NormalizeWebPath(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return null;
+            var p = path.Trim().Replace("\\", "/");
+            if (!p.StartsWith("/")) p = "/" + p;
+            return p;
+        }
+
         private void TryDeleteOldPhoto(string webPath)
         {
             try
             {
-                if (!webPath.StartsWith("/uploads/doctors/", StringComparison.OrdinalIgnoreCase))
+                if (string.IsNullOrWhiteSpace(webPath)) return;
+
+                var p = webPath.Trim().Replace("\\", "/");
+                if (!p.StartsWith("/uploads/doctors/", StringComparison.OrdinalIgnoreCase))
                     return;
 
-                var relativePath = webPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+                var relativePath = p.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
                 var absolutePath = Path.Combine(_env.WebRootPath, relativePath);
 
                 if (System.IO.File.Exists(absolutePath))

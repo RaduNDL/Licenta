@@ -1,0 +1,10 @@
+{
+  "CreatedAtUtc": "2026-05-15T21:37:59.503506Z",
+  "ClinicId": "CL-95A7766D",
+  "PatientUserId": "19089d88-6056-4f33-9e52-bea381832672",
+  "PatientProfileId": "fe1b98bd-da36-4a8d-9a6b-58e893cb492a",
+  "SelectedDoctorId": "3125ec00-347d-4c66-b4a8-b31544c0512b",
+  "SelectedLocalIso": "2026-05-18T10:00",
+  "SelectedScheduledUtc": "2026-05-18T07:00:00Z",
+  "Reason": "Vin pentru controlul anual de rutin\u0103. Ultima mamografie a fost acum 12 luni \u0219i a fost curat\u0103, dar a\u0219 vrea ca anul acesta s\u0103 compar\u0103m rezultatele \u0219i cu analiza predictiv\u0103 a platformei."
+}

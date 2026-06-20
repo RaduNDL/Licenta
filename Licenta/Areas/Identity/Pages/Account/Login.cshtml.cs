@@ -1,5 +1,4 @@
 ﻿#nullable disable
-
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Licenta.Services;
@@ -46,14 +45,12 @@ namespace Licenta.Areas.Identity.Pages.Account
         {
             [Required]
             [EmailAddress]
+            [ValidDomain(ErrorMessage = "Invalid email address.")]
             public string Email { get; set; }
 
             [Required]
             [DataType(DataType.Password)]
             public string Password { get; set; }
-
-            [Display(Name = "Remember me?")]
-            public bool RememberMe { get; set; }
         }
 
         public async Task OnGetAsync(string returnUrl = null)
@@ -75,7 +72,7 @@ namespace Licenta.Areas.Identity.Pages.Account
             var result = await _signInManager.PasswordSignInAsync(
                 Input.Email,
                 Input.Password,
-                Input.RememberMe,
+                isPersistent: false,
                 lockoutOnFailure: true);
 
             if (!result.Succeeded)
@@ -127,7 +124,6 @@ namespace Licenta.Areas.Identity.Pages.Account
                 return LocalRedirect(ReturnUrl);
 
             return LocalRedirect(Url.Content("~/"));
-
         }
     }
 }

@@ -1,6 +1,5 @@
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
-using Licenta.Services.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -22,20 +21,15 @@ namespace Licenta.Pages.Patient.PatientProfile
     {
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IAttachmentStorage _storage;
-
-
         private readonly IWebHostEnvironment _env;
 
         public IndexModel(
             AppDbContext db,
             UserManager<ApplicationUser> userManager,
-            IAttachmentStorage storage,
             IWebHostEnvironment env)
         {
             _db = db;
             _userManager = userManager;
-            _storage = storage;
             _env = env;
         }
 
@@ -98,11 +92,9 @@ namespace Licenta.Pages.Patient.PatientProfile
             };
 
             DisplaySubtitle = string.IsNullOrWhiteSpace(Input.Phone) ? "Patient" : Input.Phone;
-
-            ProfileImageUrl = await GetPatientProfilePhotoUrlAsync(patient.Id);
+            ProfileImageUrl = await GetProfilePhotoUrlAsync(patient.Id);
 
             await LoadStatsAsync(user.Id, patient.Id);
-
             return Page();
         }
 
@@ -173,20 +165,25 @@ namespace Licenta.Pages.Patient.PatientProfile
 
             await RemoveExistingProfilePhotosAsync(patient.Id);
 
-            string storedPath;
-            await using (var stream = PhotoFile.OpenReadStream())
-            {
-                storedPath = await _storage.SaveAsync(stream, PhotoFile.FileName, HttpContext.RequestAborted);
-            }
+            var fileName = $"profile_{patient.Id}{ext}";
+            var folder = Path.Combine(_env.WebRootPath, "uploads", "profile-photos");
+            Directory.CreateDirectory(folder);
+            var absPath = Path.Combine(folder, fileName);
+
+            await using (var fs = System.IO.File.Create(absPath))
+            await using (var src = PhotoFile.OpenReadStream())
+                await src.CopyToAsync(fs, HttpContext.RequestAborted);
+
+            var webPath = $"/uploads/profile-photos/{fileName}";
 
             var attachment = new MedicalAttachment
             {
                 Id = Guid.NewGuid(),
                 PatientId = patient.Id,
                 DoctorId = null,
-                FileName = Path.GetFileName(PhotoFile.FileName),
-                FilePath = storedPath,  
-                ContentType = PhotoFile.ContentType ?? "application/octet-stream",
+                FileName = fileName,
+                FilePath = webPath,
+                ContentType = PhotoFile.ContentType ?? "image/jpeg",
                 Type = "ProfilePhoto",
                 UploadedAt = DateTime.UtcNow,
                 Status = AttachmentStatus.Validated,
@@ -253,8 +250,7 @@ namespace Licenta.Pages.Patient.PatientProfile
                 Input.Address = patient.Address;
 
                 DisplaySubtitle = string.IsNullOrWhiteSpace(Input.Phone) ? "Patient" : Input.Phone;
-
-                ProfileImageUrl = await GetPatientProfilePhotoUrlAsync(patientId);
+                ProfileImageUrl = await GetProfilePhotoUrlAsync(patientId);
 
                 await LoadStatsAsync(userId, patientId);
             }
@@ -281,10 +277,11 @@ namespace Licenta.Pages.Patient.PatientProfile
                 .CountAsync();
         }
 
-     
-        private async Task<string?> GetPatientProfilePhotoUrlAsync(Guid patientId)
+        public static async Task<string?> GetProfilePhotoUrlAsync(AppDbContext db, Guid patientId)
         {
-            var att = await _db.MedicalAttachments.AsNoTracking()
+            if (patientId == Guid.Empty) return null;
+
+            var att = await db.MedicalAttachments.AsNoTracking()
                 .Where(a => a.PatientId == patientId && a.Type == "ProfilePhoto")
                 .OrderByDescending(a => a.UploadedAt)
                 .Select(a => new { a.Id, a.FilePath })
@@ -292,11 +289,17 @@ namespace Licenta.Pages.Patient.PatientProfile
 
             if (att == null) return null;
 
-            if ((att.FilePath ?? "").StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
-                return att.FilePath;
+            var fp = (att.FilePath ?? "").Trim().Replace("\\", "/");
+            if (!fp.StartsWith("/")) fp = "/" + fp;
+
+            if (fp.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+                return fp;
 
             return $"/Files/Attachment?id={att.Id}";
         }
+
+        private Task<string?> GetProfilePhotoUrlAsync(Guid patientId)
+            => GetProfilePhotoUrlAsync(_db, patientId);
 
         private async Task RemoveExistingProfilePhotosAsync(Guid patientId)
         {
@@ -304,44 +307,24 @@ namespace Licenta.Pages.Patient.PatientProfile
                 .Where(a => a.PatientId == patientId && a.Type == "ProfilePhoto")
                 .ToListAsync();
 
-            if (old.Count == 0)
-                return;
+            if (old.Count == 0) return;
 
             foreach (var a in old)
             {
                 if (string.IsNullOrWhiteSpace(a.FilePath)) continue;
 
-                
-                if (!a.FilePath.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+                try
                 {
-                    _storage.TryDelete(a.FilePath);
+                    var fp = a.FilePath.Trim().Replace("\\", "/").TrimStart('/');
+                    var abs = Path.Combine(_env.WebRootPath, fp.Replace('/', Path.DirectorySeparatorChar));
+                    if (System.IO.File.Exists(abs))
+                        System.IO.File.Delete(abs);
                 }
-                else
-                {
-                    
-                    TryDeleteLegacyPhoto(a.FilePath);
-                }
+                catch { }
             }
 
             _db.MedicalAttachments.RemoveRange(old);
             await _db.SaveChangesAsync();
-        }
-
-        private void TryDeleteLegacyPhoto(string webPath)
-        {
-            try
-            {
-                if (!webPath.StartsWith("/uploads/patient/", StringComparison.OrdinalIgnoreCase))
-                    return;
-
-                var rel = webPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-                var abs = Path.Combine(_env.WebRootPath, rel);
-                if (System.IO.File.Exists(abs))
-                    System.IO.File.Delete(abs);
-            }
-            catch
-            {
-            }
         }
     }
 }

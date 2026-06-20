@@ -1,5 +1,4 @@
 ﻿#nullable disable
-
 using Licenta.Areas.Identity.Data;
 using Licenta.Models;
 using Licenta.Services;
@@ -12,11 +11,34 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Licenta.Areas.Identity.Pages.Account
 {
+    public class ValidDomainAttribute : ValidationAttribute
+    {
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        {
+            if (value == null)
+                return ValidationResult.Success;
+
+            string email = value.ToString();
+            try
+            {
+                var address = new MailAddress(email);
+                Dns.GetHostEntry(address.Host);
+                return ValidationResult.Success;
+            }
+            catch
+            {
+                return new ValidationResult(ErrorMessage ?? "Invalid email address.");
+            }
+        }
+    }
+
     [AllowAnonymous]
     public class RegisterModel : PageModel
     {
@@ -62,6 +84,7 @@ namespace Licenta.Areas.Identity.Pages.Account
 
             [Required]
             [EmailAddress]
+            [ValidDomain(ErrorMessage = "Invalid email address.")]
             [Display(Name = "Email")]
             public string Email { get; set; }
 

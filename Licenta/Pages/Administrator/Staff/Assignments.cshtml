@@ -1,5 +1,6 @@
 ﻿@page
 @model Licenta.Areas.Admin.Pages.Staff.AssignmentsModel
+
 @{
     ViewData["Title"] = "Staff Assignments";
 }
@@ -16,6 +17,7 @@
                 <h1 class="h3 fw-bold mb-1">Medical Staff Assignments</h1>
                 <p class="text-muted">Link assistants to their respective doctors for triage routing.</p>
             </div>
+
             @if (TempData["StatusMessage"] is string status)
             {
                 <div class="alert alert-modern fade show" id="statusAlert">
@@ -42,6 +44,7 @@
 
                     <div class="card-content">
                         <label class="section-label">Assigned Assistants</label>
+
                         <div class="assistant-list">
                             @if (!doc.AssignedAssistants.Any())
                             {
@@ -59,6 +62,7 @@
                                             <i class="bi bi-headset me-2"></i>
                                             <span class="ast-name">@ast.Name</span>
                                         </div>
+
                                         <form method="post" asp-page-handler="Remove">
                                             <input type="hidden" name="assistantId" value="@ast.Id" />
                                             <button type="submit" class="btn-remove" title="Unassign Assistant">
@@ -73,11 +77,13 @@
                         <div class="assign-action">
                             <form method="post" asp-page-handler="Assign">
                                 <input type="hidden" name="doctorId" value="@doc.DoctorId" />
+
                                 <div class="assign-group">
                                     <select name="assistantId" asp-items="Model.AvailableAssistants" class="form-select-modern" required>
                                         <option value="">+ Add Assistant</option>
                                     </select>
-                                    <button class="btn-assign" type="submit">
+
+                                    <button class="btn-assign" type="submit" title="Assign Assistant">
                                         <i class="bi bi-plus-lg"></i>
                                     </button>
                                 </div>

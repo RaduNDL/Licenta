@@ -1,12 +1,6 @@
-﻿/* ═══════════════════════════════════════════════
-   AdminProfile.js
-   E:\Facultate\Licenta\Licenta\Licenta\wwwroot\js\AdminProfile.js
-   ═══════════════════════════════════════════════ */
-
-(function () {
+﻿(function () {
     'use strict';
 
-    // ── Preview poza selectata ─────────────────────────────────────
     function previewPhoto(input) {
         var file = input.files[0];
         if (!file) return;
@@ -23,7 +17,6 @@
         reader.readAsDataURL(file);
     }
 
-    // ── Drag & drop ────────────────────────────────────────────────
     function initDragDrop() {
         var zone = document.getElementById('uploadZone');
         if (!zone) return;
@@ -45,7 +38,6 @@
             if (files.length === 0) return;
 
             var input = document.getElementById('photoFileInput');
-            // Inlocuieste fisierele din input cu cele dropped
             var dt = new DataTransfer();
             dt.items.add(files[0]);
             input.files = dt.files;
@@ -54,14 +46,12 @@
         });
     }
 
-    // ── Click pe zona deschide file picker ─────────────────────────
     function initUploadZoneClick() {
         var zone = document.getElementById('uploadZone');
         var input = document.getElementById('photoFileInput');
         if (!zone || !input) return;
 
         zone.addEventListener('click', function (e) {
-            // Evita dublu-click daca userul a dat click exact pe input
             if (e.target === input) return;
             input.click();
         });
