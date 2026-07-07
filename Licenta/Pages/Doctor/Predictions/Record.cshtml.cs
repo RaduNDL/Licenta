@@ -3,6 +3,7 @@ using Licenta.Data;
 using Licenta.Models;
 using Licenta.Services.Ml;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +18,13 @@ namespace Licenta.Pages.Doctor.Predictions
     public class RecordModel : PageModel
     {
         private readonly AppDbContext _db;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IMlImagingClient _ml;
 
-        public RecordModel(AppDbContext db, IMlImagingClient ml)
+        public RecordModel(AppDbContext db, UserManager<ApplicationUser> userManager, IMlImagingClient ml)
         {
             _db = db;
+            _userManager = userManager;
             _ml = ml;
         }
 
@@ -40,10 +43,21 @@ namespace Licenta.Pages.Doctor.Predictions
 
         public async Task<IActionResult> OnGetAsync(Guid id)
         {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return Challenge();
+
+            var doctor = await _db.Doctors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.UserId == user.Id);
+
+            if (doctor == null)
+                return Forbid();
+
             var prediction = await _db.Predictions
                 .Include(p => p.Patient)
                 .ThenInclude(p => p!.User)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync(p => p.Id == id && p.DoctorId == doctor.Id);
 
             if (prediction == null)
                 return NotFound();
@@ -93,7 +107,6 @@ namespace Licenta.Pages.Doctor.Predictions
 
                     if (attachment != null)
                     {
-                        // IMPORTANT: URL real pentru browser
                         ImageUrl = Url.Page("/Files/Attachment", new { id = attachment.Id }) ?? "";
 
                         if (string.IsNullOrEmpty(DatasetLabel) && !string.IsNullOrEmpty(attachment.FileName))

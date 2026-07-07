@@ -11,7 +11,8 @@ namespace Licenta.Models
         WaitingDoctorApproval = 2,
         ActiveDoctorChat = 3,
         RejectedByDoctor = 4,
-        Closed = 5
+        Closed = 5,
+        RejectedByAssistant = 6
     }
 
     public class PatientMessageRequest

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -101,9 +102,9 @@ namespace Licenta.Pages.Patient.Form
             {
                 Id = Guid.NewGuid(),
                 PatientId = patient.Id,
-                DoctorId = user.AssignedDoctorId,
+                DoctorId = null, // Formularul merge la pool-ul general al clinicii
                 FileName = safeName,
-                FilePath = storedPath,       
+                FilePath = storedPath,
                 ContentType = "application/json",
                 Type = "PreConsultationForm",
                 UploadedAt = DateTime.UtcNow,
@@ -116,24 +117,30 @@ namespace Licenta.Pages.Patient.Form
             await _db.SaveChangesAsync();
 
             var patientName = user.FullName ?? user.Email ?? user.UserName;
+            var clinicId = user.ClinicId;
 
-            if (user.AssignedDoctorId.HasValue)
+            if (!string.IsNullOrWhiteSpace(clinicId))
             {
-                var doctorUser = await _db.Users.FirstOrDefaultAsync(
-                    u => u.DoctorProfile != null && u.DoctorProfile.Id == user.AssignedDoctorId.Value);
+                var clinicDoctors = await _db.Doctors
+                    .Include(d => d.User)
+                    .Where(d => d.User != null && d.User.ClinicId == clinicId && !d.User.IsSoftDeleted)
+                    .ToListAsync();
 
-                if (doctorUser != null)
+                foreach (var doc in clinicDoctors)
                 {
-                    await _notifier.NotifyAsync(
-                        doctorUser,
-                        NotificationType.Info,
-                        "New pre-consultation form",
-                        $"Patient {patientName} submitted a pre-consultation form.",
-                        actionUrl: "/Doctor/Attachments/Inbox",
-                        actionText: "Open Inbox",
-                        relatedEntity: "MedicalAttachment",
-                        relatedEntityId: att.Id.ToString()
-                    );
+                    if (doc.User != null)
+                    {
+                        await _notifier.NotifyAsync(
+                            doc.User,
+                            NotificationType.Info,
+                            "New pre-consultation form",
+                            $"Patient {patientName} submitted a pre-consultation form.",
+                            actionUrl: "/Doctor/Attachments/Inbox",
+                            actionText: "Open Inbox",
+                            relatedEntity: "MedicalAttachment",
+                            relatedEntityId: att.Id.ToString()
+                        );
+                    }
                 }
             }
 

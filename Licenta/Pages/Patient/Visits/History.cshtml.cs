@@ -40,7 +40,9 @@ namespace Licenta.Pages.Patient.Visits
                 .Where(a =>
                     a.Patient != null &&
                     a.Patient.UserId == user.Id &&
-                    a.Status == AttachmentStatus.Validated)
+                    a.Status == AttachmentStatus.Validated &&
+                    a.Type != "ProfilePhoto" &&
+                    a.Type != "AppointmentRequest")
                 .OrderByDescending(a => a.ValidatedAtUtc ?? a.UploadedAt)
                 .ToListAsync();
 

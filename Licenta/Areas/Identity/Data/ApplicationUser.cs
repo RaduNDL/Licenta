@@ -12,8 +12,7 @@ namespace Licenta.Areas.Identity.Data
         public string? ClinicId { get; set; }
         public string? ProfileImagePath { get; set; }
 
-        public Guid? AssignedDoctorId { get; set; }
-        public DoctorProfile? AssignedDoctor { get; set; }
+        public ICollection<DoctorProfile> AssignedDoctors { get; set; } = new List<DoctorProfile>();
 
         public PatientProfile? PatientProfile { get; set; }
         public DoctorProfile? DoctorProfile { get; set; }

@@ -19,7 +19,7 @@ namespace Licenta.Pages.Doctor.Attachments
         private readonly UserManager<ApplicationUser> _userManager;
 
         
-        private static readonly string[] HiddenAttachmentTypes = new[] { "ProfilePhoto" };
+        private static readonly string[] HiddenAttachmentTypes = new[] { "ProfilePhoto", "AppointmentRequest" };
 
         public IndexModel(AppDbContext db, UserManager<ApplicationUser> userManager)
         {

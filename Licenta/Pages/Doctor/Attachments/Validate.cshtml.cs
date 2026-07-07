@@ -88,6 +88,9 @@ namespace Licenta.Pages.Doctor.Attachments
 
             if (att == null) return null;
 
+            if (att.Type == "ProfilePhoto" || att.Type == "AppointmentRequest")
+                return null;
+
             if (!string.IsNullOrWhiteSpace(user.ClinicId))
             {
                 if (att.Patient?.User?.ClinicId != user.ClinicId) return null;

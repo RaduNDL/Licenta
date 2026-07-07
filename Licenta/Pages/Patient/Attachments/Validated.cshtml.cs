@@ -32,7 +32,11 @@ namespace Licenta.Pages.Patient.Attachments
             .Include(a => a.Patient!.User)
             .Include(a => a.Doctor)
             .Include(a => a.Doctor!.User)
-            .Where(a => a.Patient != null && a.Patient.UserId == userId)
+            .Where(a =>
+                a.Patient != null &&
+                a.Patient.UserId == userId &&
+                a.Type != "ProfilePhoto" &&
+                a.Type != "AppointmentRequest")
             .Where(a => a.Status == AttachmentStatus.Validated || a.Status == AttachmentStatus.Rejected)
             .OrderByDescending(a => a.ValidatedAtUtc)
             .ToListAsync();

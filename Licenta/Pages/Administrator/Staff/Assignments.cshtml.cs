@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Areas.Admin.Pages.Staff
 {
@@ -48,8 +52,11 @@ namespace Licenta.Areas.Admin.Pages.Staff
             if (doctorId == Guid.Empty || string.IsNullOrWhiteSpace(assistantId))
                 return RedirectToPage();
 
-            var doctorExists = await _db.Doctors.AnyAsync(d => d.Id == doctorId);
-            if (!doctorExists)
+            var doctor = await _db.Doctors
+                .Include(d => d.Assistants)
+                .FirstOrDefaultAsync(d => d.Id == doctorId);
+
+            if (doctor == null)
             {
                 TempData["StatusMessage"] = "Doctor not found.";
                 return RedirectToPage();
@@ -62,24 +69,38 @@ namespace Licenta.Areas.Admin.Pages.Staff
                 return RedirectToPage();
             }
 
-            assistant.AssignedDoctorId = doctorId;
-            await _userManager.UpdateAsync(assistant);
+            if (!doctor.Assistants.Any(a => a.Id == assistant.Id))
+            {
+                doctor.Assistants.Add(assistant);
+                await _db.SaveChangesAsync();
+                TempData["StatusMessage"] = "Assistant assigned successfully.";
+            }
+            else
+            {
+                TempData["StatusMessage"] = "Assistant is already assigned to this doctor.";
+            }
 
-            TempData["StatusMessage"] = "Assistant assigned successfully.";
             return RedirectToPage();
         }
 
-        public async Task<IActionResult> OnPostRemoveAsync(string assistantId)
+        public async Task<IActionResult> OnPostRemoveAsync(Guid doctorId, string assistantId)
         {
-            if (string.IsNullOrWhiteSpace(assistantId))
+            if (doctorId == Guid.Empty || string.IsNullOrWhiteSpace(assistantId))
                 return RedirectToPage();
 
-            var assistant = await _userManager.FindByIdAsync(assistantId);
-            if (assistant != null)
+            var doctor = await _db.Doctors
+                .Include(d => d.Assistants)
+                .FirstOrDefaultAsync(d => d.Id == doctorId);
+
+            if (doctor != null)
             {
-                assistant.AssignedDoctorId = null;
-                await _userManager.UpdateAsync(assistant);
-                TempData["StatusMessage"] = "Assignment removed.";
+                var assistant = doctor.Assistants.FirstOrDefault(a => a.Id == assistantId);
+                if (assistant != null)
+                {
+                    doctor.Assistants.Remove(assistant);
+                    await _db.SaveChangesAsync();
+                    TempData["StatusMessage"] = "Assignment removed.";
+                }
             }
 
             return RedirectToPage();
@@ -113,11 +134,10 @@ namespace Licenta.Areas.Admin.Pages.Staff
                 .Select(r => r.Id)
                 .FirstOrDefaultAsync();
 
-            var unassignedAssistants = await _db.Users
+            var allAssistants = await _db.Users
                 .AsNoTracking()
                 .Where(u =>
                     !u.IsSoftDeleted &&
-                    u.AssignedDoctorId == null &&
                     _db.UserRoles.Any(ur => ur.UserId == u.Id && ur.RoleId == assistantRoleId))
                 .OrderBy(u => u.FullName)
                 .ThenBy(u => u.Email)
@@ -128,14 +148,12 @@ namespace Licenta.Areas.Admin.Pages.Staff
                 })
                 .ToListAsync();
 
-            AvailableAssistants = new SelectList(unassignedAssistants, "Id", "Name");
+            AvailableAssistants = new SelectList(allAssistants, "Id", "Name");
         }
 
         private static string DisplayName(ApplicationUser? user)
         {
-            if (user == null)
-                return "Unknown";
-
+            if (user == null) return "Unknown";
             var fullName = (user.FullName ?? string.Empty).Trim();
 
             if (!string.IsNullOrWhiteSpace(fullName) &&
@@ -146,11 +164,8 @@ namespace Licenta.Areas.Admin.Pages.Staff
                 return fullName;
             }
 
-            if (!string.IsNullOrWhiteSpace(user.UserName))
-                return user.UserName.Trim();
-
-            if (!string.IsNullOrWhiteSpace(user.Email))
-                return user.Email.Trim();
+            if (!string.IsNullOrWhiteSpace(user.UserName)) return user.UserName.Trim();
+            if (!string.IsNullOrWhiteSpace(user.Email)) return user.Email.Trim();
 
             return "Unknown";
         }

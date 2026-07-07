@@ -103,7 +103,10 @@ namespace Licenta.Pages.Doctor.Attachments
 
             var patient = await _db.Patients
                 .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.Id == ModelInput.PatientId);
+                .FirstOrDefaultAsync(p =>
+                    p.Id == ModelInput.PatientId &&
+                    p.User != null &&
+                    !p.User.IsSoftDeleted);
 
             if (patient == null)
             {
@@ -134,7 +137,7 @@ namespace Licenta.Pages.Doctor.Attachments
                 PatientId = ModelInput.PatientId,
                 DoctorId = doctor.Id,
                 FileName = originalName,
-                FilePath = storedPath,       
+                FilePath = storedPath,
                 Type = string.IsNullOrWhiteSpace(ModelInput.Type) ? "Medical Document" : ModelInput.Type.Trim(),
                 UploadedAt = DateTime.UtcNow,
                 ContentType = ModelInput.File.ContentType,
@@ -154,7 +157,10 @@ namespace Licenta.Pages.Doctor.Attachments
             var user = await _userManager.GetUserAsync(User);
             var clinicId = (user?.ClinicId ?? "").Trim();
 
-            var q = _db.Patients.Include(p => p.User).AsQueryable();
+            var q = _db.Patients
+                .Include(p => p.User)
+                .Where(p => p.User != null && !p.User.IsSoftDeleted)
+                .AsQueryable();
             if (!string.IsNullOrWhiteSpace(clinicId))
                 q = q.Where(p => p.User != null && p.User.ClinicId == clinicId);
 

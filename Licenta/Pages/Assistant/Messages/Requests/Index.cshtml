@@ -10,7 +10,6 @@
 }
 
 <div class="container-fluid py-4">
-
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark mb-1">
@@ -21,7 +20,6 @@
                 Manage and triage incoming patient inquiries.
             </p>
         </div>
-
         <div>
             <span class="badge bg-white text-secondary shadow-sm px-3 py-2 border">
                 Total: @Model.Requests.Count
@@ -41,48 +39,31 @@
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body p-2">
             <div class="nav nav-pills nav-fill flex-column flex-sm-row gap-2">
-
                 <a class="nav-link @(string.IsNullOrEmpty(Request.Query["status"]) ? "active" : "")"
                    asp-route-status="">
                     All
                 </a>
-
                 <a class="nav-link @(Request.Query["status"] == "Pending" ? "active" : "")"
                    asp-route-status="Pending">
                     Pending
                 </a>
-
                 <a class="nav-link @(Request.Query["status"] == "AssistantChat" ? "active" : "")"
                    asp-route-status="AssistantChat">
                     In Chat
                 </a>
-
-                <a class="nav-link @(Request.Query["status"] == "WaitingDoctorApproval" ? "active" : "")"
-                   asp-route-status="WaitingDoctorApproval">
-                    Waiting Approval
-                </a>
-
-                <a class="nav-link @(Request.Query["status"] == "ActiveDoctorChat" ? "active" : "")"
-                   asp-route-status="ActiveDoctorChat">
-                    Doctor Active
-                </a>
-
-                <a class="nav-link @(Request.Query["status"] == "RejectedByDoctor" ? "active" : "")"
-                   asp-route-status="RejectedByDoctor">
+                <a class="nav-link @(Request.Query["status"] == "RejectedByAssistant" ? "active" : "")"
+                   asp-route-status="RejectedByAssistant">
                     Rejected
                 </a>
-
                 <a class="nav-link @(Request.Query["status"] == "Closed" ? "active" : "")"
                    asp-route-status="Closed">
                     Closed
                 </a>
-
             </div>
         </div>
     </div>
 
     <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
-
         @if (!Model.Requests.Any())
         {
             <div class="text-center py-5">
@@ -97,7 +78,6 @@
         {
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 custom-table">
-
                     <thead class="bg-light">
                         <tr>
                             <th class="ps-4">Date</th>
@@ -108,17 +88,15 @@
                             <th class="text-end pe-4">Actions</th>
                         </tr>
                     </thead>
-
                     <tbody>
                         @foreach (var r in Model.Requests)
                         {
                             var isPending = r.Status == Licenta.Models.PatientMessageRequestStatus.Pending;
                             var isUnassigned = string.IsNullOrWhiteSpace(r.AssistantId);
-                            var isMine = !string.IsNullOrWhiteSpace(r.AssistantId)
-                            && r.AssistantId == Model.CurrentAssistantId;
+                            var isMine = !string.IsNullOrWhiteSpace(r.AssistantId) && r.AssistantId == Model.CurrentAssistantId;
+                            var isRejected = r.Status == Licenta.Models.PatientMessageRequestStatus.RejectedByAssistant;
 
                             <tr>
-
                                 <td class="ps-4">
                                     <div class="d-flex flex-column">
                                         <span class="fw-bold">
@@ -129,7 +107,6 @@
                                         </span>
                                     </div>
                                 </td>
-
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="avatar-initials bg-gradient-primary text-white me-2">
@@ -140,15 +117,21 @@
                                         </span>
                                     </div>
                                 </td>
-
                                 <td>@r.Subject</td>
-
                                 <td>
-                                    <span class="badge badge-status status-@r.Status.ToString().ToLower()">
-                                        @r.Status
-                                    </span>
+                                    @if (isRejected)
+                                    {
+                                        <span class="badge text-danger bg-danger-subtle border border-danger-subtle px-2 py-1">
+                                            @r.Status
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-status status-@r.Status.ToString().ToLower()">
+                                            @r.Status
+                                        </span>
+                                    }
                                 </td>
-
                                 <td>
                                     @if (isUnassigned)
                                     {
@@ -170,48 +153,33 @@
                                         </div>
                                     }
                                 </td>
-
                                 <td class="text-end pe-4">
                                     <div class="d-flex justify-content-end gap-2">
-
                                         @if (isPending && (isUnassigned || isMine))
                                         {
-                                            <form method="post"
-                                                  asp-page-handler="Accept"
-                                                  asp-route-id="@r.Id">
-                                                <button type="submit"
-                                                        class="btn btn-success-soft btn-sm">
+                                            <form method="post" asp-page-handler="Accept" asp-route-id="@r.Id">
+                                                <button type="submit" class="btn btn-success-soft btn-sm">
                                                     <i class="bi bi-check-lg"></i>
                                                 </button>
                                             </form>
                                         }
-
-                                        <a asp-page="/Assistant/Messages/Requests/Review"
-                                           asp-route-id="@r.Id"
-                                           class="btn btn-primary-soft btn-sm">
+                                        <a asp-page="/Assistant/Messages/Requests/Review" asp-route-id="@r.Id" class="btn btn-primary-soft btn-sm">
                                             <i class="bi bi-eye"></i>
                                         </a>
-
                                         @if (isMine && r.Status == Licenta.Models.PatientMessageRequestStatus.AssistantChat)
                                         {
-                                            <a asp-page="/Assistant/Messages/Inbox"
-                                               asp-route-requestId="@r.Id"
-                                               class="btn btn-info-soft btn-sm">
+                                            <a asp-page="/Assistant/Messages/Inbox" asp-route-requestId="@r.Id" class="btn btn-info-soft btn-sm">
                                                 <i class="bi bi-chat-dots-fill"></i>
                                             </a>
                                         }
-
                                     </div>
                                 </td>
-
                             </tr>
                         }
                     </tbody>
-
                 </table>
             </div>
         }
-
     </div>
 </div>
 

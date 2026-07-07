@@ -25,27 +25,18 @@
     <div class="hero-section">
         <div class="hero-content text-center w-100">
             <h1 class="hero-title">Community Voice</h1>
-            <p class="hero-subtitle">Discover and share genuine experiences from our clinic.</p>
+            <p class="hero-subtitle">Discover and share genuine experiences with our doctors.</p>
         </div>
     </div>
 
-    <div class="stats-container">
-        <div class="stat-card">
-            <div class="stat-icon bg-warning-light text-warning">
-                <i class="bi bi-star-half"></i>
-            </div>
-            <div class="stat-info">
-                <span class="stat-label">Platform Rating</span>
-                <div class="stat-value">@Model.AppAverage.ToString("0.0")<span class="stat-max">/5</span></div>
-            </div>
-        </div>
+    <div class="stats-container justify-content-center">
         <div class="stat-card">
             <div class="stat-icon bg-primary-light text-primary">
                 <i class="bi bi-chat-heart"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-label">Total Reviews</span>
-                <div class="stat-value">@Model.AppTotalCount</div>
+                <span class="stat-label">Total Doctor Reviews</span>
+                <div class="stat-value">@Model.TotalDoctorReviews</div>
             </div>
         </div>
         <div class="stat-card">
@@ -67,12 +58,6 @@
                         <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-doctors" type="button">
                             <i class="bi bi-heart-pulse me-2"></i>Doctors
                             <span class="tab-badge">@Model.DoctorReviews.Count</span>
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-app" type="button">
-                            <i class="bi bi-laptop me-2"></i>Platform
-                            <span class="tab-badge">@Model.AppReviews.Count</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
@@ -133,7 +118,6 @@
                                                         <button type="button"
                                                                 class="dropdown-item js-edit-review"
                                                                 data-id="@r.Id"
-                                                                data-target="@r.Target"
                                                                 data-doctor-id="@r.DoctorId"
                                                                 data-rating="@r.Rating"
                                                                 data-title="@(r.Title ?? "")"
@@ -185,90 +169,6 @@
                     </div>
                 </div>
 
-                <!-- ========== PLATFORM REVIEWS TAB ========== -->
-                <div class="tab-pane fade" id="tab-app" role="tabpanel">
-                    <div class="reviews-grid">
-                        @if (Model.AppReviews.Count == 0)
-                        {
-                            <partial name="_EmptyReviews" model=' "No platform reviews yet." ' />
-                        }
-                        else
-                        {
-                            @foreach (var r in Model.AppReviews)
-                            {
-                                var avatarApp = Model.AuthorAvatars.TryGetValue(r.AuthorUserId, out var aa) ? aa : null;
-
-                                <div class="review-card"
-                                     data-rating="@r.Rating"
-                                     data-date="@r.CreatedAtUtc.Ticks"
-                                     data-search="@((r.Title ?? "") + " " + r.Comment)">
-
-                                    <div class="card-header-custom">
-                                        <span class="custom-badge badge-platform">Platform Review</span>
-
-                                        @if (r.AuthorUserId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
-                                        {
-                                            <div class="dropdown">
-                                                <button class="action-btn" data-bs-toggle="dropdown" type="button">
-                                                    <i class="bi bi-three-dots"></i>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                                    <li>
-                                                        <button type="button"
-                                                                class="dropdown-item js-edit-review"
-                                                                data-id="@r.Id"
-                                                                data-target="@r.Target"
-                                                                data-doctor-id=""
-                                                                data-rating="@r.Rating"
-                                                                data-title="@(r.Title ?? "")"
-                                                                data-comment="@r.Comment">
-                                                            <i class="bi bi-pencil me-2"></i>Edit
-                                                        </button>
-                                                    </li>
-                                                    <li>
-                                                        <button type="button"
-                                                                class="dropdown-item text-danger js-delete-review"
-                                                                data-id="@r.Id">
-                                                            <i class="bi bi-trash me-2"></i>Delete
-                                                        </button>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        }
-                                    </div>
-
-                                    <div class="stars-container">@Html.Raw(StarsHtml(r.Rating))</div>
-
-                                    @if (!string.IsNullOrWhiteSpace(r.Title))
-                                    {
-                                        <h5 class="review-heading">@r.Title</h5>
-                                    }
-
-                                    <p class="review-body">@r.Comment</p>
-
-                                    <div class="card-footer-custom">
-                                        <div class="reviewer-avatar bg-primary text-white">
-                                            @if (!string.IsNullOrWhiteSpace(avatarApp))
-                                            {
-                                                <img src="@avatarApp" alt="@(r.Author?.FullName ?? "Patient")" />
-                                            }
-                                            else
-                                            {
-                                                @Licenta.Pages.Patient.Reviews.IndexModel.GetInitial(r.Author?.FullName)
-                                            }
-                                        </div>
-                                        <div class="reviewer-info">
-                                            <div class="reviewer-name">@(r.Author?.FullName ?? "Patient")</div>
-                                            <div class="review-date">@r.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy")</div>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            }
-                        }
-                    </div>
-                </div>
-
                 <!-- ========== PERSONAL (MY REVIEWS) TAB ========== -->
                 <div class="tab-pane fade" id="tab-mine" role="tabpanel">
                     <div class="reviews-grid">
@@ -280,15 +180,13 @@
                         {
                             @foreach (var r in Model.MyReviews)
                             {
-                                var isDoctor = r.Target == ReviewTarget.Doctor;
-
                                 <div class="review-card personal-review"
                                      data-rating="@r.Rating"
                                      data-date="@r.CreatedAtUtc.Ticks"
                                      data-search="@((r.Title ?? "") + " " + r.Comment)">
 
                                     <div class="card-header-custom">
-                                        <span class="custom-badge badge-personal">@(isDoctor ? $"Dr. {r.Doctor?.User?.FullName}" : "Platform")</span>
+                                        <span class="custom-badge badge-personal">Dr. @r.Doctor?.User?.FullName</span>
 
                                         <div class="dropdown">
                                             <button type="button" class="action-btn" data-bs-toggle="dropdown">
@@ -299,7 +197,6 @@
                                                     <button type="button"
                                                             class="dropdown-item js-edit-review"
                                                             data-id="@r.Id"
-                                                            data-target="@r.Target"
                                                             data-doctor-id="@(r.DoctorId?.ToString() ?? "")"
                                                             data-rating="@r.Rating"
                                                             data-title="@(r.Title ?? "")"
@@ -359,23 +256,6 @@
                         <input type="hidden" asp-for="Input.Id" id="Input_Id" />
 
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>
-
-                        <div class="d-flex gap-2 mb-4" id="targetChoiceWrap">
-                            <label class="choice-card flex-fill" for="target-doctor">
-                                <input type="radio" asp-for="Input.Target" value="Doctor" id="target-doctor" class="choice-input" checked />
-                                <div class="choice-content py-3 px-2">
-                                    <i class="bi bi-heart-pulse fs-4 d-block mb-1"></i>
-                                    <span class="fw-bold small">Doctor</span>
-                                </div>
-                            </label>
-                            <label class="choice-card flex-fill" for="target-app">
-                                <input type="radio" asp-for="Input.Target" value="Application" id="target-app" class="choice-input" />
-                                <div class="choice-content py-3 px-2">
-                                    <i class="bi bi-laptop fs-4 d-block mb-1"></i>
-                                    <span class="fw-bold small">Platform</span>
-                                </div>
-                            </label>
-                        </div>
 
                         <div id="doctorSelectWrap" class="mb-4">
                             <label class="input-label">Consulting Doctor</label>

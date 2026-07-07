@@ -18,11 +18,14 @@ namespace Licenta.Pages.Patient.Attachments
 
         public MedicalAttachment? Item { get; private set; }
 
-        public async Task<IActionResult> OnGetAsync(Guid id)
+        public async Task<IActionResult> OnGetAsync(Guid? id)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return Forbid();
+
+            if (id == null || id == Guid.Empty)
+                return NotFound();
 
             var userId = user.Id;
 
@@ -32,7 +35,7 @@ namespace Licenta.Pages.Patient.Attachments
                 .Include(a => a.Patient!.User)
                 .Include(a => a.Doctor)
                 .Include(a => a.Doctor!.User)
-                .FirstOrDefaultAsync(a => a.Id == id && a.Patient != null && a.Patient.UserId == userId);
+                .FirstOrDefaultAsync(a => a.Id == id.Value && a.Patient != null && a.Patient.UserId == userId);
 
             if (Item == null)
                 return NotFound();

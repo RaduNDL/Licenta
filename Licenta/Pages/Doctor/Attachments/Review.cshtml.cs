@@ -59,8 +59,8 @@ namespace Licenta.Pages.Doctor.Attachments
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Forbid();
 
-            var existsDoctor = await _db.Doctors.AsNoTracking().AnyAsync(d => d.UserId == user.Id);
-            if (!existsDoctor) return Forbid();
+            var doctor = await _db.Doctors.AsNoTracking().FirstOrDefaultAsync(d => d.UserId == user.Id);
+            if (doctor == null) return Forbid();
 
             var item = await _db.MedicalAttachments
                 .Include(a => a.Patient!).ThenInclude(p => p.User!)
@@ -68,11 +68,13 @@ namespace Licenta.Pages.Doctor.Attachments
 
             if (item == null) return NotFound();
 
-            var docClinic = (user.ClinicId ?? "").Trim();
-            if (!string.IsNullOrWhiteSpace(docClinic))
+            if (!CanReviewAttachment(user, doctor.Id, item))
+                return Forbid();
+
+            if (item.Status != AttachmentStatus.Pending)
             {
-                var patClinic = (item.Patient?.User?.ClinicId ?? "").Trim();
-                if (patClinic != docClinic) return Forbid();
+                TempData["StatusMessage"] = "This document has already been reviewed.";
+                return RedirectToPage("/Doctor/Attachments/Index", new { patientId = item.PatientId });
             }
 
             Item = item;
@@ -94,11 +96,13 @@ namespace Licenta.Pages.Doctor.Attachments
 
             if (item == null) return NotFound();
 
-            var docClinic = (user.ClinicId ?? "").Trim();
-            if (!string.IsNullOrWhiteSpace(docClinic))
+            if (!CanReviewAttachment(user, doctor.Id, item))
+                return Forbid();
+
+            if (item.Status != AttachmentStatus.Pending)
             {
-                var patClinic = (item.Patient?.User?.ClinicId ?? "").Trim();
-                if (patClinic != docClinic) return Forbid();
+                TempData["StatusMessage"] = "This document has already been reviewed.";
+                return RedirectToPage("/Doctor/Attachments/Index", new { patientId = item.PatientId });
             }
 
             if (!ModelState.IsValid)
@@ -118,6 +122,22 @@ namespace Licenta.Pages.Doctor.Attachments
             {
                 item.Status = AttachmentStatus.Validated;
                 await _db.SaveChangesAsync();
+
+                if (patientUser != null)
+                {
+                    await _notifier.NotifyAsync(
+                        patientUser,
+                        NotificationType.Document,
+                        "Document Validated",
+                        $"Dr. {user.FullName ?? user.Email} has validated your uploaded document.",
+                        actionUrl: $"/Patient/Attachments/Details?id={item.Id}",
+                        actionText: "View Details",
+                        relatedEntity: "MedicalAttachment",
+                        relatedEntityId: item.Id.ToString(),
+                        sendEmail: false
+                    );
+                }
+
                 TempData["StatusMessage"] = "Document validated manually.";
                 return RedirectToPage("/Doctor/Attachments/Inbox");
             }
@@ -126,6 +146,22 @@ namespace Licenta.Pages.Doctor.Attachments
             {
                 item.Status = AttachmentStatus.Rejected;
                 await _db.SaveChangesAsync();
+
+                if (patientUser != null)
+                {
+                    await _notifier.NotifyAsync(
+                        patientUser,
+                        NotificationType.Document,
+                        "Document Rejected",
+                        $"Dr. {user.FullName ?? user.Email} has reviewed your uploaded document.",
+                        actionUrl: $"/Patient/Attachments/Details?id={item.Id}",
+                        actionText: "View Details",
+                        relatedEntity: "MedicalAttachment",
+                        relatedEntityId: item.Id.ToString(),
+                        sendEmail: false
+                    );
+                }
+
                 TempData["StatusMessage"] = "Document rejected.";
                 return RedirectToPage("/Doctor/Attachments/Inbox");
             }
@@ -226,6 +262,25 @@ namespace Licenta.Pages.Doctor.Attachments
 
             Item = item;
             return Page();
+        }
+
+        private static bool CanReviewAttachment(ApplicationUser user, Guid doctorId, MedicalAttachment item)
+        {
+            if (item.Type == "ProfilePhoto" || item.Type == "AppointmentRequest")
+                return false;
+
+            if (item.DoctorId.HasValue && item.DoctorId.Value != doctorId)
+                return false;
+
+            var doctorClinic = (user.ClinicId ?? "").Trim();
+            if (!string.IsNullOrWhiteSpace(doctorClinic))
+            {
+                var patientClinic = (item.Patient?.User?.ClinicId ?? "").Trim();
+                if (!string.Equals(patientClinic, doctorClinic, StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            return true;
         }
 
         private static bool IsRejected(ImagingPredictResponse? r)

@@ -69,9 +69,14 @@ namespace Licenta.Pages.Doctor.MedicalRecords
                 return Page();
             }
 
-            await LoadPatientsAsync(patientId);
+            await LoadPatientsAsync(patientId, user);
             if (patientId.HasValue)
+            {
+                if (!await PatientIsAccessibleToDoctorAsync(patientId.Value, user))
+                    return Forbid();
+
                 Record.PatientId = patientId.Value;
+            }
 
             return Page();
         }
@@ -110,6 +115,8 @@ namespace Licenta.Pages.Doctor.MedicalRecords
             {
                 if (Record.PatientId == Guid.Empty)
                     ModelState.AddModelError("Record.PatientId", "Please select a patient.");
+                else if (!await PatientIsAccessibleToDoctorAsync(Record.PatientId, user))
+                    ModelState.AddModelError("Record.PatientId", "Selected patient is not available for your clinic.");
 
                 Record.VisitDateUtc = DateTime.UtcNow;
             }
@@ -142,7 +149,7 @@ namespace Licenta.Pages.Doctor.MedicalRecords
                 }
                 else
                 {
-                    await LoadPatientsAsync(Record.PatientId);
+                    await LoadPatientsAsync(Record.PatientId, user);
                 }
 
                 return Page();
@@ -157,11 +164,17 @@ namespace Licenta.Pages.Doctor.MedicalRecords
             return RedirectToPage("/Doctor/MedicalRecords/Details", new { id = Record.Id });
         }
 
-        private async Task LoadPatientsAsync(Guid? selectedPatientId)
+        private async Task LoadPatientsAsync(Guid? selectedPatientId, ApplicationUser user)
         {
+            var clinicId = (user.ClinicId ?? "").Trim();
+
             var patients = await _db.Patients
                 .Include(p => p.User)
                 .AsNoTracking()
+                .Where(p =>
+                    p.User != null &&
+                    !p.User.IsSoftDeleted &&
+                    (string.IsNullOrWhiteSpace(clinicId) || p.User.ClinicId == clinicId))
                 .OrderBy(p => p.User.FullName ?? p.User.Email)
                 .Select(p => new
                 {
@@ -171,6 +184,20 @@ namespace Licenta.Pages.Doctor.MedicalRecords
                 .ToListAsync();
 
             Patients = new SelectList(patients, "Id", "Name", selectedPatientId);
+        }
+
+        private async Task<bool> PatientIsAccessibleToDoctorAsync(Guid patientId, ApplicationUser user)
+        {
+            var clinicId = (user.ClinicId ?? "").Trim();
+
+            return await _db.Patients
+                .AsNoTracking()
+                .Include(p => p.User)
+                .AnyAsync(p =>
+                    p.Id == patientId &&
+                    p.User != null &&
+                    !p.User.IsSoftDeleted &&
+                    (string.IsNullOrWhiteSpace(clinicId) || p.User.ClinicId == clinicId));
         }
     }
 }

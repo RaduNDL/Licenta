@@ -64,6 +64,7 @@
                                         </div>
 
                                         <form method="post" asp-page-handler="Remove">
+                                            <input type="hidden" name="doctorId" value="@doc.DoctorId" />
                                             <input type="hidden" name="assistantId" value="@ast.Id" />
                                             <button type="submit" class="btn-remove" title="Unassign Assistant">
                                                 <i class="bi bi-trash3"></i>
@@ -79,8 +80,12 @@
                                 <input type="hidden" name="doctorId" value="@doc.DoctorId" />
 
                                 <div class="assign-group">
-                                    <select name="assistantId" asp-items="Model.AvailableAssistants" class="form-select-modern" required>
+                                    <select name="assistantId" class="form-select-modern" required>
                                         <option value="">+ Add Assistant</option>
+                                        @foreach (var ast in Model.AvailableAssistants.Where(a => !doc.AssignedAssistants.Any(aa => aa.Id == a.Value)))
+                                        {
+                                            <option value="@ast.Value">@ast.Text</option>
+                                        }
                                     </select>
 
                                     <button class="btn-assign" type="submit" title="Assign Assistant">

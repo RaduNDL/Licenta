@@ -25,14 +25,12 @@ namespace Licenta.Pages.Patient.Reviews
             _userManager = userManager;
         }
 
-        public IList<Review> AppReviews { get; set; } = new List<Review>();
         public IList<Review> DoctorReviews { get; set; } = new List<Review>();
         public IList<Review> MyReviews { get; set; } = new List<Review>();
         public IList<DoctorLite> AvailableDoctors { get; set; } = new List<DoctorLite>();
         public Dictionary<string, string?> AuthorAvatars { get; set; } = new();
 
-        public double AppAverage { get; set; }
-        public int AppTotalCount { get; set; }
+        public int TotalDoctorReviews { get; set; }
         public int MyReviewsCount { get; set; }
 
         [TempData] public string? StatusMessage { get; set; }
@@ -45,9 +43,7 @@ namespace Licenta.Pages.Patient.Reviews
         {
             public Guid? Id { get; set; }
 
-            [Required]
-            public ReviewTarget Target { get; set; } = ReviewTarget.Application;
-
+            [Required(ErrorMessage = "Please select a doctor.")]
             public Guid? DoctorId { get; set; }
 
             [Range(1, 5, ErrorMessage = "Please choose a rating between 1 and 5 stars.")]
@@ -81,7 +77,7 @@ namespace Licenta.Pages.Patient.Reviews
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
-            NormalizeInputForCreate();
+            NormalizeInput();
 
             if (!ModelState.IsValid)
             {
@@ -89,43 +85,32 @@ namespace Licenta.Pages.Patient.Reviews
                 return Page();
             }
 
-            // block duplicates (also protected by DB unique indexes)
-            if (Input.Target == ReviewTarget.Application)
+            if (!Input.DoctorId.HasValue || !await DoctorIsReviewableAsync(Input.DoctorId.Value, user))
             {
-                var alreadyAppReview = await _db.Reviews
-                    .AnyAsync(r => r.AuthorUserId == user.Id
-                                && r.Target == ReviewTarget.Application
-                                && !r.IsDeleted);
-
-                if (alreadyAppReview)
-                {
-                    StatusMessage = "You have already reviewed the platform. You can edit your existing review instead.";
-                    StatusType = "warning";
-                    return RedirectToPage();
-                }
+                ModelState.AddModelError(nameof(Input) + "." + nameof(Input.DoctorId), "Please select an available doctor.");
+                await LoadDataAsync();
+                return Page();
             }
-            else if (Input.Target == ReviewTarget.Doctor && Input.DoctorId.HasValue)
-            {
-                var alreadyDoctorReview = await _db.Reviews
-                    .AnyAsync(r => r.AuthorUserId == user.Id
-                                && r.Target == ReviewTarget.Doctor
-                                && r.DoctorId == Input.DoctorId
-                                && !r.IsDeleted);
 
-                if (alreadyDoctorReview)
-                {
-                    StatusMessage = "You have already reviewed this doctor. You can edit your existing review instead.";
-                    StatusType = "warning";
-                    return RedirectToPage();
-                }
+            var alreadyDoctorReview = await _db.Reviews
+                .AnyAsync(r => r.AuthorUserId == user.Id
+                            && r.Target == ReviewTarget.Doctor
+                            && r.DoctorId == Input.DoctorId
+                            && !r.IsDeleted);
+
+            if (alreadyDoctorReview)
+            {
+                StatusMessage = "You have already reviewed this doctor. You can edit your existing review instead.";
+                StatusType = "warning";
+                return RedirectToPage();
             }
 
             var review = new Review
             {
                 Id = Guid.NewGuid(),
                 AuthorUserId = user.Id,
-                Target = Input.Target,
-                DoctorId = Input.Target == ReviewTarget.Doctor ? Input.DoctorId : null,
+                Target = ReviewTarget.Doctor, // Fortam target-ul catre Doctor
+                DoctorId = Input.DoctorId,
                 Rating = Input.Rating,
                 Title = string.IsNullOrWhiteSpace(Input.Title) ? null : Input.Title.Trim(),
                 Comment = Input.Comment.Trim(),
@@ -152,7 +137,6 @@ namespace Licenta.Pages.Patient.Reviews
                 return RedirectToPage();
             }
 
-            // Load the existing review to prevent changing Target/DoctorId via client-side tampering
             var review = await _db.Reviews
                 .FirstOrDefaultAsync(r => r.Id == Input.Id && r.AuthorUserId == user.Id);
 
@@ -163,11 +147,8 @@ namespace Licenta.Pages.Patient.Reviews
                 return RedirectToPage();
             }
 
-            // Enforce original target/doctor
-            Input.Target = review.Target;
             Input.DoctorId = review.DoctorId;
 
-            // Validate only fields user is allowed to edit
             if (Input.Rating < 1 || Input.Rating > 5)
                 ModelState.AddModelError(nameof(Input) + "." + nameof(Input.Rating), "Please choose a rating between 1 and 5 stars.");
 
@@ -217,19 +198,8 @@ namespace Licenta.Pages.Patient.Reviews
             return RedirectToPage();
         }
 
-        private void NormalizeInputForCreate()
+        private void NormalizeInput()
         {
-            // doctor selection required only for doctor target
-            if (Input.Target == ReviewTarget.Application)
-            {
-                Input.DoctorId = null;
-                ModelState.Remove(nameof(Input) + "." + nameof(Input.DoctorId));
-            }
-            else if (Input.Target == ReviewTarget.Doctor && !Input.DoctorId.HasValue)
-            {
-                ModelState.AddModelError(nameof(Input) + "." + nameof(Input.DoctorId), "Please select a doctor.");
-            }
-
             if (Input.Rating < 1 || Input.Rating > 5)
             {
                 ModelState.AddModelError(nameof(Input) + "." + nameof(Input.Rating), "Please choose a rating between 1 and 5 stars.");
@@ -244,23 +214,30 @@ namespace Licenta.Pages.Patient.Reviews
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return;
 
+            // Extragem doar recenziile pentru doctori
             var all = await _db.Reviews
-                .Where(r => !r.IsDeleted)
+                .Where(r => !r.IsDeleted && r.Target == ReviewTarget.Doctor)
                 .Include(r => r.Author)
                 .Include(r => r.Doctor).ThenInclude(d => d!.User)
                 .OrderByDescending(r => r.CreatedAtUtc)
                 .ToListAsync();
 
-            AppReviews = all.Where(r => r.Target == ReviewTarget.Application).ToList();
-            DoctorReviews = all.Where(r => r.Target == ReviewTarget.Doctor).ToList();
+            DoctorReviews = all.ToList();
             MyReviews = all.Where(r => r.AuthorUserId == user.Id).ToList();
 
-            AppTotalCount = AppReviews.Count;
-            AppAverage = AppTotalCount == 0 ? 0 : Math.Round(AppReviews.Average(r => r.Rating), 1);
+            TotalDoctorReviews = DoctorReviews.Count;
             MyReviewsCount = MyReviews.Count;
 
-            var docs = await _db.Doctors
+            var clinicId = (user.ClinicId ?? "").Trim();
+
+            var docsQuery = _db.Doctors
                 .Include(d => d.User)
+                .Where(d => d.User != null && !d.User.IsSoftDeleted);
+
+            if (!string.IsNullOrWhiteSpace(clinicId))
+                docsQuery = docsQuery.Where(d => d.User!.ClinicId == clinicId);
+
+            var docs = await docsQuery
                 .OrderBy(d => d.User!.FullName)
                 .ToListAsync();
 
@@ -282,6 +259,20 @@ namespace Licenta.Pages.Patient.Reviews
             }).ToList();
 
             await LoadAuthorAvatarsAsync(all);
+        }
+
+        private async Task<bool> DoctorIsReviewableAsync(Guid doctorId, ApplicationUser user)
+        {
+            var clinicId = (user.ClinicId ?? "").Trim();
+
+            return await _db.Doctors
+                .AsNoTracking()
+                .Include(d => d.User)
+                .AnyAsync(d =>
+                    d.Id == doctorId &&
+                    d.User != null &&
+                    !d.User.IsSoftDeleted &&
+                    (string.IsNullOrWhiteSpace(clinicId) || d.User.ClinicId == clinicId));
         }
 
         private async Task LoadAuthorAvatarsAsync(List<Review> reviews)

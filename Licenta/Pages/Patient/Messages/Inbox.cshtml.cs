@@ -12,7 +12,7 @@ using System.Text.Json;
 namespace Licenta.Pages.Patient.Messages;
 
 [Authorize(Roles = "Patient")]
-public class InboxModel : PageModel                                                                 
+public class InboxModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;

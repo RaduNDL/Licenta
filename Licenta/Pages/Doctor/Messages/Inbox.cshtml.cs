@@ -158,6 +158,7 @@ public class InboxModel : PageModel
         var requests = await _db.PatientMessageRequests
             .AsNoTracking()
             .Include(r => r.Patient)
+                .ThenInclude(p => p.User) 
             .Where(r =>
                 r.DoctorProfileId == doctorProfileId &&
                 (r.Status == PatientMessageRequestStatus.ActiveDoctorChat ||
@@ -194,10 +195,16 @@ public class InboxModel : PageModel
             var isClosed = req.Status == PatientMessageRequestStatus.Closed;
             var isHidden = hiddenConversationKeys.Contains(convKey);
 
+            var partnerName = req.Patient.User?.FullName
+                ?? req.Patient.User?.Email
+                ?? req.Patient.FullName
+                ?? req.Patient.Email
+                ?? "Patient";
+
             var conversation = new ConversationVm(
                 req.Id,
                 req.Patient.UserId,
-                req.Patient.FullName ?? req.Patient.Email ?? "Patient",
+                partnerName,
                 lastMsg?.SentAt ?? (req.UpdatedAt ?? req.CreatedAt),
                 TruncatePreview(lastMsg?.Body ?? req.Subject),
                 convKey,
@@ -247,6 +254,7 @@ public class InboxModel : PageModel
         {
             selectedReq = await _db.PatientMessageRequests
                 .Include(r => r.Patient)
+                    .ThenInclude(p => p.User) 
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r =>
                     r.Id == requestId &&
@@ -258,6 +266,7 @@ public class InboxModel : PageModel
         {
             selectedReq = await _db.PatientMessageRequests
                 .Include(r => r.Patient)
+                    .ThenInclude(p => p.User) 
                 .AsNoTracking()
                 .Where(r =>
                     r.DoctorProfileId == doctorProfile.Id &&
@@ -273,7 +282,13 @@ public class InboxModel : PageModel
 
         SelectedRequestId = selectedReq.Id;
         SelectedPartnerId = selectedReq.Patient.UserId;
-        SelectedPartnerName = selectedReq.Patient.FullName ?? selectedReq.Patient.Email ?? "Patient";
+
+        SelectedPartnerName = selectedReq.Patient.User?.FullName
+            ?? selectedReq.Patient.User?.Email
+            ?? selectedReq.Patient.FullName
+            ?? selectedReq.Patient.Email
+            ?? "Patient";
+
         CurrentConversationKey = ConversationKey(selectedReq.Id);
 
         Messages = await _db.InternalMessages

@@ -7,7 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Assistant.Messages;
 
@@ -107,12 +111,7 @@ public class InboxModel : PageModel
                 l.EntityName == ConversationVisibilityEntity &&
                 (l.Action == HideConversationAction || l.Action == RevealConversationAction) &&
                 !string.IsNullOrWhiteSpace(l.EntityId))
-            .Select(l => new
-            {
-                l.EntityId,
-                l.Action,
-                l.OccurredAtUtc
-            })
+            .Select(l => new { l.EntityId, l.Action, l.OccurredAtUtc })
             .ToListAsync();
 
         return logs
@@ -150,8 +149,7 @@ public class InboxModel : PageModel
         Conversations.Clear();
 
         var requests = await _db.PatientMessageRequests
-            .Include(r => r.Patient)
-            .ThenInclude(p => p.User)
+            .Include(r => r.Patient!).ThenInclude(p => p.User)
             .Where(r =>
                 r.AssistantId == assistant.Id &&
                 (r.Status == PatientMessageRequestStatus.AssistantChat ||
@@ -188,8 +186,8 @@ public class InboxModel : PageModel
 
             var conversation = new ConversationVm(
                 r.Id,
-                r.Patient.UserId,
-                r.Patient.FullName ?? r.Patient.Email ?? "Patient",
+                r.Patient!.UserId,
+                r.Patient.User?.FullName ?? r.Patient.Email ?? "Patient",
                 lastMsg?.SentAt ?? (r.UpdatedAt ?? r.CreatedAt),
                 preview,
                 convKey,
@@ -217,9 +215,15 @@ public class InboxModel : PageModel
 
         ShowHidden = showHidden;
 
-        PendingRequestsCount = assistant.AssignedDoctorId != null
+        var assistantUser = await _db.Users
+            .Include(u => u.AssignedDoctors)
+            .FirstOrDefaultAsync(u => u.Id == assistant.Id);
+
+        var assignedDoctorIds = assistantUser?.AssignedDoctors.Select(d => d.Id).ToList() ?? new List<Guid>();
+
+        PendingRequestsCount = assignedDoctorIds.Count > 0
             ? await _db.PatientMessageRequests.CountAsync(r =>
-                r.DoctorProfileId == assistant.AssignedDoctorId.Value &&
+                assignedDoctorIds.Contains(r.DoctorProfileId) &&
                 r.Status == PatientMessageRequestStatus.Pending &&
                 (r.AssistantId == null || r.AssistantId == assistant.Id))
             : 0;
@@ -231,8 +235,7 @@ public class InboxModel : PageModel
             return;
 
         var req = await _db.PatientMessageRequests
-            .Include(r => r.Patient)
-            .ThenInclude(p => p.User)
+            .Include(r => r.Patient!).ThenInclude(p => p.User)
             .FirstOrDefaultAsync(r =>
                 r.Id == requestId &&
                 r.AssistantId == assistant.Id &&
@@ -243,7 +246,7 @@ public class InboxModel : PageModel
             return;
 
         SelectedRequestId = req.Id;
-        SelectedPatientName = req.Patient.FullName ?? req.Patient.Email ?? "Patient";
+        SelectedPatientName = req.Patient!.User?.FullName ?? req.Patient.Email ?? "Patient";
         SelectedSubject = req.Subject;
         CurrentConversationKey = ConversationKey(req.Id);
 
@@ -308,7 +311,7 @@ public class InboxModel : PageModel
             return RedirectToPage("/Assistant/Messages/Inbox", new { requestId = Input.RequestId });
         }
 
-        var patientUserId = req.Patient.UserId;
+        var patientUserId = req.Patient!.UserId;
 
         var msg = new InternalMessage
         {
@@ -383,7 +386,7 @@ public class InboxModel : PageModel
             .Include(r => r.Patient)
             .FirstOrDefaultAsync(r => r.Id == reqId && r.AssistantId == assistant.Id);
 
-        if (req == null)
+        if (req == null || req.Patient == null)
             return new JsonResult(new { messages = Array.Empty<object>(), reloadRequired = true });
 
         if (req.Status != PatientMessageRequestStatus.AssistantChat &&
@@ -448,7 +451,7 @@ public class InboxModel : PageModel
         req.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
-        var patientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == req.Patient.UserId);
+        var patientUser = await _db.Users.FirstOrDefaultAsync(u => u.Id == req.Patient!.UserId);
         if (patientUser != null)
         {
             await _notifications.NotifyAsync(

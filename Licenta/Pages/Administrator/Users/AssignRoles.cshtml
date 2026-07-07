@@ -3,66 +3,72 @@
 @{
     ViewData["Title"] = "Assign Roles";
 }
+
 @section Styles {
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/AssignRoles.css" asp-append-version="true" />
 }
-<h2 class="mb-3">Assign Roles</h2>
-<p class="text-muted">User: <strong>@Model.UserEmail</strong></p>
 
-<form method="post">
-    @Html.AntiForgeryToken()
-    <input type="hidden" asp-for="UserId" />
+<div class="assign-roles-container">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+            <h2 class="mb-1 text-primary">Assign Roles</h2>
+            <p class="text-muted mb-0">User: <strong class="text-dark">@Model.UserEmail</strong></p>
+        </div>
+        <div class="card-body">
+            <form method="post" id="assignRolesForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="UserId" />
 
-    <div class="mb-3">
-        @foreach (var r in Model.AllRoles)
-        {
-            var isChecked = Model.SelectedRoles.Contains(r);
-            var isSelf = Model.IsSelf;
-            var isAdminRole = string.Equals(r, "Administrator", StringComparison.OrdinalIgnoreCase);
-            var disabledAttr = (isSelf && isAdminRole) ? "disabled" : null;
+                <div class="roles-wrapper mb-4">
+                    @foreach (var r in Model.AllRoles)
+                    {
+                        var isChecked = Model.SelectedRoles.Contains(r);
+                        var isSelf = Model.IsSelf;
+                        var isAdminRole = string.Equals(r, "Administrator", StringComparison.OrdinalIgnoreCase);
+                        var disabledAttr = (isSelf && isAdminRole) ? "disabled" : null;
 
-            <div class="form-check">
-                <input class="form-check-input"
-                       type="checkbox"
-                       name="SelectedRoles"
-                       value="@r"
-                       id="role_@r"
-                       @(isChecked ? "checked" : "")
-                       @disabledAttr />
-                <label class="form-check-label fw-semibold" for="role_@r">@r</label>
-            </div>
-        }
+                        <div class="form-check custom-checkbox">
+                            <input class="form-check-input shadow-none"
+                                   type="checkbox"
+                                   name="SelectedRoles"
+                                   value="@r"
+                                   id="role_@r"
+                            @(isChecked ? "checked" : "")
+                            @disabledAttr />
+                            <label class="form-check-label fw-semibold" for="role_@r">@r</label>
+                        </div>
+                    }
+                </div>
+
+                <div class="action-buttons d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4 d-inline-flex align-items-center">
+                        <i class="bi bi-save me-2"></i> Save
+                    </button>
+                    <a asp-page="Index" class="btn btn-outline-secondary px-4 d-inline-flex align-items-center">
+                        <i class="bi bi-arrow-left me-2"></i> Back
+                    </a>
+                </div>
+            </form>
+
+            @if (!string.IsNullOrEmpty(Model.Error))
+            {
+                <div class="alert alert-danger mt-4 shadow-sm border-0 d-flex align-items-center" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                    <div><strong>Error:</strong> @Model.Error</div>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.Status))
+            {
+                <div class="alert alert-success mt-4 shadow-sm border-0 d-flex align-items-center" role="alert">
+                    <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                    <div>@Model.Status</div>
+                </div>
+            }
+        </div>
     </div>
-
-    <div class="d-flex gap-2 mt-3">
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-save"></i> Save
-        </button>
-        <a asp-page="Index" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Back
-        </a>
-    </div>
-</form>
-
-@if (!string.IsNullOrEmpty(Model.Error))
-{
-    <div class="alert alert-danger mt-3 shadow-sm">
-        <strong>Error:</strong> @Model.Error
-    </div>
-}
-@if (!string.IsNullOrEmpty(Model.Status))
-{
-    <div class="alert alert-success mt-3 shadow-sm">
-        @Model.Status
-    </div>
-}
+</div>
 
 @section Scripts {
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            document.querySelectorAll("input[disabled]").forEach(cb => {
-                cb.addEventListener("click", e => e.preventDefault());
-            });
-        });
-    </script>
+    <script src="~/js/AssignRoles.js" asp-append-version="true"></script>
 }

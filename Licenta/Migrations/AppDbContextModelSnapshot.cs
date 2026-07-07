@@ -22,6 +22,21 @@ namespace Licenta.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("DoctorAssistantAssignment", b =>
+                {
+                    b.Property<string>("AssistantUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("DoctorProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("AssistantUserId", "DoctorProfileId");
+
+                    b.HasIndex("DoctorProfileId");
+
+                    b.ToTable("DoctorAssistantAssignment");
+                });
+
             modelBuilder.Entity("Licenta.Areas.Identity.Data.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -29,9 +44,6 @@ namespace Licenta.Migrations
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
-
-                    b.Property<Guid?>("AssignedDoctorId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ClinicId")
                         .HasColumnType("nvarchar(max)");
@@ -91,8 +103,6 @@ namespace Licenta.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AssignedDoctorId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -1130,14 +1140,19 @@ namespace Licenta.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Licenta.Areas.Identity.Data.ApplicationUser", b =>
+            modelBuilder.Entity("DoctorAssistantAssignment", b =>
                 {
-                    b.HasOne("Licenta.Models.DoctorProfile", "AssignedDoctor")
-                        .WithMany("Assistants")
-                        .HasForeignKey("AssignedDoctorId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                    b.HasOne("Licenta.Areas.Identity.Data.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("AssistantUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("AssignedDoctor");
+                    b.HasOne("Licenta.Models.DoctorProfile", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Licenta.Models.Appointment", b =>
@@ -1522,8 +1537,6 @@ namespace Licenta.Migrations
             modelBuilder.Entity("Licenta.Models.DoctorProfile", b =>
                 {
                     b.Navigation("Appointments");
-
-                    b.Navigation("Assistants");
 
                     b.Navigation("Attachments");
 

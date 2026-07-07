@@ -50,7 +50,8 @@ namespace Licenta.Pages.Doctor.Appointments
                 .Include(r => r.Patient).ThenInclude(p => p.User)
                 .Where(r =>
                     r.DoctorId == doctor.Id &&
-                    r.Status == AppointmentRescheduleStatus.Requested)
+                    (r.Status == AppointmentRescheduleStatus.Requested ||
+                     r.Status == AppointmentRescheduleStatus.PatientSelected))
                 .OrderByDescending(r => r.UpdatedAtUtc)
                 .Take(200)
                 .ToListAsync();

@@ -22,12 +22,14 @@ namespace Licenta.Pages.Patient.MedicalRecords
             _userManager = userManager;
         }
 
-        public MedicalRecord Record { get; set; } = default!;
+        public MedicalRecord? Record { get; set; }
 
-        public async Task<IActionResult> OnGetAsync(Guid id)
+        public async Task<IActionResult> OnGetAsync(Guid? id)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
+
+            if (id == null || id == Guid.Empty) return NotFound();
 
             var patient = await _db.Patients
                 .AsNoTracking()
@@ -38,7 +40,7 @@ namespace Licenta.Pages.Patient.MedicalRecords
             var record = await _db.MedicalRecords
                 .AsNoTracking()
                 .Include(r => r.Doctor).ThenInclude(d => d.User)
-                .FirstOrDefaultAsync(r => r.Id == id);
+                .FirstOrDefaultAsync(r => r.Id == id.Value);
 
             if (record == null) return NotFound();
             if (record.PatientId != patient.Id) return Forbid();

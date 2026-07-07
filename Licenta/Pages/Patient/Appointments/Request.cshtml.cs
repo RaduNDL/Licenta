@@ -135,6 +135,21 @@ namespace Licenta.Pages.Patient.Appointments
                 return Page();
             }
 
+            var clinicId = (user.ClinicId ?? "").Trim();
+            var selectedDoctor = await _db.Doctors
+                .Include(d => d.User)
+                .FirstOrDefaultAsync(d =>
+                    d.Id == doctorId &&
+                    d.User != null &&
+                    !d.User.IsSoftDeleted &&
+                    (string.IsNullOrWhiteSpace(clinicId) || d.User.ClinicId == clinicId));
+
+            if (selectedDoctor?.User == null)
+            {
+                ModelState.AddModelError(nameof(Input.SelectedSlotKey), "Selected doctor is not available.");
+                return Page();
+            }
+
             var ok = await ValidateSlotStillAvailableAsync(doctorId, localKinded);
             if (!ok)
             {
@@ -183,7 +198,7 @@ namespace Licenta.Pages.Patient.Appointments
                 PatientId = patient.Id,
                 DoctorId = doctorId,
                 FileName = safeName,
-                FilePath = storedPath,         
+                FilePath = storedPath,
                 ContentType = "application/json",
                 Type = "AppointmentRequest",
                 UploadedAt = DateTime.UtcNow,
@@ -195,12 +210,7 @@ namespace Licenta.Pages.Patient.Appointments
             _db.MedicalAttachments.Add(attachment);
             await _db.SaveChangesAsync();
 
-            var doctorUser = await _db.Doctors
-                .AsNoTracking()
-                .Include(d => d.User)
-                .Where(d => d.Id == doctorId)
-                .Select(d => d.User)
-                .FirstOrDefaultAsync();
+            var doctorUser = selectedDoctor.User;
 
             if (doctorUser != null)
             {

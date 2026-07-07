@@ -28,6 +28,8 @@ namespace Licenta.Pages.Doctor.Reports
         }
 
         public List<MedicalRecord> Pending { get; set; } = new();
+        public List<MedicalAttachment> PendingAttachments { get; set; } = new();
+        public Guid CurrentDoctorId { get; set; }
 
         public async Task OnGetAsync()
         {
@@ -36,6 +38,7 @@ namespace Licenta.Pages.Doctor.Reports
             {
                 TempData["StatusMessage"] = "User not found.";
                 Pending = new();
+                PendingAttachments = new();
                 return;
             }
 
@@ -47,8 +50,11 @@ namespace Licenta.Pages.Doctor.Reports
             {
                 TempData["StatusMessage"] = "Doctor profile not found.";
                 Pending = new();
+                PendingAttachments = new();
                 return;
             }
+
+            CurrentDoctorId = doctor.Id;
 
             Pending = await _db.MedicalRecords
                 .AsNoTracking()
@@ -56,6 +62,8 @@ namespace Licenta.Pages.Doctor.Reports
                 .Where(r => r.DoctorId == doctor.Id && r.Status == RecordStatus.Draft)
                 .OrderByDescending(r => r.VisitDateUtc)
                 .ToListAsync();
+
+            PendingAttachments = await LoadPendingAttachmentsAsync(currentUser, doctor.Id);
         }
 
         public async Task<IActionResult> OnPostAsync(Guid recordId)
@@ -111,6 +119,82 @@ namespace Licenta.Pages.Doctor.Reports
             var patientName = patientUser?.FullName ?? "patient";
             TempData["StatusMessage"] = $"Record for {patientName} has been validated.";
             return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostClaimAttachmentAsync(Guid attachmentId)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                TempData["StatusMessage"] = "User not found.";
+                return RedirectToPage();
+            }
+
+            var doctor = await _db.Doctors
+                .FirstOrDefaultAsync(d => d.UserId == currentUser.Id);
+
+            if (doctor == null)
+            {
+                TempData["StatusMessage"] = "Doctor profile not found.";
+                return RedirectToPage();
+            }
+
+            var attachment = await _db.MedicalAttachments
+                .Include(a => a.Patient).ThenInclude(p => p!.User)
+                .FirstOrDefaultAsync(a =>
+                    a.Id == attachmentId &&
+                    a.Status == AttachmentStatus.Pending &&
+                    a.DoctorId == null &&
+                    a.Type != "ProfilePhoto" &&
+                    a.Type != "AppointmentRequest");
+
+            if (attachment == null)
+            {
+                TempData["StatusMessage"] = "Attachment not found or already assigned.";
+                return RedirectToPage();
+            }
+
+            var doctorClinicId = (currentUser.ClinicId ?? "").Trim();
+            var patientClinicId = (attachment.Patient?.User?.ClinicId ?? "").Trim();
+
+            if (!string.IsNullOrWhiteSpace(doctorClinicId) && patientClinicId != doctorClinicId)
+            {
+                TempData["StatusMessage"] = "You cannot claim an attachment from another clinic.";
+                return RedirectToPage();
+            }
+
+            attachment.DoctorId = doctor.Id;
+            await _db.SaveChangesAsync();
+
+            TempData["StatusMessage"] = "Attachment assigned to you.";
+            return RedirectToPage("/Doctor/Attachments/Review", new { id = attachment.Id });
+        }
+
+        private async Task<List<MedicalAttachment>> LoadPendingAttachmentsAsync(ApplicationUser currentUser, Guid doctorId)
+        {
+            var clinicId = (currentUser.ClinicId ?? "").Trim();
+
+            var query = _db.MedicalAttachments
+                .AsNoTracking()
+                .Include(a => a.Patient).ThenInclude(p => p!.User)
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .Where(a =>
+                    a.Status == AttachmentStatus.Pending &&
+                    a.Type != "ProfilePhoto" &&
+                    a.Type != "AppointmentRequest" &&
+                    (a.DoctorId == null || a.DoctorId == doctorId));
+
+            if (!string.IsNullOrWhiteSpace(clinicId))
+            {
+                query = query.Where(a =>
+                    a.Patient != null &&
+                    a.Patient.User != null &&
+                    (a.Patient.User.ClinicId ?? "").Trim() == clinicId);
+            }
+
+            return await query
+                .OrderByDescending(a => a.UploadedAt)
+                .ToListAsync();
         }
     }
 }

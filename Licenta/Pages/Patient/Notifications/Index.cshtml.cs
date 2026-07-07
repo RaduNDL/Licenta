@@ -17,6 +17,14 @@ namespace Licenta.Pages.Patient
     {
         private readonly AppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private static readonly NotificationType[] PatientRelevantTypes =
+        {
+    NotificationType.General,
+    NotificationType.Appointment,
+    NotificationType.Document,
+    NotificationType.Prediction,
+    NotificationType.Info
+};
 
         public NotificationsModel(AppDbContext db, UserManager<ApplicationUser> userManager)
         {
@@ -33,7 +41,7 @@ namespace Licenta.Pages.Patient
 
             Items = await _db.UserNotifications
                 .AsNoTracking()
-                .Where(x => x.UserId == user.Id)
+                .Where(x => x.UserId == user.Id && PatientRelevantTypes.Contains(x.Type))
                 .OrderByDescending(x => x.CreatedAtUtc)
                 .Take(200)
                 .ToListAsync();
@@ -46,7 +54,10 @@ namespace Licenta.Pages.Patient
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var n = await _db.UserNotifications.FirstOrDefaultAsync(x => x.Id == id && x.UserId == user.Id);
+            var n = await _db.UserNotifications.FirstOrDefaultAsync(
+                x => x.Id == id && x.UserId == user.Id && PatientRelevantTypes.Contains(x.Type)
+            );
+
             if (n == null) return RedirectToPage();
 
             if (!n.IsRead)
@@ -65,7 +76,7 @@ namespace Licenta.Pages.Patient
             if (user == null) return Unauthorized();
 
             var list = await _db.UserNotifications
-                .Where(x => x.UserId == user.Id && !x.IsRead)
+                .Where(x => x.UserId == user.Id && !x.IsRead && PatientRelevantTypes.Contains(x.Type))
                 .ToListAsync();
 
             if (list.Count > 0)

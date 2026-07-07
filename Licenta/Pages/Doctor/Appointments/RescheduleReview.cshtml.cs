@@ -111,7 +111,8 @@ namespace Licenta.Pages.Doctor.Appointments
 
             if (req == null) return NotFound();
 
-            if (req.Status != AppointmentRescheduleStatus.Requested)
+            if (req.Status != AppointmentRescheduleStatus.Requested &&
+                req.Status != AppointmentRescheduleStatus.PatientSelected)
             {
                 TempData["StatusMessage"] = "This request cannot be approved.";
                 return RedirectToPage(new { requestId = RequestId });
@@ -132,6 +133,12 @@ namespace Licenta.Pages.Doctor.Appointments
                 }
 
                 proposedStartUtc = parsed.Value;
+            }
+
+            if (proposedStartUtc <= DateTime.UtcNow)
+            {
+                TempData["StatusMessage"] = "The selected reschedule time is in the past.";
+                return RedirectToPage(new { requestId = RequestId });
             }
 
             var proposedEndUtc = proposedStartUtc.AddMinutes(30);

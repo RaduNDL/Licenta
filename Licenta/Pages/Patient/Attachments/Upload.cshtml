@@ -1,7 +1,7 @@
 ﻿@page
 @model Licenta.Pages.Patient.Attachments.UploadModel
 @{
-    ViewData["Title"] = "Upload Breast Image";
+    ViewData["Title"] = "Upload Medical File";
 }
 
 <div class="container py-5" style="max-width: 600px;">
@@ -10,9 +10,9 @@
              style="width: 64px; height: 64px;">
             <i class="bi bi-image fs-3"></i>
         </div>
-        <h2 class="fw-bold">Upload Breast Image (CBIS-DDSM)</h2>
+        <h2 class="fw-bold">Upload Medical File</h2>
         <p class="text-muted">
-            Upload a mammography image for AI analysis by your doctor.
+            Upload a mammography image or medical document for your doctor.
         </p>
     </div>
 
@@ -48,16 +48,16 @@
 
                 <div class="mb-4">
                     <label asp-for="Input.File" class="form-label fw-bold">
-                        Select Image
+                        Select File
                     </label>
 
                     <input asp-for="Input.File"
                            class="form-control"
                            type="file"
-                           accept=".jpg,.jpeg,.png" />
+                           accept=".jpg,.jpeg,.png,.dcm,.tif,.tiff,.pdf" />
 
                     <div class="form-text">
-                        Accepted formats: JPG, PNG. Max 10MB.
+                        Accepted formats: JPG, PNG, DICOM, TIFF, PDF. Max 20MB.
                     </div>
 
                     <span asp-validation-for="Input.File" class="text-danger small"></span>

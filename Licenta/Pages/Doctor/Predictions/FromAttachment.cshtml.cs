@@ -57,12 +57,30 @@ namespace Licenta.Pages.Doctor.Predictions
 
         public async Task<IActionResult> OnGetAsync(CancellationToken ct)
         {
-            var att = await _db.MedicalAttachments.AsNoTracking().FirstOrDefaultAsync(a => a.Id == Id, ct);
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+            var doctor = await _db.Doctors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.UserId == user.Id, ct);
+
+            if (doctor == null)
+                return Forbid();
+
+            var att = await _db.MedicalAttachments
+                .AsNoTracking()
+                .Include(a => a.Patient).ThenInclude(p => p!.User)
+                .FirstOrDefaultAsync(a => a.Id == Id, ct);
+
             if (att == null)
             {
                 ErrorMessage = "Attachment not found.";
                 return Page();
             }
+
+            if (!CanUseAttachment(user, doctor.Id, att))
+                return Forbid();
 
             StatusMessage = $"Attachment loaded: {att.FileName}";
             return Page();
@@ -78,12 +96,18 @@ namespace Licenta.Pages.Doctor.Predictions
             if (doctor == null)
                 return Forbid();
 
-            var att = await _db.MedicalAttachments.FirstOrDefaultAsync(a => a.Id == Id, ct);
+            var att = await _db.MedicalAttachments
+                .Include(a => a.Patient).ThenInclude(p => p!.User)
+                .FirstOrDefaultAsync(a => a.Id == Id, ct);
+
             if (att == null)
             {
                 ErrorMessage = "Attachment not found.";
                 return Page();
             }
+
+            if (!CanUseAttachment(user, doctor.Id, att))
+                return Forbid();
 
             var patient = await _db.Patients.Include(p => p.User).FirstOrDefaultAsync(p => p.Id == att.PatientId, ct);
             if (patient == null)
@@ -158,6 +182,25 @@ namespace Licenta.Pages.Doctor.Predictions
 
             TempData["StatusMessage"] = "Prediction completed and saved.";
             return RedirectToPage("/Doctor/Predictions/Record", new { id = pred.Id });
+        }
+
+        private static bool CanUseAttachment(ApplicationUser user, Guid doctorId, MedicalAttachment att)
+        {
+            if (att.Type == "ProfilePhoto" || att.Type == "AppointmentRequest")
+                return false;
+
+            if (att.DoctorId != doctorId && att.ValidatedByDoctorId != doctorId)
+                return false;
+
+            var doctorClinic = (user.ClinicId ?? "").Trim();
+            if (!string.IsNullOrWhiteSpace(doctorClinic))
+            {
+                var patientClinic = (att.Patient?.User?.ClinicId ?? "").Trim();
+                if (!string.Equals(patientClinic, doctorClinic, StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            return true;
         }
 
         private static bool IsRejected(ImagingPredictResponse? r)

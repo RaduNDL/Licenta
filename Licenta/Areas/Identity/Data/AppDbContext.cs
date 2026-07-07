@@ -2,6 +2,7 @@
 using Licenta.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace Licenta.Areas.Identity.Data
 {
@@ -68,10 +69,13 @@ namespace Licenta.Areas.Identity.Data
                 .IsRequired(false);
 
             b.Entity<ApplicationUser>()
-                .HasOne(u => u.AssignedDoctor)
+                .HasMany(u => u.AssignedDoctors)
                 .WithMany(d => d.Assistants)
-                .HasForeignKey(u => u.AssignedDoctorId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .UsingEntity<Dictionary<string, object>>(
+                    "DoctorAssistantAssignment",
+                    j => j.HasOne<DoctorProfile>().WithMany().HasForeignKey("DoctorProfileId").OnDelete(DeleteBehavior.Cascade),
+                    j => j.HasOne<ApplicationUser>().WithMany().HasForeignKey("AssistantUserId").OnDelete(DeleteBehavior.Cascade)
+                );
 
             b.Entity<PatientProfile>().HasIndex(p => p.NationalId);
             b.Entity<DoctorProfile>().HasIndex(d => d.LicenseNumber);

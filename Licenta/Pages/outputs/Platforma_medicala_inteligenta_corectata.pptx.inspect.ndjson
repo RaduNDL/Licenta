@@ -1,0 +1,275 @@
+{"kind":"deck","id":"pr/vyfx8v","name":"Deck"}
+{"kind":"layout","layoutId":"/ppt/slideMasters/slideMaster1.xml","name":"","type":"master","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout1.xml","name":"Title Slide","type":"title","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"subtitle","type":"subtitle","textPreview":"Click to edit Master subtitle style"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout2.xml","name":"Title and Content","type":"obj","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"content placeholder 2","textPreview":"Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout3.xml","name":"Section Header","type":"secHead","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout4.xml","name":"Two Content","type":"twoObj","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"content placeholder 2","textPreview":"Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level"},{"name":"content placeholder 3","textPreview":"Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout5.xml","name":"Comparison","type":"twoTxTwoObj","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"content placeholder 3","textPreview":"Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"content placeholder 5","textPreview":"Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout6.xml","name":"Title Only","type":"titleOnly","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout7.xml","name":"Blank","type":"blank","placeholders":[{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout8.xml","name":"Content with Caption","type":"objTx","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"content placeholder 2","textPreview":"Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout9.xml","name":"Picture with Caption","type":"picTx","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"picture","type":"picture","textPreview":"Click icon to add picture"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout10.xml","name":"Panoramic Picture with Caption","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"picture","type":"picture","textPreview":"Click icon to add picture"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout11.xml","name":"Title and Caption","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout12.xml","name":"Quote with Caption","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout13.xml","name":"Name Card","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout14.xml","name":"Quote Name Card","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout15.xml","name":"True or False","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout16.xml","name":"Title and Vertical Text","type":"vertTx","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"layout","layoutId":"/ppt/slideLayouts/slideLayout17.xml","name":"Vertical Title and Text","type":"vertTitleAndTx","placeholders":[{"name":"title","type":"title","textPreview":"Click to edit Master title style"},{"name":"body","type":"body","textPreview":"Click to edit Master text styles | Second level | Third level | Fourth level | Fifth level"},{"name":"dateTime","type":"dateTime","textPreview":"7/1/2026"},{"name":"footer","type":"footer"},{"name":"slideNumber","type":"slideNumber","textPreview":"‹#›"}]}
+{"kind":"slide","id":"sl/2x4nap4r","slide":1,"title":"Platformă Medicală Inteligentă cu Analiză Predictivă","textShapes":2}
+{"kind":"textbox","id":"sh/cvixczed","slide":1,"name":"Title 1","placeholder":"title","text":"Platformă Medicală Inteligentă cu Analiză Predictivă","textPreview":"Platformă Medicală Inteligentă cu Analiză Predictivă","textChars":52,"textLines":1,"bbox":[273.19,155.52,706.56,224.64]}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":1,"name":"Subtitle 2","placeholder":"subtitle","text":"Autor:Nadolu Radu-Dimitri\nCoordonator:Șef lucr. dr. ing. Paul-Ștefan Popescu\nFacultatea de Automatică, Calculatoare și Electronică","textPreview":"Autor:Nadolu Radu-Dimitri | Coordonator:Șef lucr. dr. ing. Paul-Ștefan Popescu | Facultatea de Automatică, Calculatoare și Electronică","textChars":130,"textLines":3,"bbox":[273.19,396.48,733.61,145.78]}
+{"kind":"notes","id":"nt/2x4nap4r","slide":1,"text":""}
+{"kind":"slide","id":"sl/pg3ex0nu","slide":2,"title":"Necesitatea digitalizării proceselor medicale","textShapes":1}
+{"kind":"shape","id":"sh/5o7qpg3e","slide":2,"name":"Title 1","placeholder":"title","bbox":[143.83,14.74,1051.83,184]}
+{"kind":"shape","id":"sh/g3ex0nux","slide":2,"name":"Text Placeholder 2","placeholder":"body","bbox":[155.83,198.76,513.92,60.5]}
+{"kind":"shape","id":"sh/r65wjudg","slide":2,"name":"Content Placeholder 3","bbox":[155.83,271.36,513.92,336.64]}
+{"kind":"shape","id":"sh/ylc7u54z","slide":2,"name":"Text Placeholder 4","placeholder":"body","bbox":[697.67,198.74,499.61,60.5]}
+{"kind":"textbox","id":"sh/9cvixcze","slide":2,"name":"Content Placeholder 5","text":"Necesitatea digitalizării proceselor medicale\n Centralizarea informațiilor într-o singură platformă \nIntegrarea inteligenței artificiale ca suport pentru diagnostic \nAplicarea tehnologiilor web moderne și a tehnicilor de Machine Learning","textPreview":"Necesitatea digitalizării proceselor medicale |  Centralizarea informațiilor într-o singură platformă  | Integrarea inteligenței artifici...","textChars":237,"textLines":4,"bbox":[697.67,271.36,513.92,336.64]}
+{"kind":"notes","id":"nt/pg3ex0nu","slide":2,"text":""}
+{"kind":"slide","id":"sl/s72x4nap","slide":3,"title":"Funcționalități principale","textShapes":18}
+{"kind":"shape","id":"sh/o7qpg3ex","slide":3,"name":"Title 1","placeholder":"title","bbox":[155.83,31.68,1051.83,184]}
+{"kind":"shape","id":"sh/dsji5sne","slide":3,"name":"Content Placeholder 2","bbox":[155.83,215.68,1051.83,392.32]}
+{"kind":"shape","id":"sh/6dcbulwv","slide":3,"bbox":[50,36,1180,164]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":3,"text":"Funcționalități principale","textPreview":"Funcționalități principale","textChars":26,"textLines":1,"bbox":[130,64,1020,90]}
+{"kind":"shape","id":"sh/oj2t83it","slide":3,"bbox":[50,175,1180,525]}
+{"kind":"textbox","id":"sh/d4vmtwra","slide":3,"text":"Flux integrat pe roluri","textPreview":"Flux integrat pe roluri","textChars":23,"textLines":1,"bbox":[150,220,420,34]}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":3,"text":"Module centrale","textPreview":"Module centrale","textChars":15,"textLines":1,"bbox":[720,220,360,34]}
+{"kind":"textbox","id":"sh/z25kb6xk","slide":3,"text":"Pacient","textPreview":"Pacient","textChars":7,"textLines":1,"bbox":[145,288,128,48]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":3,"text":"Doctor","textPreview":"Doctor","textChars":6,"textLines":1,"bbox":[145,374,128,48]}
+{"kind":"textbox","id":"sh/6dcbulwv","slide":3,"text":"Asistent","textPreview":"Asistent","textChars":8,"textLines":1,"bbox":[145,460,128,48]}
+{"kind":"textbox","id":"sh/d4vmtwra","slide":3,"text":"Administrator","textPreview":"Administrator","textChars":13,"textLines":1,"bbox":[145,546,150,48]}
+{"kind":"textbox","id":"sh/oj2t83it","slide":3,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[310,295,42,36]}
+{"kind":"textbox","id":"sh/vmtwra5g","slide":3,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[310,381,42,36]}
+{"kind":"textbox","id":"sh/61032lsz","slide":3,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[310,467,42,36]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":3,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[330,553,42,36]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":3,"text":"Platformă web\nASP.NET Core + Razor Pages\nAutentificare pe roluri","textPreview":"Platformă web | ASP.NET Core + Razor Pages | Autentificare pe roluri","textChars":64,"textLines":3,"bbox":[365,330,260,138]}
+{"kind":"textbox","id":"sh/vahoza1g","slide":3,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[640,382,58,36]}
+{"kind":"textbox","id":"sh/6tovahoz","slide":3,"text":"Programări\ncalendar, disponibilitate, cereri","textPreview":"Programări | calendar, disponibilitate, cereri","textChars":44,"textLines":2,"bbox":[720,296,200,88]}
+{"kind":"textbox","id":"sh/epkzupwb","slide":3,"text":"Fișe medicale\nistoric, prescripții, documente","textPreview":"Fișe medicale | istoric, prescripții, documente","textChars":45,"textLines":2,"bbox":[950,296,200,88]}
+{"kind":"textbox","id":"sh/7adsji5s","slide":3,"text":"AI mamografii\nbenign / malign, probabilități","textPreview":"AI mamografii | benign / malign, probabilități","textChars":44,"textLines":2,"bbox":[720,428,200,88]}
+{"kind":"textbox","id":"sh/wval87ed","slide":3,"text":"Comunicare\nmesagerie, notificări SignalR","textPreview":"Comunicare | mesagerie, notificări SignalR","textChars":40,"textLines":2,"bbox":[950,428,200,88]}
+{"kind":"textbox","id":"sh/pg3ex0nu","slide":3,"text":"Rezultat: toate operațiile clinice sunt centralizate într-un singur flux controlat și trasabil.","textPreview":"Rezultat: toate operațiile clinice sunt centralizate într-un singur flux controlat și trasabil.","textChars":95,"textLines":1,"bbox":[250,615,780,34]}
+{"kind":"notes","id":"nt/s72x4nap","slide":3,"text":""}
+{"kind":"slide","id":"sl/val87ed8","slide":4,"title":"Tehnologii utilizate","textShapes":10}
+{"kind":"shape","id":"sh/87ed8bat","slide":4,"name":"Title 3","placeholder":"title","bbox":[0,0,0,0]}
+{"kind":"shape","id":"sh/q1orytsv","slide":4,"name":"Content Placeholder 5","bbox":[136,265.05,327.32,386.31]}
+{"kind":"shape","id":"sh/1w7mp0bi","slide":4,"name":"Content Placeholder 9","bbox":[842.72,265.05,356.16,386.31]}
+{"kind":"shape","id":"sh/8bat47y1","slide":4,"name":"TextBox 10","bbox":[489.36,265.05,327.32,387.75]}
+{"kind":"shape","id":"sh/jqh0fepk","slide":4,"bbox":[50,36,1180,164]}
+{"kind":"textbox","id":"sh/q5o7qpg3","slide":4,"text":"Tehnologii utilizate","textPreview":"Tehnologii utilizate","textChars":20,"textLines":1,"bbox":[130,64,1020,90]}
+{"kind":"shape","id":"sh/18jqh0fe","slide":4,"bbox":[50,175,1180,525]}
+{"kind":"shape","id":"sh/8nqxs72x","slide":4,"bbox":[138,258,214,300]}
+{"kind":"textbox","id":"sh/j2t83itg","slide":4,"text":"WEB","textPreview":"WEB","textChars":3,"textLines":1,"bbox":[195,286,100,80]}
+{"kind":"textbox","id":"sh/qh0fepkz","slide":4,"text":"HTML5 / CSS3\nBootstrap\nJavaScript + Fetch\nRazor Pages","textPreview":"HTML5 / CSS3 | Bootstrap | JavaScript + Fetch | Razor Pages","textChars":53,"textLines":4,"bbox":[158,390,174,128]}
+{"kind":"shape","id":"sh/1cfa9w3m","slide":4,"bbox":[402,258,214,300]}
+{"kind":"textbox","id":"sh/crmhk3q5","slide":4,"text":"NET","textPreview":"NET","textChars":3,"textLines":1,"bbox":[459,286,100,80]}
+{"kind":"textbox","id":"sh/sfil0rqd","slide":4,"text":"ASP.NET Core 9\nC#\nASP.NET Identity\nSignalR","textPreview":"ASP.NET Core 9 | C# | ASP.NET Identity | SignalR","textChars":42,"textLines":4,"bbox":[422,390,174,128]}
+{"kind":"shape","id":"sh/h0fepkzu","slide":4,"bbox":[666,258,214,300]}
+{"kind":"textbox","id":"sh/a9w3m94f","slide":4,"text":"DB","textPreview":"DB","textChars":2,"textLines":1,"bbox":[723,286,100,80]}
+{"kind":"textbox","id":"sh/zupwb2hw","slide":4,"text":"Entity Framework Core\nSQL Server\nMigrații\nSoft-delete","textPreview":"Entity Framework Core | SQL Server | Migrații | Soft-delete","textChars":53,"textLines":4,"bbox":[686,390,174,128]}
+{"kind":"shape","id":"sh/orytsvu9","slide":4,"bbox":[930,258,214,300]}
+{"kind":"textbox","id":"sh/hcrmhk3q","slide":4,"text":"AI","textPreview":"AI","textChars":2,"textLines":1,"bbox":[987,286,100,80]}
+{"kind":"textbox","id":"sh/al87ed8b","slide":4,"text":"Python\nPyTorch\nFastAPI\nEfficientNet-V2-S","textPreview":"Python | PyTorch | FastAPI | EfficientNet-V2-S","textChars":40,"textLines":4,"bbox":[950,390,174,128]}
+{"kind":"textbox","id":"sh/z61032ls","slide":4,"text":"Aplicația web gestionează fluxul clinic, iar microserviciul AI rulează separat inferența pe imagini.","textPreview":"Aplicația web gestionează fluxul clinic, iar microserviciul AI rulează separat inferența pe imagini.","textChars":100,"textLines":1,"bbox":[150,600,980,36]}
+{"kind":"notes","id":"nt/val87ed8","slide":4,"text":""}
+{"kind":"slide","id":"sl/mlkjm1cf","slide":5,"title":"Arhitectura","textShapes":1}
+{"kind":"textbox","id":"sh/vixczed8","slide":5,"name":"TextBox 20","text":"Arhitectura \nSistemului","textPreview":"Arhitectura  | Sistemului","textChars":23,"textLines":2,"bbox":[-150.46,290.53,703.68,138.94]}
+{"kind":"image","id":"im/b2hwfyxo","slide":5,"name":"Picture 19","bbox":[348.83,70.08,838.75,581.77]}
+{"kind":"notes","id":"nt/mlkjm1cf","slide":5,"text":""}
+{"kind":"slide","id":"sl/58z25kb6","slide":6,"title":"Mammogram Mastery Dataset (Mendeley Data, 2024)","textShapes":27}
+{"kind":"textbox","id":"sh/ylc7u54z","slide":6,"name":"Title 1","placeholder":"title","text":"Mammogram Mastery Dataset (Mendeley Data, 2024)","textPreview":"Mammogram Mastery Dataset (Mendeley Data, 2024)","textChars":47,"textLines":1,"bbox":[155.83,40.5,1051.83,184]}
+{"kind":"textbox","id":"sh/r65wjudg","slide":6,"name":"Text Placeholder 2","placeholder":"body","text":"Setul de Date","textPreview":"Setul de Date","textChars":13,"textLines":1,"bbox":[153.43,234.98,513.44,60.5]}
+{"kind":"textbox","id":"sh/g3ex0nux","slide":6,"name":"Content Placeholder 3","text":"Volum Total: 10.430 de imagini mamografice digitale (Greyscale).\nStructura Datasetului:\nImagini Originale: 745 de imagini brute, colectate direct din clinică.\nImagini Augmentate: 9.685 de imagini generate prin tehnici de procesare pentru extinderea setului.\nTip Problemă: Clasificare binară standard (BENIGN / MALIGNANT).\nValidarea Modelelor: Datasetul include subseturi dedicate pentru antrenare și validare, permițând evaluarea riguroasă a capacității de generalizare pe ambele clase.","textPreview":"Volum Total: 10.430 de imagini mamografice digitale (Greyscale). | Structura Datasetului: | Imagini Originale: 745 de imagini brute, cole...","textChars":486,"textLines":6,"bbox":[104.48,295.48,535.52,368.84]}
+{"kind":"textbox","id":"sh/5o7qpg3e","slide":6,"name":"Text Placeholder 4","placeholder":"body","text":"Pipeline Tehnic","textPreview":"Pipeline Tehnic","textChars":15,"textLines":1,"bbox":[681.75,234.98,513.92,60.5]}
+{"kind":"shape","id":"sh/nih4byhg","slide":6,"name":"TextBox 6","bbox":[681.75,295.48,486.25,252.04]}
+{"kind":"shape","id":"sh/9s36hcrm","slide":6,"name":"TextBox 8","bbox":[681.75,608.02,486.25,33.93]}
+{"kind":"shape","id":"sh/d8v6psfi","slide":6,"bbox":[50,36,1180,164]}
+{"kind":"textbox","id":"sh/onyd0z61","slide":6,"text":"Pipeline tehnic de procesare","textPreview":"Pipeline tehnic de procesare","textChars":28,"textLines":1,"bbox":[130,64,1020,90]}
+{"kind":"shape","id":"sh/z25kb6xk","slide":6,"bbox":[50,175,1180,525]}
+{"kind":"shape","id":"sh/6hcrmhk3","slide":6,"bbox":[98,310,145,150]}
+{"kind":"textbox","id":"sh/dg7adsji","slide":6,"text":"Dataset","textPreview":"Dataset","textChars":7,"textLines":1,"bbox":[108,326,125,42]}
+{"kind":"textbox","id":"sh/ovahoza1","slide":6,"text":"10.430 imagini\nMammogram Mastery","textPreview":"10.430 imagini | Mammogram Mastery","textChars":32,"textLines":2,"bbox":[108,386,125,54]}
+{"kind":"textbox","id":"sh/vahoza1g","slide":6,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[239,364,30,36]}
+{"kind":"shape","id":"sh/6tovahoz","slide":6,"bbox":[265,310,145,150]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":6,"text":"Standardizare\nrezoluție","textPreview":"Standardizare | rezoluție","textChars":23,"textLines":2,"bbox":[275,326,125,42]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":6,"text":"224 × 224 px","textPreview":"224 × 224 px","textChars":12,"textLines":1,"bbox":[275,386,125,54]}
+{"kind":"textbox","id":"sh/kjm1cfa9","slide":6,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[406,364,30,36]}
+{"kind":"shape","id":"sh/94fu18jq","slide":6,"bbox":[432,310,145,150]}
+{"kind":"textbox","id":"sh/2hwfyxob","slide":6,"text":"Normalizare","textPreview":"Normalizare","textChars":11,"textLines":1,"bbox":[442,326,125,42]}
+{"kind":"textbox","id":"sh/r2p8nqxs","slide":6,"text":"tensori + statistici\nImageNet","textPreview":"tensori + statistici | ImageNet","textChars":29,"textLines":2,"bbox":[442,386,125,54]}
+{"kind":"textbox","id":"sh/gvy90je9","slide":6,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[573,364,30,36]}
+{"kind":"shape","id":"sh/9gr2p8nq","slide":6,"bbox":[599,310,145,150]}
+{"kind":"textbox","id":"sh/2p8nqxs7","slide":6,"text":"Augmentare\ndinamică","textPreview":"Augmentare | dinamică","textChars":19,"textLines":2,"bbox":[609,326,125,42]}
+{"kind":"textbox","id":"sh/ra5gbq1o","slide":6,"text":"rotații, translații,\nflip orizontal","textPreview":"rotații, translații, | flip orizontal","textChars":35,"textLines":2,"bbox":[609,386,125,54]}
+{"kind":"textbox","id":"sh/kzupwb2h","slide":6,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[740,364,30,36]}
+{"kind":"shape","id":"sh/9knih4by","slide":6,"bbox":[766,310,145,150]}
+{"kind":"textbox","id":"sh/fa9w3m94","slide":6,"text":"Regularizare","textPreview":"Regularizare","textChars":12,"textLines":1,"bbox":[776,326,125,42]}
+{"kind":"textbox","id":"sh/qpg3ex0n","slide":6,"text":"Random Erasing\nLabel smoothing","textPreview":"Random Erasing | Label smoothing","textChars":30,"textLines":2,"bbox":[776,386,125,54]}
+{"kind":"textbox","id":"sh/xczed8v6","slide":6,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[907,364,30,36]}
+{"kind":"shape","id":"sh/8v6psfil","slide":6,"bbox":[933,310,145,150]}
+{"kind":"textbox","id":"sh/fyxobm58","slide":6,"text":"Antrenare\nalgoritm","textPreview":"Antrenare | algoritm","textChars":18,"textLines":2,"bbox":[943,326,125,42]}
+{"kind":"textbox","id":"sh/qd4vmtwr","slide":6,"text":"EfficientNet-V2-S\ntransfer learning","textPreview":"EfficientNet-V2-S | transfer learning","textChars":35,"textLines":2,"bbox":[943,386,125,54]}
+{"kind":"textbox","id":"sh/x4nap4r6","slide":6,"text":"→","textPreview":"→","textChars":1,"textLines":1,"bbox":[1074,364,30,36]}
+{"kind":"shape","id":"sh/8jqh0fep","slide":6,"bbox":[1100,310,145,150]}
+{"kind":"textbox","id":"sh/fmlkjm1c","slide":6,"text":"Rezultate","textPreview":"Rezultate","textChars":9,"textLines":1,"bbox":[1110,326,125,42]}
+{"kind":"textbox","id":"sh/q1orytsv","slide":6,"text":"probabilități\nbenign / malign","textPreview":"probabilități | benign / malign","textChars":29,"textLines":2,"bbox":[1110,386,125,54]}
+{"kind":"textbox","id":"sh/65wjudg7","slide":6,"text":"Ideea slide-ului: imaginea nu intră direct în model. Ea trece printr-un lanț controlat de preprocesare, regularizare și validare.","textPreview":"Ideea slide-ului: imaginea nu intră direct în model. Ea trece printr-un lanț controlat de preprocesare, regularizare și validare.","textChars":129,"textLines":1,"bbox":[145,545,990,50]}
+{"kind":"textbox","id":"sh/zqtcj6to","slide":6,"text":"Link dataset: https://data.mendeley.com/datasets/fvjhtskg93/1","textPreview":"Link dataset: https://data.mendeley.com/datasets/fvjhtskg93/1","textChars":61,"textLines":1,"bbox":[260,615,760,30]}
+{"kind":"notes","id":"nt/58z25kb6","slide":6,"text":""}
+{"kind":"slide","id":"sl/0z61032l","slide":7,"title":"Arhitectura modelului și deciziile tehnice","textShapes":8}
+{"kind":"shape","id":"sh/x4nap4r6","slide":7,"name":"Title 1","placeholder":"title","bbox":[143.36,73.92,1051.83,184]}
+{"kind":"shape","id":"sh/8jqh0fep","slide":7,"name":"Text Placeholder 2","placeholder":"body","bbox":[155.83,239.4,513.44,60.5]}
+{"kind":"shape","id":"sh/fa9w3m94","slide":7,"name":"Content Placeholder 3","bbox":[155.83,314.81,513.92,297.83]}
+{"kind":"shape","id":"sh/qpg3ex0n","slide":7,"name":"Text Placeholder 4","placeholder":"body","bbox":[693.75,240.22,513.92,60.5]}
+{"kind":"shape","id":"sh/xczed8v6","slide":7,"name":"Content Placeholder 5","bbox":[693.75,305.21,513.92,340.87]}
+{"kind":"shape","id":"sh/8v6psfil","slide":7,"bbox":[50,36,1180,164]}
+{"kind":"textbox","id":"sh/je9cvixc","slide":7,"text":"Arhitectura modelului și deciziile tehnice","textPreview":"Arhitectura modelului și deciziile tehnice","textChars":42,"textLines":1,"bbox":[130,64,1020,90]}
+{"kind":"shape","id":"sh/qtcj6tov","slide":7,"bbox":[50,175,1180,525]}
+{"kind":"textbox","id":"sh/svu9knih","slide":7,"text":"Funcții de activare","textPreview":"Funcții de activare","textChars":19,"textLines":1,"bbox":[135,224,400,34]}
+{"kind":"textbox","id":"sh/hgn29gr2","slide":7,"text":"ReLU\nf(x)=max(0,x)\nrapidă, simplă\npoate bloca neuroni pe valori negative","textPreview":"ReLU | f(x)=max(0,x) | rapidă, simplă | poate bloca neuroni pe valori negative","textChars":72,"textLines":4,"bbox":[135,286,245,164]}
+{"kind":"textbox","id":"sh/ap4r65wj","slide":7,"text":"SiLU / Swish\nf(x)=x·sigmoid(x)\nnetedă, păstrează semnal negativ mic\ngradienți mai stabili","textPreview":"SiLU / Swish | f(x)=x·sigmoid(x) | netedă, păstrează semnal negativ mic | gradienți mai stabili","textChars":89,"textLines":4,"bbox":[410,286,285,164]}
+{"kind":"textbox","id":"sh/za1gvy90","slide":7,"text":"Ieșire și eficiență","textPreview":"Ieșire și eficiență","textChars":19,"textLines":1,"bbox":[750,224,380,34]}
+{"kind":"textbox","id":"sh/s36hcrmh","slide":7,"text":"SoftMax\ntransformă logit-urile în probabilități normalizate\nP(benign)+P(malign)=1","textPreview":"SoftMax | transformă logit-urile în probabilități normalizate | P(benign)+P(malign)=1","textChars":81,"textLines":3,"bbox":[760,286,360,112]}
+{"kind":"textbox","id":"sh/hoza1gvy","slide":7,"text":"Precizie mixtă AMP\ncalcule rapide FP16/BF16 + stabilitate FP32\nconsum mai mic de memorie și inferență mai rapidă","textPreview":"Precizie mixtă AMP | calcule rapide FP16/BF16 + stabilitate FP32 | consum mai mic de memorie și inferență mai rapidă","textChars":112,"textLines":3,"bbox":[760,420,360,126]}
+{"kind":"textbox","id":"sh/a1gvy90j","slide":7,"text":"• EfficientNet-V2-S folosește transfer learning pe ImageNet.\n• Fine-tuning-ul adaptează clasificatorul la mamografii.\n• SoftMax nu decide diagnosticul singur: medicul validează rezultatul.","textPreview":"• EfficientNet-V2-S folosește transfer learning pe ImageNet. | • Fine-tuning-ul adaptează clasificatorul la mamografii. | • SoftMax nu de...","textChars":188,"textLines":3,"bbox":[155,515,520,110]}
+{"kind":"notes","id":"nt/0z61032l","slide":7,"text":""}
+{"kind":"slide","id":"sl/fu18jqh0","slide":8,"title":"Cum se interpretează metricile modelului","textShapes":19}
+{"kind":"shape","id":"sh/u9knih4b","slide":8,"name":"Title 1","placeholder":"title","bbox":[143.36,64.04,1051.83,184]}
+{"kind":"shape","id":"sh/judg7ads","slide":8,"name":"Text Placeholder 2","placeholder":"body","bbox":[155.83,239.4,513.44,60.5]}
+{"kind":"shape","id":"sh/c7u54zid","slide":8,"name":"Content Placeholder 3","bbox":[143.36,299.9,526.39,346.1]}
+{"kind":"shape","id":"sh/1orytsvu","slide":8,"name":"Text Placeholder 4","placeholder":"body","bbox":[749.03,239.4,513.92,60.5]}
+{"kind":"shape","id":"sh/jm1cfa9w","slide":8,"bbox":[50,36,1180,164]}
+{"kind":"textbox","id":"sh/cvixczed","slide":8,"text":"Cum se interpretează metricile modelului","textPreview":"Cum se interpretează metricile modelului","textChars":40,"textLines":1,"bbox":[130,64,1020,90]}
+{"kind":"shape","id":"sh/5gbq1ory","slide":8,"bbox":[50,175,1180,525]}
+{"kind":"shape","id":"sh/18jqh0fe","slide":8,"bbox":[118,245,190,112]}
+{"kind":"textbox","id":"sh/8nqxs72x","slide":8,"text":"Acuratețe","textPreview":"Acuratețe","textChars":9,"textLines":1,"bbox":[132,255,162,24]}
+{"kind":"textbox","id":"sh/j2t83itg","slide":8,"text":"(TP+TN)/(Total)","textPreview":"(TP+TN)/(Total)","textChars":15,"textLines":1,"bbox":[132,287,162,22]}
+{"kind":"textbox","id":"sh/qh0fepkz","slide":8,"text":"procentul total de predicții corecte","textPreview":"procentul total de predicții corecte","textChars":36,"textLines":1,"bbox":[132,313,162,34]}
+{"kind":"shape","id":"sh/1w7mp0bi","slide":8,"bbox":[326,245,220,112]}
+{"kind":"textbox","id":"sh/8bat47y1","slide":8,"text":"Acuratețe balansată","textPreview":"Acuratețe balansată","textChars":19,"textLines":1,"bbox":[340,255,192,24]}
+{"kind":"textbox","id":"sh/jqh0fepk","slide":8,"text":"(Recall+Specificitate)/2","textPreview":"(Recall+Specificitate)/2","textChars":24,"textLines":1,"bbox":[340,287,192,22]}
+{"kind":"textbox","id":"sh/q5o7qpg3","slide":8,"text":"mai corectă când clasele sunt dezechilibrate","textPreview":"mai corectă când clasele sunt dezechilibrate","textChars":44,"textLines":1,"bbox":[340,313,192,34]}
+{"kind":"shape","id":"sh/1kre1w7m","slide":8,"bbox":[564,245,190,112]}
+{"kind":"textbox","id":"sh/c3ylc7u5","slide":8,"text":"Precizie","textPreview":"Precizie","textChars":8,"textLines":1,"bbox":[578,255,162,24]}
+{"kind":"textbox","id":"sh/orytsvu9","slide":8,"text":"TP/(TP+FP)","textPreview":"TP/(TP+FP)","textChars":10,"textLines":1,"bbox":[578,287,162,22]}
+{"kind":"textbox","id":"sh/hcrmhk3q","slide":8,"text":"cât de corecte sunt predicțiile pozitive","textPreview":"cât de corecte sunt predicțiile pozitive","textChars":40,"textLines":1,"bbox":[578,313,162,34]}
+{"kind":"shape","id":"sh/al87ed8b","slide":8,"bbox":[772,245,190,112]}
+{"kind":"textbox","id":"sh/z61032ls","slide":8,"text":"Recall","textPreview":"Recall","textChars":6,"textLines":1,"bbox":[786,255,162,24]}
+{"kind":"textbox","id":"sh/sfil0rqd","slide":8,"text":"TP/(TP+FN)","textPreview":"TP/(TP+FN)","textChars":10,"textLines":1,"bbox":[786,287,162,22]}
+{"kind":"textbox","id":"sh/h0fepkzu","slide":8,"text":"câte cazuri reale pozitive sunt găsite","textPreview":"câte cazuri reale pozitive sunt găsite","textChars":38,"textLines":1,"bbox":[786,313,162,34]}
+{"kind":"shape","id":"sh/a9w3m94f","slide":8,"bbox":[980,245,170,112]}
+{"kind":"textbox","id":"sh/zupwb2hw","slide":8,"text":"F1","textPreview":"F1","textChars":2,"textLines":1,"bbox":[994,255,142,24]}
+{"kind":"textbox","id":"sh/obm58z25","slide":8,"text":"2·P·R/(P+R)","textPreview":"2·P·R/(P+R)","textChars":11,"textLines":1,"bbox":[994,287,142,22]}
+{"kind":"textbox","id":"sh/hwfyxobm","slide":8,"text":"echilibru între precizie și recall","textPreview":"echilibru între precizie și recall","textChars":34,"textLines":1,"bbox":[994,313,142,34]}
+{"kind":"textbox","id":"sh/7u54zido","slide":8,"text":"Metrici statistice folosite în validare","textPreview":"Metrici statistice folosite în validare","textChars":39,"textLines":1,"bbox":[145,405,560,34]}
+{"kind":"textbox","id":"sh/ed8bat47","slide":8,"text":"• MCC verifică performanța pe toate cele patru valori ale matricei de confuzie.\n• Kappa Cohen estimează acordul modelului peste nivelul întâmplării.\n• AUC/ROC arată separarea dintre clase pe toate pragurile de decizie.","textPreview":"• MCC verifică performanța pe toate cele patru valori ale matricei de confuzie. | • Kappa Cohen estimează acordul modelului peste nivelul...","textChars":218,"textLines":3,"bbox":[145,455,530,130]}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":8,"text":"Testare suplimentară\nPe lângă imaginile din dataset, am folosit și imagini externe de pe internet pentru a verifica dacă aplicația rulează corect și pe exemple care nu provin direct din setul de antrenare.","textPreview":"Testare suplimentară | Pe lângă imaginile din dataset, am folosit și imagini externe de pe internet pentru a verifica dacă aplicația rule...","textChars":205,"textLines":2,"bbox":[725,430,390,150]}
+{"kind":"image","id":"im/nqxs72x4","slide":8,"name":"Content Placeholder 7","bbox":[749.03,305.17,403.28,340.83]}
+{"kind":"notes","id":"nt/fu18jqh0","slide":8,"text":""}
+{"kind":"slide","id":"sl/qh0fepkz","slide":9,"title":"Stabilitatea modelului la schimbarea pragului","textShapes":40}
+{"kind":"shape","id":"sh/ovahoza1","slide":9,"name":"Title 1","placeholder":"title","bbox":[114.08,59.33,1051.83,184]}
+{"kind":"shape","id":"sh/dg7adsji","slide":9,"name":"Text Placeholder 2","placeholder":"body","bbox":[185.58,269.65,354.85,60.5]}
+{"kind":"shape","id":"sh/z25kb6xk","slide":9,"name":"Text Placeholder 4","placeholder":"body","bbox":[648.89,269.65,547.27,60.5]}
+{"kind":"shape","id":"sh/nuxc3ylc","slide":9,"name":"Content Placeholder 9","bbox":[648.89,343.38,508.87,297.83]}
+{"kind":"shape","id":"sh/5wjudg7a","slide":9,"bbox":[50,36,1180,164]}
+{"kind":"textbox","id":"sh/gbq1oryt","slide":9,"text":"Stabilitatea modelului la schimbarea pragului","textPreview":"Stabilitatea modelului la schimbarea pragului","textChars":45,"textLines":1,"bbox":[130,64,1020,90]}
+{"kind":"shape","id":"sh/n29gr2p8","slide":9,"bbox":[50,175,1180,525]}
+{"kind":"textbox","id":"sh/yhgn29gr","slide":9,"text":"Tabelul pragurilor de decizie","textPreview":"Tabelul pragurilor de decizie","textChars":29,"textLines":1,"bbox":[150,222,520,34]}
+{"kind":"textbox","id":"sh/58z25kb6","slide":9,"text":"Prag","textPreview":"Prag","textChars":4,"textLines":1,"bbox":[230,292,100,36]}
+{"kind":"textbox","id":"sh/gn29gr2p","slide":9,"text":"Acuratețe","textPreview":"Acuratețe","textChars":9,"textLines":1,"bbox":[360,292,110,36]}
+{"kind":"textbox","id":"sh/neloj2t8","slide":9,"text":"Precizie","textPreview":"Precizie","textChars":8,"textLines":1,"bbox":[490,292,110,36]}
+{"kind":"textbox","id":"sh/ytsvu9kn","slide":9,"text":"Recall","textPreview":"Recall","textChars":6,"textLines":1,"bbox":[620,292,110,36]}
+{"kind":"textbox","id":"sh/2x4nap4r","slide":9,"text":"Specificitate","textPreview":"Specificitate","textChars":13,"textLines":1,"bbox":[750,292,110,36]}
+{"kind":"textbox","id":"sh/vixczed8","slide":9,"text":"F1","textPreview":"F1","textChars":2,"textLines":1,"bbox":[880,292,110,36]}
+{"kind":"textbox","id":"sh/k3q5o7qp","slide":9,"text":"0.1","textPreview":"0.1","textChars":3,"textLines":1,"bbox":[230,336,100,36]}
+{"kind":"textbox","id":"sh/donyd0z6","slide":9,"text":"0.9984","textPreview":"0.9984","textChars":6,"textLines":1,"bbox":[360,336,110,36]}
+{"kind":"textbox","id":"sh/6psfil0r","slide":9,"text":"0.9903","textPreview":"0.9903","textChars":6,"textLines":1,"bbox":[490,336,110,36]}
+{"kind":"textbox","id":"sh/val87ed8","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[620,336,110,36]}
+{"kind":"textbox","id":"sh/kre1w7mp","slide":9,"text":"0.9981","textPreview":"0.9981","textChars":6,"textLines":1,"bbox":[750,336,110,36]}
+{"kind":"textbox","id":"sh/dcbulwva","slide":9,"text":"0.9951","textPreview":"0.9951","textChars":6,"textLines":1,"bbox":[880,336,110,36]}
+{"kind":"textbox","id":"sh/2lszqtcj","slide":9,"text":"0.3","textPreview":"0.3","textChars":3,"textLines":1,"bbox":[230,380,100,36]}
+{"kind":"textbox","id":"sh/v6psfil0","slide":9,"text":"0.9992","textPreview":"0.9992","textChars":6,"textLines":1,"bbox":[360,380,110,36]}
+{"kind":"textbox","id":"sh/h4byhgn2","slide":9,"text":"0.9951","textPreview":"0.9951","textChars":6,"textLines":1,"bbox":[490,380,110,36]}
+{"kind":"textbox","id":"sh/sji5snel","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[620,380,110,36]}
+{"kind":"textbox","id":"sh/3ylc7u54","slide":9,"text":"0.9990","textPreview":"0.9990","textChars":6,"textLines":1,"bbox":[750,380,110,36]}
+{"kind":"textbox","id":"sh/adsji5sn","slide":9,"text":"0.9976","textPreview":"0.9976","textChars":6,"textLines":1,"bbox":[880,380,110,36]}
+{"kind":"textbox","id":"sh/lszqtcj6","slide":9,"text":"0.5","textPreview":"0.5","textChars":3,"textLines":1,"bbox":[230,424,100,36]}
+{"kind":"textbox","id":"sh/s72x4nap","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[360,424,110,36]}
+{"kind":"textbox","id":"sh/3m94fu18","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[490,424,110,36]}
+{"kind":"textbox","id":"sh/a5gbq1or","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[620,424,110,36]}
+{"kind":"textbox","id":"sh/hoza1gvy","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[750,424,110,36]}
+{"kind":"textbox","id":"sh/s36hcrmh","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[880,424,110,36]}
+{"kind":"textbox","id":"sh/wval87ed","slide":9,"text":"0.7","textPreview":"0.7","textChars":3,"textLines":1,"bbox":[230,468,100,36]}
+{"kind":"textbox","id":"sh/pg3ex0nu","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[360,468,110,36]}
+{"kind":"textbox","id":"sh/epkzupwb","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[490,468,110,36]}
+{"kind":"textbox","id":"sh/7adsji5s","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[620,468,110,36]}
+{"kind":"textbox","id":"sh/w7mp0bi9","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[750,468,110,36]}
+{"kind":"textbox","id":"sh/psfil0rq","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[880,468,110,36]}
+{"kind":"textbox","id":"sh/e1w7mp0b","slide":9,"text":"0.9","textPreview":"0.9","textChars":3,"textLines":1,"bbox":[230,512,100,36]}
+{"kind":"textbox","id":"sh/7mp0bi9s","slide":9,"text":"0.9992","textPreview":"0.9992","textChars":6,"textLines":1,"bbox":[360,512,110,36]}
+{"kind":"textbox","id":"sh/wfyxobm5","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[490,512,110,36]}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":9,"text":"0.9951","textPreview":"0.9951","textChars":6,"textLines":1,"bbox":[620,512,110,36]}
+{"kind":"textbox","id":"sh/b2hwfyxo","slide":9,"text":"1.0000","textPreview":"1.0000","textChars":6,"textLines":1,"bbox":[750,512,110,36]}
+{"kind":"textbox","id":"sh/mhk3q5o7","slide":9,"text":"0.9976","textPreview":"0.9976","textChars":6,"textLines":1,"bbox":[880,512,110,36]}
+{"kind":"textbox","id":"sh/t83itgfm","slide":9,"text":"Cum citim pragurile\n0.1 favorizează recall-ul.\n\n0.9 favorizează precizia.\n\n0.5 și 0.7 rămân ideale pe setul validat.","textPreview":"Cum citim pragurile | 0.1 favorizează recall-ul. |  | 0.9 favorizează precizia. |  | 0.5 și 0.7 rămân ideale pe setul validat.","textChars":116,"textLines":6,"bbox":[1010,292,150,218]}
+{"kind":"textbox","id":"sh/4nap4r65","slide":9,"text":"Interpretare: 0.5 și 0.7 păstrează toate metricile la 1.0000. Pragurile extreme schimbă ușor precizia sau recall-ul, dar modelul rămâne stabil și fără zonă mare de indecizie.","textPreview":"Interpretare: 0.5 și 0.7 păstrează toate metricile la 1.0000. Pragurile extreme schimbă ușor precizia sau recall-ul, dar modelul rămâne s...","textChars":174,"textLines":1,"bbox":[180,602,900,46]}
+{"kind":"image","id":"im/lc7u54zi","slide":9,"name":"Content Placeholder 6","bbox":[169.82,330.15,383.67,322.03]}
+{"kind":"notes","id":"nt/qh0fepkz","slide":9,"text":""}
+{"kind":"slide","id":"sl/29gr2p8n","slide":10,"title":"Distribuția Predicțiilor și Robustețea","textShapes":4}
+{"kind":"textbox","id":"sh/9gr2p8nq","slide":10,"name":"Title 1","placeholder":"title","text":"Distribuția Predicțiilor și Robustețea ","textPreview":"Distribuția Predicțiilor și Robustețea","textChars":39,"textLines":1,"bbox":[122.72,63.68,1051.83,184]}
+{"kind":"textbox","id":"sh/gvy90je9","slide":10,"name":"Text Placeholder 2","placeholder":"body","text":"Separarea Categorică a Claselor","textPreview":"Separarea Categorică a Claselor","textChars":31,"textLines":1,"bbox":[122.72,247.68,490.72,92.82]}
+{"kind":"textbox","id":"sh/2hwfyxob","slide":10,"name":"Text Placeholder 4","placeholder":"body","text":"Distribuția Vizuală a Scorurilor","textPreview":"Distribuția Vizuală a Scorurilor","textChars":32,"textLines":1,"bbox":[648.64,280,547.27,60.5]}
+{"kind":"textbox","id":"sh/94fu18jq","slide":10,"name":"Content Placeholder 5","text":"Interval [0.0 - 0.1) (Siguranță Benign): 1.045 de imagini. \nInterval [0.9 - 1.0] (Siguranță Malign): 204 imagini. \nZona gri (Incertitudine în jur de 0.5): 0 imagini. \nModelul prezintă o polarizare puternică la extreme, eliminând cazurile de \"indecizie\" în diagnostic.","textPreview":"Interval [0.0 - 0.1) (Siguranță Benign): 1.045 de imagini.  | Interval [0.9 - 1.0] (Siguranță Malign): 204 imagini.  | Zona gri (Incertit...","textChars":267,"textLines":4,"bbox":[114.24,340.5,525.76,291.46]}
+{"kind":"image","id":"im/l0rqd4vm","slide":10,"name":"Content Placeholder 8","bbox":[648.83,346.88,509,285.08]}
+{"kind":"notes","id":"nt/29gr2p8n","slide":10,"text":""}
+{"kind":"slide","id":"sl/re1w7mp0","slide":11,"title":"Modulul de Analiză Predictivă","textShapes":5}
+{"kind":"textbox","id":"sh/6tovahoz","slide":11,"name":"Title 1","placeholder":"title","text":"Modulul de Analiză Predictivă","textPreview":"Modulul de Analiză Predictivă","textChars":29,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/vahoza1g","slide":11,"name":"Text Placeholder 2","placeholder":"body","text":"Integrare și Funcționare Back-End","textPreview":"Integrare și Funcționare Back-End","textChars":33,"textLines":1,"bbox":[108.48,257.21,531.52,83.29]}
+{"kind":"textbox","id":"sh/onyd0z61","slide":11,"name":"Content Placeholder 3","text":"Arhitectură Decuplată: Modulul predictiv rulează direct în fișa pacientului din secțiunea AI Center.\nComunicare Inter-Server: La acțiunea „Analyze with AI”, nucleul .NET transmite asincron imaginea către microserviciul Python FastAPI prin cereri HTTP POST.\nProcesare Pipeline: Serviciul Python preia mamografia, execută standardizarea la 224x224 pixeli și rulează inferența pe rețeaua EfficientNet-V2-S.\nSalvare Structurată: Rezultatul clasificării este returnat ca obiect JSON și persistat automat în baza de date SQL Server.\n","textPreview":"Arhitectură Decuplată: Modulul predictiv rulează direct în fișa pacientului din secțiunea AI Center. | Comunicare Inter-Server: La acțiun...","textChars":527,"textLines":5,"bbox":[116.87,340.5,514.49,276.39]}
+{"kind":"textbox","id":"sh/d8v6psfi","slide":11,"name":"Text Placeholder 4","placeholder":"body","text":"Control Medical și Cazuri la Limită","textPreview":"Control Medical și Cazuri la Limită","textChars":35,"textLines":1,"bbox":[648.89,279.11,531.52,60.5]}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":11,"name":"Content Placeholder 5","text":"Suport Decizional (Human-in-the-Loop): Sistemul nu înlocuiește decizia clinică; medicul are opțiuni dedicate de „Validate Manually” sau „Reject” pentru confirmarea diagnosticului.\nTratarea Datelor Externe: Alerta „No dataset ground-truth available for this upload” gestionează elegant încărcarea unei imagini noi, custom, din afara setului de date istoric.\nNotificări în Timp Real: Statusul analizei și raportul generat sunt transmise instantaneu către portalul pacientului prin WebSockets (SignalR).\n","textPreview":"Suport Decizional (Human-in-the-Loop): Sistemul nu înlocuiește decizia clinică; medicul are opțiuni dedicate de „Validate Manually” sau „...","textChars":501,"textLines":4,"bbox":[650.24,340.5,530.17,276.39]}
+{"kind":"notes","id":"nt/re1w7mp0","slide":11,"text":""}
+{"kind":"slide","id":"sl/4fu18jqh","slide":12,"title":"Exemple de Rulare Model","textShapes":3}
+{"kind":"textbox","id":"sh/s72x4nap","slide":12,"name":"Title 1","placeholder":"title","text":"Exemple de Rulare Model","textPreview":"Exemple de Rulare Model","textChars":23,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/lszqtcj6","slide":12,"name":"Text Placeholder 2","placeholder":"body","text":"MALIGNANT ","textPreview":"MALIGNANT","textChars":10,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"textbox","id":"sh/3ylc7u54","slide":12,"name":"Text Placeholder 4","placeholder":"body","text":"BENIGN","textPreview":"BENIGN","textChars":6,"textLines":1,"bbox":[0,0,0,0]}
+{"kind":"image","id":"im/9w3m94fu","slide":12,"name":"Content Placeholder 8","bbox":[136,356.27,495.33,244.8]}
+{"kind":"image","id":"im/kb6xkf6d","slide":12,"name":"Content Placeholder 10","bbox":[648.83,355.88,495.33,245.58]}
+{"kind":"notes","id":"nt/4fu18jqh","slide":12,"text":""}
+{"kind":"slide","id":"sl/lwval87e","slide":13,"title":"Referințe și rezultate în context","textShapes":19}
+{"kind":"shape","id":"sh/l0rqd4vm","slide":13,"name":"Title 1","placeholder":"title","bbox":[0,0,0,0]}
+{"kind":"shape","id":"sh/wfyxobm5","slide":13,"name":"Text Placeholder 2","placeholder":"body","bbox":[119.28,246.01,541.6,77.5]}
+{"kind":"shape","id":"sh/eloj2t83","slide":13,"name":"Text Placeholder 4","placeholder":"body","bbox":[682.24,263,509.83,60.5]}
+{"kind":"shape","id":"sh/lc7u54zi","slide":13,"name":"Content Placeholder 5","bbox":[111.2,333.3,557.76,316.3]}
+{"kind":"shape","id":"sh/7adsji5s","slide":13,"name":"Content Placeholder 7","bbox":[682.24,340.5,495.36,276.39]}
+{"kind":"shape","id":"sh/epkzupwb","slide":13,"bbox":[50,36,1180,164]}
+{"kind":"textbox","id":"sh/8jqh0fep","slide":13,"text":"Referințe și rezultate în context","textPreview":"Referințe și rezultate în context","textChars":33,"textLines":1,"bbox":[130,64,1020,90]}
+{"kind":"shape","id":"sh/x4nap4r6","slide":13,"bbox":[50,175,1180,525]}
+{"kind":"textbox","id":"sh/qd4vmtwr","slide":13,"text":"Rezultate-cheie","textPreview":"Rezultate-cheie","textChars":15,"textLines":1,"bbox":[145,224,430,34]}
+{"kind":"textbox","id":"sh/fyxobm58","slide":13,"text":"• Latență mediană: 1.50 ms / imagine; throughput: 205.12 imagini / secundă pe CUDA.\n• Modelul EfficientNet-V2-S obține 1.0000 pentru acuratețe, F1 și AUC pe setul de validare.\n• Cazurile mai dificile apar la augmentări extreme: zgomot Gaussian, distorsiuni de perspectivă și contrast redus.","textPreview":"• Latență mediană: 1.50 ms / imagine; throughput: 205.12 imagini / secundă pe CUDA. | • Modelul EfficientNet-V2-S obține 1.0000 pentru ac...","textChars":290,"textLines":3,"bbox":[145,278,500,180]}
+{"kind":"textbox","id":"sh/8v6psfil","slide":13,"text":"Linkuri folosite ca referințe","textPreview":"Linkuri folosite ca referințe","textChars":29,"textLines":1,"bbox":[690,224,430,34]}
+{"kind":"textbox","id":"sh/xczed8v6","slide":13,"text":"1. Mammogram Mastery dataset","textPreview":"1. Mammogram Mastery dataset","textChars":28,"textLines":1,"bbox":[690,278,255,20]}
+{"kind":"textbox","id":"sh/qpg3ex0n","slide":13,"text":"https://data.mendeley.com/datasets/fvjhtskg93/1","textPreview":"https://data.mendeley.com/datasets/fvjhtskg93/1","textChars":47,"textLines":1,"bbox":[690,298,430,18]}
+{"kind":"textbox","id":"sh/fa9w3m94","slide":13,"text":"2. EfficientNetV2 paper","textPreview":"2. EfficientNetV2 paper","textChars":23,"textLines":1,"bbox":[690,321,255,20]}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":13,"text":"https://arxiv.org/abs/2104.00298","textPreview":"https://arxiv.org/abs/2104.00298","textChars":32,"textLines":1,"bbox":[690,341,430,18]}
+{"kind":"textbox","id":"sh/1gvy90je","slide":13,"text":"3. PyTorch documentation","textPreview":"3. PyTorch documentation","textChars":24,"textLines":1,"bbox":[690,364,255,20]}
+{"kind":"textbox","id":"sh/loj2t83i","slide":13,"text":"https://pytorch.org/docs/stable/index.html","textPreview":"https://pytorch.org/docs/stable/index.html","textChars":42,"textLines":1,"bbox":[690,384,430,18]}
+{"kind":"textbox","id":"sh/w3m94fu1","slide":13,"text":"4. FastAPI documentation","textPreview":"4. FastAPI documentation","textChars":24,"textLines":1,"bbox":[690,407,255,20]}
+{"kind":"textbox","id":"sh/3itgfmlk","slide":13,"text":"https://fastapi.tiangolo.com/","textPreview":"https://fastapi.tiangolo.com/","textChars":29,"textLines":1,"bbox":[690,427,430,18]}
+{"kind":"textbox","id":"sh/ex0nuxc3","slide":13,"text":"5. ASP.NET Core / Razor Pages","textPreview":"5. ASP.NET Core / Razor Pages","textChars":29,"textLines":1,"bbox":[690,450,255,20]}
+{"kind":"textbox","id":"sh/lwval87e","slide":13,"text":"https://learn.microsoft.com/en-us/aspnet/core/razor-pages/","textPreview":"https://learn.microsoft.com/en-us/aspnet/core/razor-pages/","textChars":58,"textLines":1,"bbox":[690,470,430,18]}
+{"kind":"textbox","id":"sh/wb2hwfyx","slide":13,"text":"6. Entity Framework Core","textPreview":"6. Entity Framework Core","textChars":24,"textLines":1,"bbox":[690,493,255,20]}
+{"kind":"textbox","id":"sh/3q5o7qpg","slide":13,"text":"https://learn.microsoft.com/en-us/ef/core/","textPreview":"https://learn.microsoft.com/en-us/ef/core/","textChars":42,"textLines":1,"bbox":[690,513,430,18]}
+{"kind":"textbox","id":"sh/e9cvixcz","slide":13,"text":"7. ASP.NET Core SignalR","textPreview":"7. ASP.NET Core SignalR","textChars":23,"textLines":1,"bbox":[690,536,255,20]}
+{"kind":"textbox","id":"sh/l87ed8ba","slide":13,"text":"https://learn.microsoft.com/en-us/aspnet/core/signalr/introduction","textPreview":"https://learn.microsoft.com/en-us/aspnet/core/signalr/introduction","textChars":66,"textLines":1,"bbox":[690,556,430,18]}
+{"kind":"textbox","id":"sh/sneloj2t","slide":13,"text":"Mesaj pentru susținere\nAplicația nu propune înlocuirea medicului, ci un flux digital în care AI-ul oferă suport rapid, iar validarea rămâne la specialist.","textPreview":"Mesaj pentru susținere | Aplicația nu propune înlocuirea medicului, ci un flux digital în care AI-ul oferă suport rapid, iar validarea ră...","textChars":154,"textLines":2,"bbox":[160,500,465,110]}
+{"kind":"notes","id":"nt/lwval87e","slide":13,"text":""}
+{"kind":"slide","id":"sl/25kb6xkf","slide":14,"title":"Concluzii și Direcții Viitoare","textShapes":5}
+{"kind":"textbox","id":"sh/kre1w7mp","slide":14,"name":"Title 1","placeholder":"title","text":"Concluzii și Direcții Viitoare","textPreview":"Concluzii și Direcții Viitoare","textChars":30,"textLines":1,"bbox":[143.36,73.92,1051.83,184]}
+{"kind":"textbox","id":"sh/dcbulwva","slide":14,"name":"Text Placeholder 2","placeholder":"body","text":"Realizări și Aspecte Importante","textPreview":"Realizări și Aspecte Importante","textChars":31,"textLines":1,"bbox":[155.83,239.4,513.44,60.5]}
+{"kind":"textbox","id":"sh/2x4nap4r","slide":14,"name":"Content Placeholder 3","text":"Digitalizare Integrată: S-a demonstrat dezvoltarea unei soluții software unitare ce elimină fragmentarea dintre fluxurile administrative clinice și analiza imagistică. \nPerformanță și Convergență: \nModelul EfficientNet-V2-S  a atins performanțe maxime pe setul de validare disjunct prin aplicarea regularizării stricte. \nControl Uman Garantat: Platforma respectă paradigma Human-in-the-Loop, lăsând decizia clinică finală și validarea exclusiv în responsabilitatea medicului specialist. \nSinergie Tehnologică: Integrare stabilă și cross-platform între un backend robust în .NET 9 și un microserviciu asincron de AI în Python FastAPI. \n","textPreview":"Digitalizare Integrată: S-a demonstrat dezvoltarea unei soluții software unitare ce elimină fragmentarea dintre fluxurile administrative ...","textChars":635,"textLines":6,"bbox":[155.83,314.81,513.92,331.27]}
+{"kind":"textbox","id":"sh/vixczed8","slide":14,"name":"Text Placeholder 4","placeholder":"body","text":"Direcții Viitoare de Dezvoltare","textPreview":"Direcții Viitoare de Dezvoltare","textChars":31,"textLines":1,"bbox":[693.75,240.22,513.92,60.5]}
+{"kind":"textbox","id":"sh/k3q5o7qp","slide":14,"name":"Content Placeholder 5","text":"Extinderea Datasetului: Integrarea unor seturi de date clinice locale suplimentare pentru testarea continuă a capacității de generalizare. \nModule Predictive Noi: Extinderea capabilităților AI prin adăugarea de modele predictive pentru alte investigații imagistice (CT, RMN sau ecografii). \nOptimizare Edge: Explorarea tehnicilor de cuantificare a modelului (Quantization) pentru reducerea suplimentară a amprentei de memorie pe sisteme locale. \nCertificare Medicală: Adaptarea completă a standardelor de securitate a datelor în vederea alinierii platformei la cerințele sistemelor medicale reale. \n","textPreview":"Extinderea Datasetului: Integrarea unor seturi de date clinice locale suplimentare pentru testarea continuă a capacității de generalizare...","textChars":599,"textLines":5,"bbox":[693.75,305.21,513.92,340.87]}
+{"kind":"notes","id":"nt/25kb6xkf","slide":14,"text":""}

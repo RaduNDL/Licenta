@@ -54,6 +54,7 @@ namespace Licenta.Pages.Doctor.Attachments
                     a.Status == AttachmentStatus.Pending &&
                     (a.DoctorId == null || a.DoctorId == doctor.Id) &&
                     a.Type != "ProfilePhoto" &&
+                    a.Type != "AppointmentRequest" &&
                     (!hasClinic ||
                         (a.Patient != null &&
                          a.Patient.User != null &&
@@ -96,13 +97,24 @@ namespace Licenta.Pages.Doctor.Attachments
                 return Forbid();
 
             var att = await _db.MedicalAttachments
+                .Include(a => a.Patient).ThenInclude(p => p!.User)
                 .FirstOrDefaultAsync(a =>
                     a.Id == id &&
                     a.Status == AttachmentStatus.Pending &&
-                    a.DoctorId == null);
+                    a.DoctorId == null &&
+                    a.Type != "ProfilePhoto" &&
+                    a.Type != "AppointmentRequest");
 
             if (att == null)
                 return RedirectToPage();
+
+            var clinicId = (user.ClinicId ?? "").Trim();
+            if (!string.IsNullOrWhiteSpace(clinicId))
+            {
+                var patientClinicId = (att.Patient?.User?.ClinicId ?? "").Trim();
+                if (!string.Equals(patientClinicId, clinicId, StringComparison.OrdinalIgnoreCase))
+                    return Forbid();
+            }
 
             att.DoctorId = doctor.Id;
 

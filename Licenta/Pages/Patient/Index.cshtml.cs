@@ -79,6 +79,8 @@ namespace Licenta.Pages.Patient
                 .Where(a =>
                     a.PatientId == patientProfile.Id &&
                     a.Status == AttachmentStatus.Validated &&
+                    a.Type != "ProfilePhoto" &&
+                    a.Type != "AppointmentRequest" &&
                     a.ValidatedAtUtc != null &&
                     a.ValidatedAtUtc >= resultsSinceUtc)
                 .CountAsync();
@@ -230,7 +232,11 @@ namespace Licenta.Pages.Patient
 
             var attachments = await _context.MedicalAttachments
                 .AsNoTracking()
-                .Where(a => a.PatientId == patientId && (a.UploadedAt >= sinceUtc || (a.ValidatedAtUtc != null && a.ValidatedAtUtc >= sinceUtc)))
+                .Where(a =>
+                    a.PatientId == patientId &&
+                    a.Type != "ProfilePhoto" &&
+                    a.Type != "AppointmentRequest" &&
+                    (a.UploadedAt >= sinceUtc || (a.ValidatedAtUtc != null && a.ValidatedAtUtc >= sinceUtc)))
                 .OrderByDescending(a => a.ValidatedAtUtc ?? a.UploadedAt)
                 .Take(12)
                 .Select(a => new { a.Id, a.FileName, a.Status, a.UploadedAt, a.ValidatedAtUtc })

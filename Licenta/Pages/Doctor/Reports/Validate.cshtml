@@ -1,50 +1,210 @@
-﻿@page
+@page
 @model Licenta.Pages.Doctor.Reports.ValidateModel
 @{
     ViewData["Title"] = "Validate Reports";
+    var pendingReportsCount = Model.Pending?.Count ?? 0;
+    var pendingAttachmentCount = Model.PendingAttachments?.Count ?? 0;
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/doctor.css" />
 }
-<h2 class="mb-3">Pending Reports for Validation</h2>
 
-@if (TempData["StatusMessage"] != null)
-{
-    <div class="alert alert-info">@TempData["StatusMessage"]</div>
-}
+<div class="container py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold">
+                <i class="bi bi-file-earmark-check text-primary me-2"></i>Validate Reports
+            </h2>
+            <p class="text-muted mb-0">
+                Review draft medical reports and pending files uploaded by patients.
+            </p>
+        </div>
 
-@if (Model.Pending == null || Model.Pending.Count == 0)
-{
-    <div class="alert alert-secondary">There are no reports pending validation.</div>
-}
-else
-{
-    <table class="table table-striped table-hover align-middle shadow-sm">
-        <thead class="table-light">
-            <tr>
-                <th>Patient</th>
-                <th>Diagnosis</th>
-                <th>Date</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var r in Model.Pending)
-            {
-                <tr>
-                    <td>@(r.Patient?.User?.FullName ?? r.Patient?.User?.Email)</td>
-                    <td>@r.Diagnosis</td>
-                    <td>@r.VisitDateUtc.ToLocalTime().ToString("g")</td>
-                    <td class="text-end">
-                        <form method="post" class="d-inline">
-                            <input type="hidden" name="recordId" value="@r.Id" />
-                            <button type="submit" class="btn btn-success btn-sm">
-                                <i class="bi bi-check-circle"></i> Validate
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+        <a asp-page="/Doctor/Attachments/Inbox" class="btn btn-outline-primary">
+            <i class="bi bi-inbox me-2"></i>Open Attachments Inbox
+        </a>
+    </div>
+
+    @if (TempData["StatusMessage"] != null)
+    {
+        <div class="alert alert-info border-0 shadow-sm">@TempData["StatusMessage"]</div>
+    }
+
+    @if (pendingAttachmentCount == 0 && pendingReportsCount == 0)
+    {
+        <div class="alert alert-secondary border-0 shadow-sm">
+            There are no reports or patient uploads pending validation.
+        </div>
+    }
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-paperclip text-primary me-2"></i>Pending Patient Uploads
+            </h5>
+            <span class="badge bg-primary rounded-pill">@pendingAttachmentCount</span>
+        </div>
+
+        @if (pendingAttachmentCount == 0)
+        {
+            <div class="card-body text-muted">
+                No pending patient files for your account.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">File</th>
+                            <th>Patient</th>
+                            <th>Uploaded</th>
+                            <th>Patient Notes</th>
+                            <th>Assignment</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model.PendingAttachments)
+                        {
+                            var fileName = a.FileName ?? "file";
+                            var lowerFileName = fileName.ToLowerInvariant();
+                            var contentType = (a.ContentType ?? "").ToLowerInvariant();
+                            var isImage = contentType.StartsWith("image/")
+                                || lowerFileName.EndsWith(".jpg")
+                                || lowerFileName.EndsWith(".jpeg")
+                                || lowerFileName.EndsWith(".png")
+                                || lowerFileName.EndsWith(".tif")
+                                || lowerFileName.EndsWith(".tiff");
+                            var iconClass = isImage
+                                ? "bi-file-earmark-image text-primary"
+                                : lowerFileName.EndsWith(".pdf")
+                                    ? "bi-file-earmark-pdf text-danger"
+                                    : lowerFileName.EndsWith(".dcm")
+                                        ? "bi-file-earmark-medical text-info"
+                                        : "bi-file-earmark-text text-secondary";
+                            var isMine = a.DoctorId == Model.CurrentDoctorId;
+                            var patientName = a.Patient?.User?.FullName ?? a.Patient?.User?.Email ?? "Unknown";
+
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi @iconClass fs-4"></i>
+                                        <div>
+                                            <div class="fw-semibold text-dark">@fileName</div>
+                                            <div class="small text-muted">@(!string.IsNullOrWhiteSpace(a.Type) ? a.Type : "Medical attachment")</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@patientName</td>
+                                <td>@a.UploadedAt.ToLocalTime().ToString("g")</td>
+                                <td style="max-width: 260px;">
+                                    @if (string.IsNullOrWhiteSpace(a.PatientNotes))
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="d-inline-block text-truncate" style="max-width: 240px;" title="@a.PatientNotes">
+                                            @a.PatientNotes
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (isMine)
+                                    {
+                                        <span class="badge bg-primary">Assigned to you</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Unassigned</span>
+                                    }
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group">
+                                        <a href="@Url.Page("/Files/Attachment", new { id = a.Id })"
+                                           target="_blank"
+                                           class="btn btn-sm btn-outline-secondary"
+                                           title="Open file">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                        </a>
+
+                                        @if (isMine)
+                                        {
+                                            <a asp-page="/Doctor/Attachments/Review"
+                                               asp-route-id="@a.Id"
+                                               class="btn btn-sm btn-primary">
+                                                Review
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <form method="post"
+                                                  asp-page-handler="ClaimAttachment"
+                                                  asp-route-attachmentId="@a.Id"
+                                                  class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    Claim & Review
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-journal-medical text-primary me-2"></i>Draft Medical Reports
+            </h5>
+            <span class="badge bg-primary rounded-pill">@pendingReportsCount</span>
+        </div>
+
+        @if (pendingReportsCount == 0)
+        {
+            <div class="card-body text-muted">
+                No draft medical reports pending validation.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Patient</th>
+                            <th>Diagnosis</th>
+                            <th>Date</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.Pending)
+                        {
+                            <tr>
+                                <td class="ps-4">@(r.Patient?.User?.FullName ?? r.Patient?.User?.Email ?? "Unknown")</td>
+                                <td>@r.Diagnosis</td>
+                                <td>@r.VisitDateUtc.ToLocalTime().ToString("g")</td>
+                                <td class="text-end pe-4">
+                                    <form method="post" class="d-inline">
+                                        <input type="hidden" name="recordId" value="@r.Id" />
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check-circle me-1"></i>Validate
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

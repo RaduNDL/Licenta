@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Licenta.Pages.Assistant.Messages.Requests;
 
@@ -24,28 +28,30 @@ public class ReviewModel : PageModel
         _notifier = notifier;
     }
 
-    public PatientMessageRequest RequestData { get; set; } = null!;
+    public PatientMessageRequest? RequestData { get; set; }
     public bool CanAccept { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Unauthorized();
-        if (user.AssignedDoctorId == null) return Unauthorized();
+
+        var assistantUser = await _db.Users
+            .Include(u => u.AssignedDoctors)
+            .FirstOrDefaultAsync(u => u.Id == user.Id);
+
+        var doctorIds = assistantUser?.AssignedDoctors.Select(d => d.Id).ToList() ?? new List<Guid>();
+        if (!doctorIds.Any()) return Unauthorized();
 
         RequestData = await _db.PatientMessageRequests
-            .Include(r => r.Patient).ThenInclude(p => p.User)
-            .Include(r => r.DoctorProfile).ThenInclude(d => d.User)
-            .Include(r => r.Assistant)
-            .FirstOrDefaultAsync(r =>
-                r.Id == id &&
-                r.DoctorProfileId == user.AssignedDoctorId.Value &&
-                (r.AssistantId == null || r.AssistantId == user.Id));
+            .Include(r => r.Patient!).ThenInclude(p => p.User)
+            .Include(r => r.DoctorProfile!).ThenInclude(d => d.User)
+            .FirstOrDefaultAsync(r => r.Id == id && doctorIds.Contains(r.DoctorProfileId));
 
         if (RequestData == null) return NotFound();
 
         CanAccept = RequestData.Status == PatientMessageRequestStatus.Pending &&
-                    string.IsNullOrEmpty(RequestData.AssistantId);
+                    (string.IsNullOrEmpty(RequestData.AssistantId) || RequestData.AssistantId == user.Id);
 
         return Page();
     }
@@ -54,43 +60,36 @@ public class ReviewModel : PageModel
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Unauthorized();
-        if (user.AssignedDoctorId == null) return Unauthorized();
 
         var req = await _db.PatientMessageRequests
-            .Include(r => r.Patient)
-            .FirstOrDefaultAsync(r => r.Id == id && r.DoctorProfileId == user.AssignedDoctorId.Value);
+            .Include(r => r.Patient!)
+            .Include(r => r.DoctorProfile!)
+            .FirstOrDefaultAsync(r => r.Id == id);
 
         if (req == null) return NotFound();
-        if (req.Status != PatientMessageRequestStatus.Pending)
-        {
-            TempData["StatusMessage"] = "Request is no longer pending.";
-            return RedirectToPage("./Review", new { id });
-        }
 
-        if (!string.IsNullOrWhiteSpace(req.AssistantId) && req.AssistantId != user.Id)
-        {
-            TempData["StatusMessage"] = "This request is assigned to another assistant.";
-            return RedirectToPage("./Review", new { id });
-        }
+        var assistantUser = await _db.Users
+            .Include(u => u.AssignedDoctors)
+            .FirstOrDefaultAsync(u => u.Id == user.Id);
+
+        if (assistantUser == null || !assistantUser.AssignedDoctors.Any(d => d.Id == req.DoctorProfileId))
+            return Forbid();
 
         req.AssistantId = user.Id;
         req.Status = PatientMessageRequestStatus.AssistantChat;
         req.UpdatedAt = DateTime.UtcNow;
 
-        try
-        {
-            await _db.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            TempData["StatusMessage"] = "Request was updated by another user. Please refresh.";
-            return RedirectToPage("./Review", new { id });
-        }
+        await _db.SaveChangesAsync();
 
         await _notifier.NotifyUserAsync(
-            req.Patient.UserId,
+            req.Patient!.UserId,
             "Assistant accepted your request",
             $"/Patient/Messages/Inbox?requestId={req.Id}&kind=Assistant");
+
+        await _notifier.NotifyUserAsync(
+            req.DoctorProfile!.UserId,
+            $"Assistant started triage: {req.Subject}",
+            "/Doctor/Messages/Requests");
 
         return RedirectToPage("/Assistant/Messages/Inbox", new { requestId = req.Id });
     }
@@ -99,37 +98,43 @@ public class ReviewModel : PageModel
     {
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return Unauthorized();
-        if (user.AssignedDoctorId == null) return Unauthorized();
 
         var req = await _db.PatientMessageRequests
-            .Include(r => r.Patient)
-            .Include(r => r.DoctorProfile)
-            .FirstOrDefaultAsync(r => r.Id == id && r.DoctorProfileId == user.AssignedDoctorId.Value);
+            .Include(r => r.Patient!)
+            .Include(r => r.DoctorProfile!)
+            .FirstOrDefaultAsync(r => r.Id == id);
 
         if (req == null) return NotFound();
 
-        var safeNote = string.IsNullOrWhiteSpace(note) ? "Assistant requested doctor review." : note.Trim();
-        if (safeNote.Length > 2000)
-            safeNote = safeNote.Substring(0, 2000);
+        var assistantUser = await _db.Users
+            .Include(u => u.AssignedDoctors)
+            .FirstOrDefaultAsync(u => u.Id == user.Id);
 
-        req.AssistantNote = safeNote;
-        req.AssistantId = null;
-        req.Status = PatientMessageRequestStatus.WaitingDoctorApproval;
+        if (assistantUser == null || !assistantUser.AssignedDoctors.Any(d => d.Id == req.DoctorProfileId))
+            return Forbid();
+
+        req.AssistantNote = string.IsNullOrWhiteSpace(note)
+            ? "Assistant requested doctor review."
+            : note.Trim();
+
+        req.AssistantId = user.Id;
+        req.Status = PatientMessageRequestStatus.RejectedByAssistant;
         req.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
 
         await _notifier.NotifyUserAsync(
-            req.DoctorProfile.UserId,
-            $"Request returned by assistant: {req.Subject}",
+            req.DoctorProfile!.UserId,
+            $"Request returned: {req.Subject}",
             "/Doctor/Messages/Requests");
 
         await _notifier.NotifyUserAsync(
-            req.Patient.UserId,
-            "Your request is back to the doctor for approval",
+            req.Patient!.UserId,
+            "Your request is back to the doctor for review",
             "/Patient/Messages/RequestList");
 
-        TempData["StatusMessage"] = "Request sent back to the doctor.";
-        return RedirectToPage("/Assistant/Messages/Requests/Index");
+        TempData["StatusMessage"] = "Request sent back to the doctor and marked as Rejected by Assistant.";
+
+        return RedirectToPage("/Assistant/Messages/Requests/Index", new { status = "RejectedByAssistant" });
     }
 }

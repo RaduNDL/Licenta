@@ -60,7 +60,7 @@ namespace Licenta.Pages.Patient.Attachments
 
             public string? Notes { get; set; }
 
-            [Required(ErrorMessage = "Please select an image file.")]
+            [Required(ErrorMessage = "Please select a medical file.")]
             public IFormFile File { get; set; } = null!;
         }
 
@@ -108,9 +108,15 @@ namespace Licenta.Pages.Patient.Attachments
             if (patient == null)
                 return Forbid();
 
+            var clinicId = (user.ClinicId ?? "").Trim();
+
             var selectedDoctor = await _db.Doctors
                 .Include(d => d.User)
-                .FirstOrDefaultAsync(d => d.Id == Input.DoctorId);
+                .FirstOrDefaultAsync(d =>
+                    d.Id == Input.DoctorId &&
+                    d.User != null &&
+                    !d.User.IsSoftDeleted &&
+                    (string.IsNullOrWhiteSpace(clinicId) || d.User.ClinicId == clinicId));
 
             if (selectedDoctor == null || selectedDoctor.User == null)
             {

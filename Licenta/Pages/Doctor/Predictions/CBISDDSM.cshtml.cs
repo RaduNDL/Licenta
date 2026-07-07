@@ -81,7 +81,11 @@ namespace Licenta.Pages.Doctor.Predictions
             await RefreshTrainingBannerAsync(ct);
 
             if (PatientId.HasValue && PatientId.Value != Guid.Empty)
-                Patient = await LoadPatientAsync(PatientId.Value, ct);
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user != null)
+                    Patient = await LoadPatientAsync(PatientId.Value, user, ct);
+            }
         }
 
         public async Task<IActionResult> OnPostAsync(CancellationToken ct)
@@ -103,7 +107,7 @@ namespace Licenta.Pages.Doctor.Predictions
                 return Page();
             }
 
-            Patient = await LoadPatientAsync(PatientId.Value, ct);
+            Patient = await LoadPatientAsync(PatientId.Value, user, ct);
             if (Patient == null)
             {
                 ErrorMessage = "Selected patient not found.";
@@ -318,7 +322,7 @@ namespace Licenta.Pages.Doctor.Predictions
             var query = _db.Patients
                 .Include(p => p.User)
                 .AsNoTracking()
-                .Where(p => p.User != null && patientUserIds.Contains(p.UserId));
+                .Where(p => p.User != null && !p.User.IsSoftDeleted && patientUserIds.Contains(p.UserId));
 
             if (!string.IsNullOrWhiteSpace(clinicId))
                 query = query.Where(p => p.User != null && p.User.ClinicId == clinicId);
@@ -333,11 +337,18 @@ namespace Licenta.Pages.Doctor.Predictions
                 .ToListAsync(ct);
         }
 
-        private Task<PatientProfile?> LoadPatientAsync(Guid id, CancellationToken ct)
+        private Task<PatientProfile?> LoadPatientAsync(Guid id, ApplicationUser user, CancellationToken ct)
         {
+            var clinicId = (user.ClinicId ?? "").Trim();
+
             return _db.Patients
                 .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.Id == id, ct);
+                .FirstOrDefaultAsync(p =>
+                    p.Id == id &&
+                    p.User != null &&
+                    !p.User.IsSoftDeleted &&
+                    (string.IsNullOrWhiteSpace(clinicId) || p.User.ClinicId == clinicId),
+                    ct);
         }
 
         private async Task<MlTrainingState?> SafeGetTrainingStateAsync(CancellationToken ct)

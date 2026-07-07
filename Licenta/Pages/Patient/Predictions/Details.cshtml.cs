@@ -50,7 +50,7 @@ namespace Licenta.Pages.Patient.Predictions
             if (patient == null)
             {
                 TempData["StatusMessage"] = "No patient profile linked to your account.";
-                return RedirectToPage("/Patient/Dashboard/Index");
+                return RedirectToPage("/Patient/Index");
             }
 
             var prediction = await _db.Predictions

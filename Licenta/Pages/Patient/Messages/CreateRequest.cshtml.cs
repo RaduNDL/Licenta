@@ -76,12 +76,22 @@ public class CreateRequestModel : PageModel
         if (patientProfileId == null)
             return BadRequest();
 
+        var clinicId = (patientUser.ClinicId ?? "").Trim();
+
         var doctorProfile = await _db.Doctors
             .Include(d => d.User)
-            .FirstOrDefaultAsync(d => d.Id == Input.DoctorId);
+            .FirstOrDefaultAsync(d =>
+                d.Id == Input.DoctorId &&
+                d.User != null &&
+                !d.User.IsSoftDeleted &&
+                (string.IsNullOrWhiteSpace(clinicId) || d.User.ClinicId == clinicId));
 
         if (doctorProfile == null || doctorProfile.User == null)
-            return BadRequest();
+        {
+            ModelState.AddModelError("Input.DoctorId", "Selected doctor is not available.");
+            await LoadDoctorsAsync();
+            return Page();
+        }
 
         var req = new PatientMessageRequest
         {
@@ -116,9 +126,18 @@ public class CreateRequestModel : PageModel
 
     private async Task LoadDoctorsAsync()
     {
-        var doctors = await _db.Doctors
+        var patientUser = await _userManager.GetUserAsync(User);
+        var clinicId = (patientUser?.ClinicId ?? "").Trim();
+
+        var query = _db.Doctors
             .AsNoTracking()
-            .Where(d => !d.User.IsSoftDeleted)
+            .Include(d => d.User)
+            .Where(d => d.User != null && !d.User.IsSoftDeleted);
+
+        if (!string.IsNullOrWhiteSpace(clinicId))
+            query = query.Where(d => d.User!.ClinicId == clinicId);
+
+        var doctors = await query
             .Select(d => new
             {
                 d.Id,
